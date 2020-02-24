@@ -1,35 +1,37 @@
-type Type =
+export type Type =
   | { tag: Type_.UInt32 }
   | { tag: Type_.String }
   | { tag: Type_.Id; parameter: Type }
   | { tag: Type_.Hash; parameter: Type }
+  | { tag: Type_.Maybe; parameter: Type }
   | { tag: Type_.List; parameter: Type }
   | { tag: Type_.Map; parameter: MapType }
   | { tag: Type_.Set; parameter: Type }
   | { tag: Type_.Custom; parameter: CustomType };
 
-const enum Type_ {
+export const enum Type_ {
   UInt32,
   String,
   Id,
   Hash,
+  Maybe,
   List,
   Map,
   Set,
   Custom
 }
 
-type MapType = {
+export type MapType = {
   key: Type;
   value: Type;
 };
 
-type CustomType = {
+export type CustomType = {
   name: string;
   body: CustomTypeBody;
 };
 
-type CustomTypeBody =
+export type CustomTypeBody =
   | {
       tag: CustomType_.Product;
       parameter: ReadonlyArray<TagNameAndParameter>;
@@ -39,17 +41,32 @@ type CustomTypeBody =
       parameter: ReadonlyArray<MemberNameAndType>;
     };
 
-const enum CustomType_ {
+export const enum CustomType_ {
   Product,
   Sum
 }
 
-type TagNameAndParameter = {
+export type TagNameAndParameter = {
   name: string;
-  parameter: Type | null;
+  parameter: TagParameter;
 };
 
-type MemberNameAndType = {
+export type MemberNameAndType = {
   name: string;
   memberType: Type;
 };
+
+export type TagParameter =
+  | {
+      tag: TagParameter_.Just;
+      parameter: Type;
+    }
+  | {
+      tag: TagParameter_.Nothing;
+    };
+
+export const enum TagParameter_ {
+  Just,
+  Nothing
+}
+
