@@ -5,7 +5,7 @@ export type Type =
   | { tag: Type_.Hash; parameter: Type }
   | { tag: Type_.Maybe; parameter: Type }
   | { tag: Type_.List; parameter: Type }
-  | { tag: Type_.Map; parameter: MapType }
+  | { tag: Type_.Dictionary; parameter: DictionaryType }
   | { tag: Type_.Set; parameter: Type }
   | { tag: Type_.Custom; parameter: CustomType };
 
@@ -16,12 +16,12 @@ export const enum Type_ {
   Hash,
   Maybe,
   List,
-  Map,
+  Dictionary,
   Set,
   Custom
 }
 
-export type MapType = {
+export type DictionaryType = {
   key: Type;
   value: Type;
 };
