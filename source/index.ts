@@ -1,3 +1,5 @@
+import * as generator from "js-ts-code-generator";
+
 export type Type =
   | { _: Type_.UInt32 }
   | { _: Type_.String }
@@ -7,7 +9,7 @@ export type Type =
   | { _: Type_.List; type_: Type }
   | { _: Type_.Dictionary; dictionaryType: DictionaryType }
   | { _: Type_.Set; type_: Type }
-  | { _: Type_.Custom; customType: CustomType };
+  | { _: Type_.Custom; string_: string };
 
 export const enum Type_ {
   UInt32,
@@ -27,7 +29,7 @@ export type DictionaryType = {
 };
 
 export type CustomType = {
-  name: string;
+  description: string;
   body: CustomTypeBody;
 };
 
@@ -48,11 +50,13 @@ export const enum CustomType_ {
 
 export type TagNameAndParameter = {
   name: string;
+  description: string;
   parameter: TagParameter;
 };
 
 export type MemberNameAndType = {
   name: string;
+  description: string;
   memberType: Type;
 };
 
@@ -108,9 +112,9 @@ export const typeSet = (type_: Type): Type => ({
   type_
 });
 
-export const typeCustom = (customType: CustomType): Type => ({
+export const typeCustom = (string_: string): Type => ({
   _: Type_.Custom,
-  customType
+  string_
 });
 
 export const customTypeBodyProduct = (
@@ -134,4 +138,21 @@ export const tagParameterJust = (type_: Type): TagParameter => ({
 
 export const tagParameterNothing: TagParameter = {
   _: TagParameter_.Nothing
+};
+
+export const generateTypeScriptCode = (
+  customTypeDictionary: ReadonlyMap<string, CustomType>
+): generator.Code => {
+  return {
+    exportTypeAliasMap: new Map(),
+    exportConstEnumMap: new Map(),
+    exportFunctionMap: new Map(),
+    statementList: []
+  };
+};
+
+export const generateElmCode = (
+  customTypeDictionary: ReadonlyMap<string, CustomType>
+): string => {
+  return "";
 };
