@@ -1,0 +1,32 @@
+{
+  "name": "type",
+  "version": "0.0.0",
+  "description": "Generate TypeScript and Elm type definitions, encode and decode code",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/narumincho/type.git"
+  },
+  "author": "narumincho <narumincho.starfy@gmail.com> (https://narumincho.com)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/narumincho/type/issues"
+  },
+  "homepage": "https://github.com/narumincho/type#readme",
+  "devDependencies": {
+    "@types/node": "^13.7.4",
+    "@typescript-eslint/eslint-plugin": "^2.20.0",
+    "@typescript-eslint/parser": "^2.20.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-plugin-prettier": "^3.1.2",
+    "prettier": "^1.19.1",
+    "typescript": "^3.8.2"
+  },
+  "dependencies": {
+    "js-ts-code-generator": "^0.1.9"
+  }
+}
