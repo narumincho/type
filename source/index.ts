@@ -1,13 +1,13 @@
 export type Type =
-  | { tag: Type_.UInt32 }
-  | { tag: Type_.String }
-  | { tag: Type_.Id; parameter: Type }
-  | { tag: Type_.Hash; parameter: Type }
-  | { tag: Type_.Maybe; parameter: Type }
-  | { tag: Type_.List; parameter: Type }
-  | { tag: Type_.Dictionary; parameter: DictionaryType }
-  | { tag: Type_.Set; parameter: Type }
-  | { tag: Type_.Custom; parameter: CustomType };
+  | { _: Type_.UInt32 }
+  | { _: Type_.String }
+  | { _: Type_.Id; type_: Type }
+  | { _: Type_.Hash; type_: Type }
+  | { _: Type_.Maybe; type_: Type }
+  | { _: Type_.List; type_: Type }
+  | { _: Type_.Dictionary; dictionaryType: DictionaryType }
+  | { _: Type_.Set; type_: Type }
+  | { _: Type_.Custom; customType: CustomType };
 
 export const enum Type_ {
   UInt32,
@@ -33,12 +33,12 @@ export type CustomType = {
 
 export type CustomTypeBody =
   | {
-      tag: CustomType_.Product;
-      parameter: ReadonlyArray<TagNameAndParameter>;
+      _: CustomType_.Product;
+      tagNameAndParameterArray: ReadonlyArray<TagNameAndParameter>;
     }
   | {
-      tag: CustomType_.Sum;
-      parameter: ReadonlyArray<MemberNameAndType>;
+      _: CustomType_.Sum;
+      memberNameAndTypeArray: ReadonlyArray<MemberNameAndType>;
     };
 
 export const enum CustomType_ {
@@ -58,11 +58,11 @@ export type MemberNameAndType = {
 
 export type TagParameter =
   | {
-      tag: TagParameter_.Just;
-      parameter: Type;
+      _: TagParameter_.Just;
+      type_: Type;
     }
   | {
-      tag: TagParameter_.Nothing;
+      _: TagParameter_.Nothing;
     };
 
 export const enum TagParameter_ {
