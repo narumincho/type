@@ -94,7 +94,9 @@ const createTypeAlias = (
     memberNameAndTypeArray
       .map(
         memberNameAndType =>
-          memberNameAndType.name +
+          (isIdentifer(memberNameAndType.name)
+            ? memberNameAndType.name + "_"
+            : memberNameAndType.name) +
           ": " +
           typeToElmType(memberNameAndType.memberType)
       )
