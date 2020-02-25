@@ -77,10 +77,17 @@ describe("test", () => {
     typeCustomType,
     dictionaryType
   ]);
-  const code: generator.Code = t.typeScript.generateCode(data);
-  const codeAsString = generator.toNodeJsOrBrowserCodeAsTypeScript(code);
+  const typeScriptCode: generator.Code = t.typeScript.generateCode(data);
+  const typeScriptCodeAsString = generator.toNodeJsOrBrowserCodeAsTypeScript(
+    typeScriptCode
+  );
+  const elmCodeAsString: string = t.elm.generateCode("Data", data);
   it("return string", () => {
-    console.log(codeAsString);
-    expect(typeof codeAsString === "string").toBe(true);
+    console.log(typeScriptCodeAsString);
+    expect(typeof typeScriptCodeAsString === "string").toBe(true);
+  });
+  it("elm return string", () => {
+    console.log(elmCodeAsString);
+    expect(typeof elmCodeAsString === "string").toBe(true);
   });
 });
