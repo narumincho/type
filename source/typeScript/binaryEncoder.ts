@@ -1,5 +1,6 @@
 import * as generator from "js-ts-code-generator";
 import { expr, typeExpr } from "js-ts-code-generator";
+import * as c from "../case";
 
 /**
  * `ReadonlyArray<number>`
@@ -131,6 +132,85 @@ export const stringCode = (
           )
         ])
       )
+    ]
+  }
+];
+
+/* ========================================
+                  Id
+   ========================================
+*/
+
+const idName = (customTypeName: string): string =>
+  "encode" + c.firstUpperCase(customTypeName) + "Id";
+
+export const idCode = (
+  customTypeName: string
+): [string, generator.ExportFunction] =>
+  encodeHexString(16, idName(customTypeName));
+
+/* ========================================
+                  Hash
+   ========================================
+*/
+
+const hashName = (customTypeName: string): string =>
+  "encode" + c.firstUpperCase(customTypeName) + "Hash";
+
+export const hashCode = (
+  customTypeName: string
+): [string, generator.ExportFunction] =>
+  encodeHexString(32, hashName(customTypeName));
+
+/* ========================================
+            HexString (Id / Hash)
+   ========================================
+*/
+
+const encodeHexString = (
+  byteSize: number,
+  functionName: string
+): [string, generator.ExportFunction] => [
+  functionName,
+  {
+    document: "",
+    parameterList: [
+      { name: "id", typeExpr: typeExpr.typeString, document: "" }
+    ],
+    returnType: readonlyArrayNumber,
+    statementList: [
+      expr.variableDefinition(
+        ["result"],
+        typeExpr.withTypeParameter(typeExpr.globalType("Array"), [
+          typeExpr.typeNumber
+        ]),
+        expr.arrayLiteral([])
+      ),
+      expr.forStatement(["i"], expr.numberLiteral(byteSize), [
+        expr.set(
+          expr.getByExpr(
+            expr.localVariable(["result"]),
+            expr.localVariable(["i"])
+          ),
+          null,
+          expr.callMethod(expr.globalVariable("Number"), "parseInt", [
+            expr.callMethod(expr.localVariable(["id"]), "slice", [
+              expr.multiplication(
+                expr.localVariable(["i"]),
+                expr.numberLiteral(2)
+              ),
+              expr.addition(
+                expr.multiplication(
+                  expr.localVariable(["i"]),
+                  expr.numberLiteral(2)
+                ),
+                expr.numberLiteral(2)
+              )
+            ]),
+            expr.numberLiteral(16)
+          ])
+        )
+      ])
     ]
   }
 ];
