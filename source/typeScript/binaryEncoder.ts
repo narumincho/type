@@ -90,3 +90,47 @@ export const uInt32Code: [string, generator.ExportFunction] = [
     ]
   }
 ];
+
+/* ========================================
+                  String
+   ========================================
+*/
+
+const stringName = "encodeString";
+
+/**
+ * stringからバイナリに変換するコード
+ * ブラウザではグローバルのTextDecoderを使い、node.jsではutilのTextDecoderを使う
+ */
+export const stringCode = (
+  isBrowser: boolean
+): [string, generator.ExportFunction] => [
+  stringName,
+  {
+    document:
+      "stringからバイナリに変換するコード. このコードは" +
+      (isBrowser
+        ? "ブラウザ用なのでグローバルのTextDecoderを使う"
+        : "Node.js用なのでutilのTextDecoderを使う"),
+    parameterList: [
+      { name: "text", typeExpr: typeExpr.typeString, document: "" }
+    ],
+    returnType: readonlyArrayNumber,
+    statementList: [
+      expr.returnStatement(
+        expr.callMethod(expr.globalVariable("Array"), "from", [
+          expr.callMethod(
+            expr.newExpr(
+              isBrowser
+                ? expr.globalVariable("TextEncoder")
+                : expr.importedVariable("util", "TextEncoder"),
+              []
+            ),
+            "encode",
+            [expr.localVariable(["text"])]
+          )
+        ])
+      )
+    ]
+  }
+];
