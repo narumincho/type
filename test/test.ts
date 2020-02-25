@@ -4,7 +4,7 @@ import * as generator from "js-ts-code-generator";
 describe("test", () => {
   const data: ReadonlyMap<string, t.type.CustomType> = new Map([
     [
-      "",
+      "Type",
       {
         description: "サンプル",
         body: t.type.customTypeBodyProduct([
@@ -18,7 +18,8 @@ describe("test", () => {
             description: "文字列",
             parameter: t.type.tagParameterNothing
           }
-        ])
+        ]),
+        idHashType: t.type.IdHashType.Id
       }
     ]
   ]);
