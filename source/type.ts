@@ -1,3 +1,6 @@
+/**
+ * 型
+ */
 export type Type =
   | { _: Type_.UInt32 }
   | { _: Type_.String }
@@ -7,22 +10,21 @@ export type Type =
   | { _: Type_.Dictionary; dictionaryType: DictionaryType }
   | { _: Type_.Set; type_: Type }
   | { _: Type_.Custom; string_: string };
+/**
+ * キーと値
+ */
+export type DictionaryType = { key: Type; value: Type };
 
 export const enum Type_ {
-  UInt32,
-  String,
-  Id,
-  Hash,
-  List,
-  Dictionary,
-  Set,
-  Custom
+  UInt32 = 0,
+  String = 1,
+  Id = 2,
+  Hash = 3,
+  List = 4,
+  Dictionary = 5,
+  Set = 6,
+  Custom = 7
 }
-
-export type DictionaryType = {
-  key: Type;
-  value: Type;
-};
 
 export type CustomType = {
   description: string;
