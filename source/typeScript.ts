@@ -36,7 +36,7 @@ export const generateCode = (
   return result;
 };
 
-const toTypeAliasAndEnum = ([customTypeName, customType]: [
+export const toTypeAliasAndEnum = ([customTypeName, customType]: [
   string,
   type.CustomType
 ]): {
@@ -116,7 +116,7 @@ const toTypeAliasAndEnum = ([customTypeName, customType]: [
   }
 };
 
-const customTypeNameToEnumName = (customTypeName: string): string =>
+export const customTypeNameToEnumName = (customTypeName: string): string =>
   customTypeToTypeName(customTypeName) + "_";
 
 const tagNameAndParameterToObjectType = (
@@ -156,7 +156,9 @@ const tagNameAndParameterToObjectType = (
   }
 };
 
-const typeToGeneratorType = (type_: type.Type): generator.typeExpr.TypeExpr => {
+export const typeToGeneratorType = (
+  type_: type.Type
+): generator.typeExpr.TypeExpr => {
   switch (type_._) {
     case type.Type_.UInt32:
       return generator.typeExpr.typeNumber;
