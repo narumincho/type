@@ -11,12 +11,14 @@ export const generateCode = (
       string,
       generator.type.ExportConstEnumTagNameAndValueList
     >;
-    readonly exportFunctionMap: Map<string, generator.ExportFunction>;
+    readonly exportFunctionMap: ReadonlyMap<string, generator.ExportFunction>;
     readonly statementList: ReadonlyArray<generator.expr.Statement>;
   } = {
     exportTypeAliasMap: new Map(),
     exportConstEnumMap: new Map(),
-    exportFunctionMap: new Map(),
+    exportFunctionMap: customTypeDictionaryToTagFunctionList(
+      customTypeDictionary
+    ),
     statementList: []
   };
   for (const customType of customTypeDictionary.entries()) {
@@ -44,10 +46,7 @@ const toTypeAliasAndEnum = ([customTypeName, customType]: [
   switch (customType.body._) {
     case type.CustomType_.Product:
       if (
-        customType.body.tagNameAndParameterArray.every(
-          tagNameAndParameter =>
-            tagNameAndParameter.parameter._ === type.TagParameter_.Nothing
-        )
+        isProductTypeAllNoParameter(customType.body.tagNameAndParameterArray)
       ) {
         return {
           typeAlias: null,
@@ -221,6 +220,114 @@ const typeToMemberName = (type_: type.Type): string => {
   }
 };
 
+const customTypeDictionaryToTagFunctionList = (
+  customTypeDictionary: ReadonlyMap<string, type.CustomType>
+): ReadonlyMap<string, generator.ExportFunction> => {
+  const result = new Map<string, generator.ExportFunction>();
+  for (const [customTypeName, customType] of customTypeDictionary.entries()) {
+    switch (customType.body._) {
+      case type.CustomType_.Product: {
+        if (
+          isProductTypeAllNoParameter(customType.body.tagNameAndParameterArray)
+        ) {
+          break;
+        }
+        const functionList = productTypeToTagFunctionList(
+          customTypeName,
+          customType.body.tagNameAndParameterArray
+        );
+        for (const [funcName, func] of functionList) {
+          result.set(funcName, func);
+        }
+      }
+    }
+  }
+  return result;
+};
+
+const productTypeToTagFunctionList = (
+  customTypeName: string,
+  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
+): ReadonlyMap<string, generator.ExportFunction> => {
+  const result = new Map<string, generator.ExportFunction>();
+
+  for (const tagNameAndParameter of tagNameAndParameterArray) {
+    result.set(
+      c.firstLowerCase(customTypeToTypeName(customTypeName)) +
+        c.firstUpperCase(tagNameAndParameter.name),
+      {
+        document: tagNameAndParameter.description,
+        parameterList: tagFunctionParameter(tagNameAndParameter.parameter),
+        returnType: generator.typeExpr.globalType(
+          customTypeToTypeName(customTypeName)
+        ),
+        statementList: tagFunctionStatement(customTypeName, tagNameAndParameter)
+      }
+    );
+  }
+
+  return result;
+};
+
+const tagFunctionParameter = (
+  tagParameter: type.TagParameter
+): ReadonlyArray<{
+  readonly name: string;
+  readonly document: string;
+  readonly typeExpr: generator.typeExpr.TypeExpr;
+}> => {
+  switch (tagParameter._) {
+    case type.TagParameter_.Just:
+      return [
+        {
+          name: typeToMemberName(tagParameter.type_),
+          document: "",
+          typeExpr: typeToGeneratorType(tagParameter.type_)
+        }
+      ];
+    case type.TagParameter_.Nothing:
+      return [];
+  }
+};
+
+const tagFunctionStatement = (
+  customTypeName: string,
+  tagNameAndParameter: type.TagNameAndParameter
+): ReadonlyArray<generator.expr.Statement> => {
+  const tagField: [string, generator.expr.Expr] = [
+    "_",
+    generator.expr.enumTag(
+      customTypeNameToEnumName(customTypeName),
+      tagNameAndParameter.name
+    )
+  ];
+
+  switch (tagNameAndParameter.parameter._) {
+    case type.TagParameter_.Just:
+      return [
+        generator.expr.returnStatement(
+          generator.expr.objectLiteral(
+            new Map([
+              tagField,
+              [
+                typeToMemberName(tagNameAndParameter.parameter.type_),
+                generator.expr.localVariable([
+                  typeToMemberName(tagNameAndParameter.parameter.type_)
+                ])
+              ]
+            ])
+          )
+        )
+      ];
+    case type.TagParameter_.Nothing:
+      return [
+        generator.expr.returnStatement(
+          generator.expr.objectLiteral(new Map([tagField]))
+        )
+      ];
+  }
+};
+
 const idTypeName = (customTypeName: string): string => customTypeName + "Id";
 
 const hashTypeName = (customTypeName: string): string =>
@@ -228,3 +335,11 @@ const hashTypeName = (customTypeName: string): string =>
 
 const customTypeToTypeName = (customTypeName: string): string =>
   c.firstUpperCase(customTypeName);
+
+const isProductTypeAllNoParameter = (
+  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
+): boolean =>
+  tagNameAndParameterArray.every(
+    tagNameAndParameter =>
+      tagNameAndParameter.parameter._ === type.TagParameter_.Nothing
+  );
