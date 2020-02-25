@@ -1,8 +1,8 @@
 export type Type =
   | { _: Type_.UInt32 }
   | { _: Type_.String }
-  | { _: Type_.Id; type_: Type }
-  | { _: Type_.Hash; type_: Type }
+  | { _: Type_.Id; string_: string }
+  | { _: Type_.Hash; string_: string }
   | { _: Type_.List; type_: Type }
   | { _: Type_.Dictionary; dictionaryType: DictionaryType }
   | { _: Type_.Set; type_: Type }
@@ -85,14 +85,14 @@ export const typeString: Type = {
   _: Type_.String
 };
 
-export const typeId = (type_: Type): Type => ({
+export const typeId = (string_: string): Type => ({
   _: Type_.Id,
-  type_
+  string_
 });
 
-export const typeHash = (type_: Type): Type => ({
+export const typeHash = (string_: string): Type => ({
   _: Type_.Hash,
-  type_
+  string_
 });
 
 export const typeList = (type_: Type): Type => ({
