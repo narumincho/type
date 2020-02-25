@@ -42,6 +42,27 @@ const toTypeAliasAndEnum = ([customTypeName, customType]: [
 } => {
   switch (customType.body._) {
     case type.CustomType_.Product:
+      if (
+        customType.body.tagNameAndParameterArray.every(
+          tagNameAndParameter =>
+            tagNameAndParameter.parameter._ === type.TagParameter_.Nothing
+        )
+      ) {
+        return {
+          typeAlias: null,
+          enum: [
+            customTypeToTypeName(customTypeName),
+            new Map(
+              customType.body.tagNameAndParameterArray.map(
+                (tagNameAndParameter, index) => [
+                  tagNameAndParameter.name,
+                  index
+                ]
+              )
+            )
+          ]
+        };
+      }
       return {
         typeAlias: [
           customTypeToTypeName(customTypeName),
@@ -209,5 +230,3 @@ const hashTypeName = (customTypeName: string): string =>
 
 const customTypeToTypeName = (customTypeName: string): string =>
   firstUpperCase(customTypeName);
-
-// すべてのタグでパラメーターがなかった場合。enumとして出力するようにする TODO
