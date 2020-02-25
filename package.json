@@ -2,7 +2,7 @@
   "name": "type",
   "version": "0.0.0",
   "description": "Generate TypeScript and Elm type definitions, encode and decode code",
-  "main": "index.js",
+  "main": "distribution/index.js",
   "scripts": {
     "test": "jest --watch --verbose false"
   },
