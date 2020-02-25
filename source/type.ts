@@ -3,7 +3,6 @@ export type Type =
   | { _: Type_.String }
   | { _: Type_.Id; type_: Type }
   | { _: Type_.Hash; type_: Type }
-  | { _: Type_.Maybe; type_: Type }
   | { _: Type_.List; type_: Type }
   | { _: Type_.Dictionary; dictionaryType: DictionaryType }
   | { _: Type_.Set; type_: Type }
@@ -14,7 +13,6 @@ export const enum Type_ {
   String,
   Id,
   Hash,
-  Maybe,
   List,
   Dictionary,
   Set,
@@ -90,11 +88,6 @@ export const typeHash = (type_: Type): Type => ({
   type_
 });
 
-export const typeMaybe = (type_: Type): Type => ({
-  _: Type_.Maybe,
-  type_
-});
-
 export const typeList = (type_: Type): Type => ({
   _: Type_.List,
   type_
@@ -110,6 +103,7 @@ export const typeSet = (type_: Type): Type => ({
   type_
 });
 
+/** 型名は大文字にする必要がある */
 export const typeCustom = (string_: string): Type => ({
   _: Type_.Custom,
   string_
