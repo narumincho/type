@@ -87,6 +87,7 @@ export const encodeType = (type_: Type): ReadonlyArray<number> => {
   if (type_._ === 5) {
     return a.concat(encodeString(type_.string_));
   }
+  throw new Error("Typetype tag index error. index = " + type_._.toString());
 };
 
 /**

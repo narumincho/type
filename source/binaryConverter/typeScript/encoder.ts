@@ -323,6 +323,7 @@ export const customCode = (
         );
       case type.CustomType_.Sum:
         return customSumCode(
+          customTypeName,
           customType.body.tagNameAndParameterArray,
           (memberName: string) =>
             expr.get(expr.localVariable([parameterName]), memberName)
@@ -366,6 +367,7 @@ export const customProductCode = (
 };
 
 export const customSumCode = (
+  customTypeName: string,
   tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
   get: (memberName: string) => expr.Expr
 ): ReadonlyArray<generator.expr.Statement> => {
@@ -407,5 +409,12 @@ export const customSumCode = (
         );
     }
   }
-  return statementList;
+  return statementList.concat([
+    expr.throwError(
+      expr.addition(
+        expr.stringLiteral(customTypeName + "type tag index error. index = "),
+        expr.callMethod(get("_"), "toString", [])
+      )
+    )
+  ]);
 };
