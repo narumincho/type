@@ -120,15 +120,11 @@ export const encodeStringList = (
   return result;
 };
 
-export const encodeStringUInt32Dictionary = (
-  dictionary: ReadonlyMap<string, number>
-): ReadonlyArray<number> => {
-  let result: Array<number> = [];
-  result = result.concat(encodeUInt32(dictionary.size));
-  for (const keyAndValue of dictionary) {
-    result = result
-      .concat(encodeString(keyAndValue[0]))
-      .concat(encodeUInt32(keyAndValue[1]));
-  }
-  return result;
+type User = {
+  name: string;
+  age: number;
+};
+
+export const encodeUser = (user: User): ReadonlyArray<number> => {
+  return encodeString(user.name).concat(encodeUInt32(user.age));
 };
