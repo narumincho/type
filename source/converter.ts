@@ -108,3 +108,13 @@ export const decodeId = (
     .join(""),
   nextIndex: index + 16
 });
+
+export const encodeStringList = (
+  list: ReadonlyArray<string>
+): ReadonlyArray<number> => {
+  let result = encodeUInt32(list.length) as Array<number>;
+  for (const element of list) {
+    result = result.concat(encodeString(element));
+  }
+  return result;
+};
