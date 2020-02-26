@@ -1,8 +1,7 @@
 import * as generator from "js-ts-code-generator";
 import { expr, typeExpr } from "js-ts-code-generator";
-import * as c from "../case";
-import * as type from "../type";
-import * as typeScript from "../typeScript";
+import * as type from "../../type";
+import * as typeScript from "../../typeScript";
 
 /**
  * `ReadonlyArray<number>`
