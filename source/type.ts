@@ -1,3 +1,5 @@
+import * as c from "./case";
+
 /**
  * 型
  */
@@ -139,4 +141,35 @@ export const tagParameterJust = (type_: Type): TagParameter => ({
 
 export const tagParameterNothing: TagParameter = {
   _: TagParameter_.Nothing
+};
+
+export const customTypeToTypeName = (customTypeName: string): string =>
+  c.firstUpperCase(customTypeName);
+
+/**
+ * UInt32, String, UInt32List
+ */
+export const toTypeName = (type_: Type): string => {
+  switch (type_._) {
+    case Type_.UInt32:
+      return "UInt32";
+    case Type_.String:
+      return "String";
+    case Type_.Id:
+      return customTypeToTypeName(type_.string_) + "Id";
+    case Type_.Hash:
+      return customTypeToTypeName(type_.string_) + "Hash";
+    case Type_.List:
+      return toTypeName(type_.type_) + "List";
+    case Type_.Dictionary:
+      return (
+        toTypeName(type_.dictionaryType.key) +
+        c.firstUpperCase(toTypeName(type_.dictionaryType.value)) +
+        "Dictionary"
+      );
+    case Type_.Set:
+      return toTypeName(type_.type_) + "Set";
+    case Type_.Custom:
+      return customTypeToTypeName(type_.string_);
+  }
 };

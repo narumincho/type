@@ -191,30 +191,11 @@ export const typeToGeneratorType = (
 };
 
 const typeToMemberName = (type_: type.Type): string => {
-  switch (type_._) {
-    case type.Type_.UInt32:
-      return "uInt32";
-    case type.Type_.String:
-      return "string_";
-    case type.Type_.Id:
-      return customTypeToTypeName(type_.string_) + "Id";
-    case type.Type_.Hash:
-      return customTypeToTypeName(type_.string_) + "Hash";
-    case type.Type_.List:
-      return typeToMemberName(type_.type_) + "List";
-    case type.Type_.Dictionary:
-      return (
-        typeToMemberName(type_.dictionaryType.key) +
-        c.firstUpperCase(typeToMemberName(type_.dictionaryType.value)) +
-        "Dictionary"
-      );
-    case type.Type_.Set:
-      return typeToMemberName(type_.type_) + "Set";
-    case type.Type_.Custom: {
-      const name = c.firstLowerCase(type_.string_);
-      return generator.identifer.isIdentifer(name) ? name : name + "_";
-    }
+  const name = c.firstLowerCase(type.toTypeName(type_));
+  if (generator.identifer.isIdentifer(name)) {
+    return name;
   }
+  return name + "_";
 };
 
 const customTypeDictionaryToTagFunctionList = (
@@ -330,8 +311,13 @@ const idTypeName = (customTypeName: string): string => customTypeName + "Id";
 const hashTypeName = (customTypeName: string): string =>
   customTypeName + "Hash";
 
-const customTypeToTypeName = (customTypeName: string): string =>
-  c.firstUpperCase(customTypeName);
+const customTypeToTypeName = (customTypeName: string): string => {
+  const name = type.customTypeToTypeName(customTypeName);
+  if (generator.identifer.isIdentifer(name)) {
+    return name;
+  }
+  return name + "_";
+};
 
 const isProductTypeAllNoParameter = (
   tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
