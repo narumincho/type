@@ -1,11 +1,17 @@
 /**
  * 型
  */
-export type Type = { _: Type_.UInt32 } | { _: Type_.String } | { _: Type_.Id, string_: string } | { _: Type_.Hash, string_: string } | { _: Type_.List, type_: Type } | { _: Type_.Custom, string_: string };
+export type Type =
+  | { _: Type_.UInt32 }
+  | { _: Type_.String }
+  | { _: Type_.Id; string_: string }
+  | { _: Type_.Hash; string_: string }
+  | { _: Type_.List; type_: Type }
+  | { _: Type_.Custom; string_: string };
 /**
  * キーと値
  */
-export type DictionaryType = { key: Type, value: Type }
+export type DictionaryType = { key: Type; value: Type };
 export const enum Type_ {
   UInt32 = 0,
   String = 1,
@@ -28,31 +34,43 @@ export const typeString = (): Type => ({ _: Type_.String });
 
 /**
  * Id
- * @param string_ 
+ * @param string_
  */
-export const typeId = (string_: string): Type => ({ _: Type_.Id, string_: string_ });
+export const typeId = (string_: string): Type => ({
+  _: Type_.Id,
+  string_: string_
+});
 
 /**
  * データを識別するもので, データに応じて1つに決まる。
- * @param string_ 
+ * @param string_
  */
-export const typeHash = (string_: string): Type => ({ _: Type_.Hash, string_: string_ });
+export const typeHash = (string_: string): Type => ({
+  _: Type_.Hash,
+  string_: string_
+});
 
 /**
  * リスト. 複数の要素を表現する
- * @param type_ 
+ * @param type_
  */
-export const typeList = (type_: Type): Type => ({ _: Type_.List, type_: type_ });
+export const typeList = (type_: Type): Type => ({
+  _: Type_.List,
+  type_: type_
+});
 
 /**
  * 用意されていない型.
- * @param string_ 
+ * @param string_
  */
-export const typeCustom = (string_: string): Type => ({ _: Type_.Custom, string_: string_ });
+export const typeCustom = (string_: string): Type => ({
+  _: Type_.Custom,
+  string_: string_
+});
 
 /**
- * 
- * @param type_ 
+ *
+ * @param type_
  */
 export const encodeType = (type_: Type): ReadonlyArray<number> => {
   let a: Array<number> = [];
@@ -72,18 +90,21 @@ export const encodeType = (type_: Type): ReadonlyArray<number> => {
 };
 
 /**
- * 
- * @param dictionaryType 
+ *
+ * @param dictionaryType
  */
-export const encodeDictionaryType = (dictionaryType: DictionaryType): ReadonlyArray<number> => (encodeType(dictionaryType.key).concat(encodeType(dictionaryType.value)));
+export const encodeDictionaryType = (
+  dictionaryType: DictionaryType
+): ReadonlyArray<number> =>
+  encodeType(dictionaryType.key).concat(encodeType(dictionaryType.value));
 
 /**
  * numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード
- * @param num 
+ * @param num
  */
 export const encodeUInt32 = (num: number): ReadonlyArray<number> => {
   num = Math.floor(Math.max(0, Math.min(num, 4294967295)));
-  const a: ReadonlyArray<number> = [];
+  const a: Array<number> = [];
   while (true) {
     const b: number = num & 127;
     num = num >>> 7;
@@ -93,4 +114,4 @@ export const encodeUInt32 = (num: number): ReadonlyArray<number> => {
     }
     a.push(b | 128);
   }
-}
+};

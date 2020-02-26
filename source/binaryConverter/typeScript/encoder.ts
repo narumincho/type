@@ -105,7 +105,7 @@ const uInt32Code: generator.ExportFunction = {
     ),
     expr.variableDefinition(
       ["numberArray"],
-      readonlyArrayNumber,
+      typeExpr.arrayType(typeExpr.typeNumber),
       expr.arrayLiteral([])
     ),
     expr.whileTrue([
