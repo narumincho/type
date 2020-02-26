@@ -45,3 +45,11 @@ export const customTypeToTypeName = (customTypeName: string): string => {
   }
   return name + "_";
 };
+
+export const tagNameToEnumTag = (tagName: string): string => {
+  const name = c.firstLowerCase(tagName);
+  if (generator.identifer.isIdentifer(name)) {
+    return name;
+  }
+  return name + "_";
+};

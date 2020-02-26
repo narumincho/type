@@ -34,16 +34,6 @@ describe("test", () => {
           parameter: type.tagParameterJust(type.typeCustom("Type"))
         },
         {
-          name: "Dictionary",
-          description: "辞書. キーと値の組のリストだがキーは重複しない",
-          parameter: type.tagParameterJust(type.typeCustom("DictionaryType"))
-        },
-        {
-          name: "Set",
-          description: "集合. 要素は重複しない",
-          parameter: type.tagParameterJust(type.typeCustom("Type"))
-        },
-        {
           name: "Custom",
           description: "用意されていない型.",
           parameter: type.tagParameterJust(type.typeString)
@@ -77,18 +67,15 @@ describe("test", () => {
     typeCustomType,
     dictionaryType
   ]);
-  const typeScriptCode: generator.Code = t.typeDefinitionTypeScript.generateCode(
-    data
-  );
-  const typeScriptCodeAsString = generator.toNodeJsOrBrowserCodeAsTypeScript(
-    typeScriptCode
+  const typeDefinitionTypeScriptCode = generator.toNodeJsOrBrowserCodeAsTypeScript(
+    t.typeDefinitionTypeScript.generateCode(data)
   );
   const elmCodeAsString: string = t.elm.generateCode("Data", data);
-  it("return string", () => {
-    console.log(typeScriptCodeAsString);
-    expect(typeof typeScriptCodeAsString === "string").toBe(true);
+  it("type definition typeScript", () => {
+    console.log(typeDefinitionTypeScriptCode);
+    expect(typeof typeDefinitionTypeScriptCode === "string").toBe(true);
   });
-  it("elm return string", () => {
+  it("type definition elm", () => {
     console.log(elmCodeAsString);
     expect(typeof elmCodeAsString === "string").toBe(true);
   });

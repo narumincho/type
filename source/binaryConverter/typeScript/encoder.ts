@@ -3,6 +3,15 @@ import { expr, typeExpr } from "js-ts-code-generator";
 import * as type from "../../type";
 import * as typeScript from "../../typeScript";
 
+export const generateCode = (
+  customTypeDictionary: ReadonlyMap<string, type.CustomType>
+): ReadonlyMap<string, generator.ExportFunction> =>
+  new Map(
+    [...customTypeDictionary.entries()].map(([name, customType]) =>
+      customCode(name, customType)
+    )
+  );
+
 /**
  * `ReadonlyArray<number>`
  * を表現する

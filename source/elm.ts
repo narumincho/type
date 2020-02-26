@@ -49,11 +49,11 @@ const customTypeToCode = (
 ): string => {
   const comment = "{-| " + customType.description + " -}\n";
   switch (customType.body._) {
-    case type.CustomType_.Product:
+    case type.CustomType_.Sum:
       return (
         comment + createType(name, customType.body.tagNameAndParameterArray)
       );
-    case type.CustomType_.Sum:
+    case type.CustomType_.Product:
       return (
         comment + createTypeAlias(name, customType.body.memberNameAndTypeArray)
       );
@@ -117,16 +117,6 @@ const typeToElmType = (type_: type.Type): string => {
       return customTypeToHashTypeName(type_.string_);
     case type.Type_.List:
       return "(List " + typeToElmType(type_.type_) + ")";
-    case type.Type_.Dictionary:
-      return (
-        "(Map.Map " +
-        typeToElmType(type_.dictionaryType.key) +
-        " " +
-        typeToElmType(type_.dictionaryType.value) +
-        ")"
-      );
-    case type.Type_.Set:
-      return "(Set.Set " + typeToElmType(type_.type_) + ")";
     case type.Type_.Custom: {
       return customTypeToTypeName(type_.string_);
     }

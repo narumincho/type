@@ -2,6 +2,7 @@ import * as generator from "js-ts-code-generator";
 import * as type from "../type";
 import * as c from "../case";
 import * as typeScript from "../typeScript";
+import * as e from "../binaryConverter/typeScript/encoder";
 
 export const generateCode = (
   customTypeDictionary: ReadonlyMap<string, type.CustomType>
@@ -17,9 +18,10 @@ export const generateCode = (
   } = {
     exportTypeAliasMap: new Map(),
     exportConstEnumMap: new Map(),
-    exportFunctionMap: customTypeDictionaryToTagFunctionList(
-      customTypeDictionary
-    ),
+    exportFunctionMap: new Map([
+      ...customTypeDictionaryToTagFunctionList(customTypeDictionary),
+      ...e.generateCode(customTypeDictionary)
+    ]),
     statementList: []
   };
   for (const customType of customTypeDictionary.entries()) {
@@ -130,7 +132,7 @@ const tagNameAndParameterToObjectType = (
       document: "",
       typeExpr: generator.typeExpr.enumTagLiteral(
         enumName,
-        tagNameAndParameter.name
+        typeScript.tagNameToEnumTag(tagNameAndParameter.name)
       )
     }
   ];
@@ -236,7 +238,7 @@ const tagFunctionStatement = (
     "_",
     generator.expr.enumTag(
       typeScript.customTypeNameToEnumName(customTypeName),
-      tagNameAndParameter.name
+      typeScript.tagNameToEnumTag(tagNameAndParameter.name)
     )
   ];
 
