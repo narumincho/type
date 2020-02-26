@@ -7,7 +7,7 @@ describe("test", () => {
     "Type",
     {
       description: "型",
-      body: type.customTypeBodyProduct([
+      body: type.customTypeBodySum([
         {
           name: "UInt32",
           description: "0～4294967295 32bit符号なし整数",
@@ -57,7 +57,7 @@ describe("test", () => {
     "DictionaryType",
     {
       description: "キーと値",
-      body: type.customTypeBodySum([
+      body: type.customTypeBodyProduct([
         {
           name: "key",
           description: "キー. Dictionary内で重複しない",
