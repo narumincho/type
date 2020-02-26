@@ -77,7 +77,9 @@ describe("test", () => {
     typeCustomType,
     dictionaryType
   ]);
-  const typeScriptCode: generator.Code = t.typeScript.generateCode(data);
+  const typeScriptCode: generator.Code = t.typeDefinitionTypeScript.generateCode(
+    data
+  );
   const typeScriptCodeAsString = generator.toNodeJsOrBrowserCodeAsTypeScript(
     typeScriptCode
   );

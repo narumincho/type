@@ -1,5 +1,5 @@
 import * as elm from "./elm";
-import * as typeScript from "./typeScript";
+import * as typeDefinitionTypeScript from "./typeDefinition/typeScript";
 import * as type from "./type";
 
-export { elm, typeScript, type };
+export { elm, typeDefinitionTypeScript, type };
