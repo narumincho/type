@@ -12,41 +12,6 @@ const readonlyArrayNumber: typeExpr.TypeExpr = typeExpr.readonlyArrayType(
   typeExpr.typeNumber
 );
 
-export const encodeCode = (
-  type_: type.Type,
-  isBrowser: boolean
-): [string, generator.ExportFunction] => {
-  const name = encodeName(type_);
-  switch (type_._) {
-    case type.Type_.UInt32:
-      return [name, uInt32Code];
-
-    case type.Type_.String:
-      return [name, stringCode(isBrowser)];
-
-    case type.Type_.Id:
-      return [name, encodeHexString(16)];
-
-    case type.Type_.Hash:
-      return [name, encodeHexString(32)];
-
-    case type.Type_.List:
-      return [name, listCode(type_)];
-
-    case type.Type_.Dictionary:
-    case type.Type_.Set:
-    case type.Type_.Custom:
-  }
-  // | { _: Type_.UInt32 }
-  // | { _: Type_.String }
-  // | { _: Type_.Id; string_: string }
-  // | { _: Type_.Hash; string_: string }
-  // | { _: Type_.List; type_: Type }
-  // | { _: Type_.Dictionary; dictionaryType: DictionaryType }
-  // | { _: Type_.Set; type_: Type }
-  // | { _: Type_.Custom; string_: string };
-};
-
 export const encodeVarEval = (type_: type.Type, data: expr.Expr): expr.Expr =>
   expr.call(expr.globalVariable(encodeName(type_)), [data]);
 
@@ -249,3 +214,141 @@ const listCode = (type_: type.Type): generator.ExportFunction => ({
     expr.returnStatement(expr.localVariable(["result"]))
   ]
 });
+
+export const encodeCode = (
+  type_: type.Type,
+  isBrowser: boolean
+): [string, generator.ExportFunction] | null => {
+  const name = encodeName(type_);
+  switch (type_._) {
+    case type.Type_.UInt32:
+      return [name, uInt32Code];
+
+    case type.Type_.String:
+      return [name, stringCode(isBrowser)];
+
+    case type.Type_.Id:
+      return [name, encodeHexString(16)];
+
+    case type.Type_.Hash:
+      return [name, encodeHexString(32)];
+
+    case type.Type_.List:
+      return [name, listCode(type_)];
+
+    case type.Type_.Custom:
+      return null;
+  }
+};
+
+/* ========================================
+                Custom
+   ========================================
+*/
+
+export const customCode = (
+  customTypeName: string,
+  customType: type.CustomType
+): [string, generator.ExportFunction] => {
+  const parameterName = typeScript.typeToMemberOrParameterName(
+    type.typeCustom(customTypeName)
+  );
+
+  const returnExpr = ((): ReadonlyArray<generator.expr.Statement> => {
+    switch (customType.body._) {
+      case type.CustomType_.Product:
+        return customProductCode(
+          customType.body.memberNameAndTypeArray,
+          (memberName: string) =>
+            expr.get(expr.localVariable([parameterName]), memberName)
+        );
+      case type.CustomType_.Sum:
+        return customSumCode(
+          customType.body.tagNameAndParameterArray,
+          (memberName: string) =>
+            expr.get(expr.localVariable([parameterName]), memberName)
+        );
+    }
+  })();
+
+  return [
+    encodeName(type.typeCustom(customTypeName)),
+    {
+      document: "",
+      parameterList: [
+        {
+          name: parameterName,
+          document: "",
+          typeExpr: typeScript.typeToGeneratorType(
+            type.typeCustom(customTypeName)
+          )
+        }
+      ],
+      returnType: readonlyArrayNumber,
+      statementList: returnExpr
+    }
+  ];
+};
+
+export const customProductCode = (
+  memberNameAndTypeArray: ReadonlyArray<type.MemberNameAndType>,
+  get: (memberName: string) => expr.Expr
+): ReadonlyArray<generator.expr.Statement> => {
+  let e = encodeVarEval(
+    memberNameAndTypeArray[0].memberType,
+    get(memberNameAndTypeArray[0].name)
+  );
+  for (const memberNameAndType of memberNameAndTypeArray) {
+    e = expr.callMethod(e, "concat", [
+      encodeVarEval(memberNameAndType.memberType, get(memberNameAndType.name))
+    ]);
+  }
+  return [expr.returnStatement(e)];
+};
+
+export const customSumCode = (
+  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
+  get: (memberName: string) => expr.Expr
+): ReadonlyArray<generator.expr.Statement> => {
+  const statementList: Array<generator.expr.Statement> = [
+    expr.letVariableDefinition(
+      ["result"],
+      typeExpr.arrayType(typeExpr.typeNumber),
+      expr.arrayLiteral([])
+    ),
+    expr.set(
+      expr.localVariable(["result"]),
+      null,
+      expr.callMethod(expr.localVariable(["result"]), "concat", [
+        encodeVarEval(type.typeUInt32, get("_"))
+      ])
+    )
+  ];
+  for (const [
+    index,
+    tagNameAndParameter
+  ] of tagNameAndParameterArray.entries()) {
+    switch (tagNameAndParameter.parameter._) {
+      case type.TagParameter_.Just:
+        statementList.push(
+          expr.ifStatement(expr.equal(get("_"), expr.numberLiteral(index)), [
+            expr.set(
+              expr.localVariable(["result"]),
+              null,
+              expr.callMethod(expr.localVariable(["result"]), "concat", [
+                encodeVarEval(
+                  tagNameAndParameter.parameter.type_,
+                  get(
+                    typeScript.typeToMemberOrParameterName(
+                      tagNameAndParameter.parameter.type_
+                    )
+                  )
+                )
+              ])
+            )
+          ])
+        );
+    }
+  }
+  return statementList;
+};

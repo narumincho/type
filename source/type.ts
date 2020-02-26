@@ -9,8 +9,6 @@ export type Type =
   | { _: Type_.Id; string_: string }
   | { _: Type_.Hash; string_: string }
   | { _: Type_.List; type_: Type }
-  | { _: Type_.Dictionary; dictionaryType: DictionaryType }
-  | { _: Type_.Set; type_: Type }
   | { _: Type_.Custom; string_: string };
 /**
  * キーと値
@@ -37,11 +35,11 @@ export type CustomType = {
 export type CustomTypeBody =
   | {
       _: CustomType_.Product;
-      tagNameAndParameterArray: ReadonlyArray<TagNameAndParameter>;
+      memberNameAndTypeArray: ReadonlyArray<MemberNameAndType>;
     }
   | {
       _: CustomType_.Sum;
-      memberNameAndTypeArray: ReadonlyArray<MemberNameAndType>;
+      tagNameAndParameterArray: ReadonlyArray<TagNameAndParameter>;
     };
 
 export const enum CustomType_ {
@@ -104,33 +102,23 @@ export const typeList = (type_: Type): Type => ({
   type_
 });
 
-export const typeDictionary = (dictionaryType: DictionaryType): Type => ({
-  _: Type_.Dictionary,
-  dictionaryType
-});
-
-export const typeSet = (type_: Type): Type => ({
-  _: Type_.Set,
-  type_
-});
-
 /** 型名は大文字にする必要がある */
 export const typeCustom = (string_: string): Type => ({
   _: Type_.Custom,
   string_
 });
 
-export const customTypeBodyProduct = (
+export const customTypeBodySum = (
   tagNameAndParameterArray: ReadonlyArray<TagNameAndParameter>
 ): CustomTypeBody => ({
-  _: CustomType_.Product,
+  _: CustomType_.Sum,
   tagNameAndParameterArray
 });
 
-export const customTypeBodySum = (
+export const customTypeBodyProduct = (
   memberNameAndTypeArray: ReadonlyArray<MemberNameAndType>
 ): CustomTypeBody => ({
-  _: CustomType_.Sum,
+  _: CustomType_.Product,
   memberNameAndTypeArray
 });
 
@@ -161,14 +149,6 @@ export const toTypeName = (type_: Type): string => {
       return customTypeToTypeName(type_.string_) + "Hash";
     case Type_.List:
       return toTypeName(type_.type_) + "List";
-    case Type_.Dictionary:
-      return (
-        toTypeName(type_.dictionaryType.key) +
-        c.firstUpperCase(toTypeName(type_.dictionaryType.value)) +
-        "Dictionary"
-      );
-    case Type_.Set:
-      return toTypeName(type_.type_) + "Set";
     case Type_.Custom:
       return customTypeToTypeName(type_.string_);
   }

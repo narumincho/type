@@ -143,7 +143,7 @@ const tagNameAndParameterToObjectType = (
         new Map([
           tagField,
           [
-            typeToMemberName(tagNameAndParameter.parameter.type_),
+            typeToMemberOrParameterName(tagNameAndParameter.parameter.type_),
             {
               document: "",
               typeExpr: typeToGeneratorType(tagNameAndParameter.parameter.type_)
@@ -176,21 +176,12 @@ export const typeToGeneratorType = (
       return generator.typeExpr.readonlyArrayType(
         typeToGeneratorType(type_.type_)
       );
-    case type.Type_.Dictionary:
-      return generator.typeExpr.readonlyMapType(
-        typeToGeneratorType(type_.dictionaryType.key),
-        typeToGeneratorType(type_.dictionaryType.value)
-      );
-    case type.Type_.Set:
-      return generator.typeExpr.readonlySetType(
-        typeToGeneratorType(type_.type_)
-      );
     case type.Type_.Custom:
       return generator.typeExpr.globalType(customTypeToTypeName(type_.string_));
   }
 };
 
-const typeToMemberName = (type_: type.Type): string => {
+export const typeToMemberOrParameterName = (type_: type.Type): string => {
   const name = c.firstLowerCase(type.toTypeName(type_));
   if (generator.identifer.isIdentifer(name)) {
     return name;
@@ -258,7 +249,7 @@ const tagFunctionParameter = (
     case type.TagParameter_.Just:
       return [
         {
-          name: typeToMemberName(tagParameter.type_),
+          name: typeToMemberOrParameterName(tagParameter.type_),
           document: "",
           typeExpr: typeToGeneratorType(tagParameter.type_)
         }
@@ -288,9 +279,13 @@ const tagFunctionStatement = (
             new Map([
               tagField,
               [
-                typeToMemberName(tagNameAndParameter.parameter.type_),
+                typeToMemberOrParameterName(
+                  tagNameAndParameter.parameter.type_
+                ),
                 generator.expr.localVariable([
-                  typeToMemberName(tagNameAndParameter.parameter.type_)
+                  typeToMemberOrParameterName(
+                    tagNameAndParameter.parameter.type_
+                  )
                 ])
               ]
             ])
