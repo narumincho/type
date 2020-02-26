@@ -153,3 +153,20 @@ export const toTypeName = (type_: Type): string => {
       return customTypeToTypeName(type_.string_);
   }
 };
+
+export const equal = (a: Type, b: Type): boolean => {
+  switch (a._) {
+    case Type_.UInt32:
+      return b._ === Type_.UInt32;
+    case Type_.String:
+      return b._ === Type_.UInt32;
+    case Type_.Id:
+      return b._ === Type_.Id && b.string_ === a.string_;
+    case Type_.Hash:
+      return b._ === Type_.Hash && b.string_ === a.string_;
+    case Type_.List:
+      return b._ === Type_.List && equal(a.type_, b.type_);
+    case Type_.Custom:
+      return b._ === Type_.Custom && b.string_ === a.string_;
+  }
+};

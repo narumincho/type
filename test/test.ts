@@ -1,6 +1,7 @@
 import * as t from "../source/index";
 import { type } from "../source/index";
 import * as generator from "js-ts-code-generator";
+import * as fs from "fs";
 
 describe("test", () => {
   const typeCustomType: [string, type.CustomType] = [
@@ -68,9 +69,12 @@ describe("test", () => {
     dictionaryType
   ]);
   const typeDefinitionTypeScriptCode = generator.toNodeJsOrBrowserCodeAsTypeScript(
-    t.typeDefinitionTypeScript.generateCode(data)
+    t.generateTypeScriptCode(data, false)
   );
   const elmCodeAsString: string = t.elm.generateCode("Data", data);
+  // fs.writeFile("out.ts", typeDefinitionTypeScriptCode, () => {
+  //   console.log("out put code at ./out.ts");
+  // });
   it("type definition typeScript", () => {
     console.log(typeDefinitionTypeScriptCode);
     expect(typeof typeDefinitionTypeScriptCode === "string").toBe(true);

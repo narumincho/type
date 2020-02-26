@@ -2,41 +2,38 @@ import * as generator from "js-ts-code-generator";
 import * as type from "../type";
 import * as c from "../case";
 import * as typeScript from "../typeScript";
-import * as e from "../binaryConverter/typeScript/encoder";
 
 export const generateCode = (
   customTypeDictionary: ReadonlyMap<string, type.CustomType>
-): generator.Code => {
-  const result: {
-    readonly exportTypeAliasMap: Map<string, generator.ExportTypeAlias>;
-    readonly exportConstEnumMap: Map<
-      string,
-      generator.type.ExportConstEnumTagNameAndValueList
-    >;
-    readonly exportFunctionMap: ReadonlyMap<string, generator.ExportFunction>;
-    readonly statementList: ReadonlyArray<generator.expr.Statement>;
-  } = {
-    exportTypeAliasMap: new Map(),
-    exportConstEnumMap: new Map(),
-    exportFunctionMap: new Map([
-      ...customTypeDictionaryToTagFunctionList(customTypeDictionary),
-      ...e.generateCode(customTypeDictionary)
-    ]),
-    statementList: []
-  };
+): {
+  exportTypeAliasMap: ReadonlyMap<string, generator.ExportTypeAlias>;
+  exportConstEnumMap: ReadonlyMap<
+    string,
+    generator.type.ExportConstEnumTagNameAndValueList
+  >;
+  exportFunctionMap: ReadonlyMap<string, generator.ExportFunction>;
+} => {
+  const exportConstEnumMap = new Map<
+    string,
+    generator.type.ExportConstEnumTagNameAndValueList
+  >();
+  const exportTypeAliasMap = new Map<string, generator.ExportTypeAlias>();
   for (const customType of customTypeDictionary.entries()) {
     const definition = toTypeAliasAndEnum(customType);
     if (definition.typeAlias !== null) {
-      result.exportTypeAliasMap.set(
-        definition.typeAlias[0],
-        definition.typeAlias[1]
-      );
+      exportTypeAliasMap.set(definition.typeAlias[0], definition.typeAlias[1]);
     }
     if (definition.enum !== null) {
-      result.exportConstEnumMap.set(definition.enum[0], definition.enum[1]);
+      exportConstEnumMap.set(definition.enum[0], definition.enum[1]);
     }
   }
-  return result;
+  return {
+    exportConstEnumMap,
+    exportTypeAliasMap,
+    exportFunctionMap: customTypeDictionaryToTagFunctionList(
+      customTypeDictionary
+    )
+  };
 };
 
 export const toTypeAliasAndEnum = ([customTypeName, customType]: [

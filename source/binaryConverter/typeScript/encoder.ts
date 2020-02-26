@@ -4,13 +4,62 @@ import * as type from "../../type";
 import * as typeScript from "../../typeScript";
 
 export const generateCode = (
-  customTypeDictionary: ReadonlyMap<string, type.CustomType>
-): ReadonlyMap<string, generator.ExportFunction> =>
-  new Map(
-    [...customTypeDictionary.entries()].map(([name, customType]) =>
-      customCode(name, customType)
-    )
+  customTypeDictionary: ReadonlyMap<string, type.CustomType>,
+  isBrowser: boolean
+): ReadonlyMap<string, generator.ExportFunction> => {
+  let needEncodeTypeList: Array<type.Type> = [type.typeUInt32];
+  for (const customType of customTypeDictionary.values()) {
+    needEncodeTypeList = needEncodeTypeList.concat(
+      customTypeCollectType(customType)
+    );
+  }
+  const uniqueNeedEncodeTypeList = typeListUnique(needEncodeTypeList);
+  let typeEncoderList: ReadonlyArray<[string, generator.ExportFunction]> = [];
+  for (const type_ of uniqueNeedEncodeTypeList) {
+    typeEncoderList = typeEncoderList.concat(encodeCode(type_, isBrowser));
+  }
+
+  return new Map(
+    [...customTypeDictionary.entries()]
+      .map(([name, customType]) => customCode(name, customType))
+      .concat(typeEncoderList)
   );
+};
+
+const customTypeCollectType = (
+  customType: type.CustomType
+): ReadonlyArray<type.Type> => {
+  switch (customType.body._) {
+    case type.CustomType_.Product:
+      return customType.body.memberNameAndTypeArray.map(
+        memberNameAndType => memberNameAndType.memberType
+      );
+
+    case type.CustomType_.Sum: {
+      const typeList: Array<type.Type> = [];
+      for (const tagNameAndParameter of customType.body
+        .tagNameAndParameterArray) {
+        switch (tagNameAndParameter.parameter._) {
+          case type.TagParameter_.Just:
+            typeList.push(tagNameAndParameter.parameter.type_);
+        }
+      }
+      return typeList;
+    }
+  }
+};
+
+const typeListUnique = (
+  list: ReadonlyArray<type.Type>
+): ReadonlyArray<type.Type> => {
+  const resultList: Array<type.Type> = [];
+  for (const type_ of list) {
+    if (!resultList.some(resultElement => type.equal(type_, resultElement))) {
+      resultList.push(type_);
+    }
+  }
+  return resultList;
+};
 
 /**
  * `ReadonlyArray<number>`
@@ -226,26 +275,28 @@ const listCode = (type_: type.Type): generator.ExportFunction => ({
 export const encodeCode = (
   type_: type.Type,
   isBrowser: boolean
-): [string, generator.ExportFunction] | null => {
+): ReadonlyArray<[string, generator.ExportFunction]> => {
   const name = encodeName(type_);
   switch (type_._) {
     case type.Type_.UInt32:
-      return [name, uInt32Code];
+      return [[name, uInt32Code]];
 
     case type.Type_.String:
-      return [name, stringCode(isBrowser)];
+      return [[name, stringCode(isBrowser)]];
 
     case type.Type_.Id:
-      return [name, encodeHexString(16)];
+      return [[name, encodeHexString(16)]];
 
     case type.Type_.Hash:
-      return [name, encodeHexString(32)];
+      return [[name, encodeHexString(32)]];
 
     case type.Type_.List:
-      return [name, listCode(type_)];
+      return [
+        [name, listCode(type_.type_)] as [string, generator.ExportFunction]
+      ].concat(encodeCode(type_.type_, isBrowser));
 
     case type.Type_.Custom:
-      return null;
+      return [];
   }
 };
 
@@ -306,7 +357,7 @@ export const customProductCode = (
     memberNameAndTypeArray[0].memberType,
     get(memberNameAndTypeArray[0].name)
   );
-  for (const memberNameAndType of memberNameAndTypeArray) {
+  for (const memberNameAndType of memberNameAndTypeArray.slice(1)) {
     e = expr.callMethod(e, "concat", [
       encodeVarEval(memberNameAndType.memberType, get(memberNameAndType.name))
     ]);
@@ -340,9 +391,7 @@ export const customSumCode = (
       case type.TagParameter_.Just:
         statementList.push(
           expr.ifStatement(expr.equal(get("_"), expr.numberLiteral(index)), [
-            expr.set(
-              expr.localVariable(["result"]),
-              null,
+            expr.returnStatement(
               expr.callMethod(expr.localVariable(["result"]), "concat", [
                 encodeVarEval(
                   tagNameAndParameter.parameter.type_,

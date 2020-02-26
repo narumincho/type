@@ -30,7 +30,7 @@
     "typescript": "^3.8.2"
   },
   "dependencies": {
-    "js-ts-code-generator": "^0.1.12"
+    "js-ts-code-generator": "^0.1.13"
   },
   "jest": {
     "moduleFileExtensions": [
