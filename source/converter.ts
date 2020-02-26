@@ -112,7 +112,8 @@ export const decodeId = (
 export const encodeStringList = (
   list: ReadonlyArray<string>
 ): ReadonlyArray<number> => {
-  let result = encodeUInt32(list.length) as Array<number>;
+  let result: Array<number> = [];
+  result = result.concat(encodeUInt32(list.length));
   for (const element of list) {
     result = result.concat(encodeString(element));
   }
