@@ -6,12 +6,9 @@ import * as c from "../case";
  * `ReadonlyArray<number>`
  * を表現する
  */
-const readonlyArrayNumber: typeExpr.TypeExpr = typeExpr.withTypeParameter(
-  typeExpr.globalType("ReadonlyArray"),
-  [typeExpr.typeNumber]
+const readonlyArrayNumber: typeExpr.TypeExpr = typeExpr.readonlyArrayType(
+  typeExpr.typeNumber
 );
-
-const mathObject = expr.globalVariable("Math");
 
 /* ========================================
                   UInt32
@@ -36,10 +33,10 @@ export const uInt32Code: [string, generator.ExportFunction] = [
       expr.set(
         expr.localVariable(["num"]),
         null,
-        expr.callMethod(mathObject, "floor", [
-          expr.callMethod(mathObject, "max", [
+        expr.callMathMethod("floor", [
+          expr.callMathMethod("max", [
             expr.numberLiteral(0),
-            expr.callMethod(mathObject, "min", [
+            expr.callMathMethod("min", [
               expr.localVariable(["num"]),
               expr.numberLiteral(2 ** 32 - 1)
             ])
@@ -181,9 +178,7 @@ const encodeHexString = (
     statementList: [
       expr.variableDefinition(
         ["result"],
-        typeExpr.withTypeParameter(typeExpr.globalType("Array"), [
-          typeExpr.typeNumber
-        ]),
+        typeExpr.arrayType(typeExpr.typeNumber),
         expr.arrayLiteral([])
       ),
       expr.forStatement(["i"], expr.numberLiteral(byteSize), [
@@ -193,7 +188,7 @@ const encodeHexString = (
             expr.localVariable(["i"])
           ),
           null,
-          expr.callMethod(expr.globalVariable("Number"), "parseInt", [
+          expr.callNumberMethod("parseInt", [
             expr.callMethod(expr.localVariable(["id"]), "slice", [
               expr.multiplication(
                 expr.localVariable(["i"]),

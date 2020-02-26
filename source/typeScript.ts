@@ -173,22 +173,17 @@ export const typeToGeneratorType = (
         hashTypeName(customTypeToTypeName(type_.string_))
       );
     case type.Type_.List:
-      return generator.typeExpr.withTypeParameter(
-        generator.typeExpr.globalType("ReadonlyArray"),
-        [typeToGeneratorType(type_.type_)]
+      return generator.typeExpr.readonlyArrayType(
+        typeToGeneratorType(type_.type_)
       );
     case type.Type_.Dictionary:
-      return generator.typeExpr.withTypeParameter(
-        generator.typeExpr.globalType("Map"),
-        [
-          typeToGeneratorType(type_.dictionaryType.key),
-          typeToGeneratorType(type_.dictionaryType.value)
-        ]
+      return generator.typeExpr.readonlyMapType(
+        typeToGeneratorType(type_.dictionaryType.key),
+        typeToGeneratorType(type_.dictionaryType.value)
       );
     case type.Type_.Set:
-      return generator.typeExpr.withTypeParameter(
-        generator.typeExpr.globalType("Set"),
-        [typeToGeneratorType(type_.type_)]
+      return generator.typeExpr.readonlySetType(
+        typeToGeneratorType(type_.type_)
       );
     case type.Type_.Custom:
       return generator.typeExpr.globalType(customTypeToTypeName(type_.string_));
