@@ -1,13 +1,14 @@
 import * as t from "../source/index";
 import { type } from "../source/index";
 import * as generator from "js-ts-code-generator";
+import * as fs from "fs";
 
 describe("test", () => {
   const typeCustomType: [string, type.CustomType] = [
     "Type",
     {
       description: "型",
-      body: type.customTypeBodyProduct([
+      body: type.customTypeBodySum([
         {
           name: "UInt32",
           description: "0～4294967295 32bit符号なし整数",
@@ -34,16 +35,6 @@ describe("test", () => {
           parameter: type.tagParameterJust(type.typeCustom("Type"))
         },
         {
-          name: "Dictionary",
-          description: "辞書. キーと値の組のリストだがキーは重複しない",
-          parameter: type.tagParameterJust(type.typeCustom("DictionaryType"))
-        },
-        {
-          name: "Set",
-          description: "集合. 要素は重複しない",
-          parameter: type.tagParameterJust(type.typeCustom("Type"))
-        },
-        {
           name: "Custom",
           description: "用意されていない型.",
           parameter: type.tagParameterJust(type.typeString)
@@ -57,7 +48,7 @@ describe("test", () => {
     "DictionaryType",
     {
       description: "キーと値",
-      body: type.customTypeBodySum([
+      body: type.customTypeBodyProduct([
         {
           name: "key",
           description: "キー. Dictionary内で重複しない",
@@ -77,16 +68,18 @@ describe("test", () => {
     typeCustomType,
     dictionaryType
   ]);
-  const typeScriptCode: generator.Code = t.typeScript.generateCode(data);
-  const typeScriptCodeAsString = generator.toNodeJsOrBrowserCodeAsTypeScript(
-    typeScriptCode
+  const typeDefinitionTypeScriptCode = generator.toNodeJsOrBrowserCodeAsTypeScript(
+    t.generateTypeScriptCode(data, false)
   );
   const elmCodeAsString: string = t.elm.generateCode("Data", data);
-  it("return string", () => {
-    console.log(typeScriptCodeAsString);
-    expect(typeof typeScriptCodeAsString === "string").toBe(true);
+  // fs.writeFile("out.ts", typeDefinitionTypeScriptCode, () => {
+  //   console.log("out put code at ./out.ts");
+  // });
+  it("type definition typeScript", () => {
+    console.log(typeDefinitionTypeScriptCode);
+    expect(typeof typeDefinitionTypeScriptCode === "string").toBe(true);
   });
-  it("elm return string", () => {
+  it("type definition elm", () => {
     console.log(elmCodeAsString);
     expect(typeof elmCodeAsString === "string").toBe(true);
   });
