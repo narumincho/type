@@ -56,8 +56,7 @@ describe("test", () => {
           description: "用意されていないアプリ特有の型",
           parameter: type.tagParameterJust(type.typeString())
         }
-      ]),
-      idHashType: type.IdHashType.Id
+      ])
     }
   ];
 
@@ -76,38 +75,70 @@ describe("test", () => {
           description: "値",
           memberType: type.typeCustom("Type")
         }
-      ]),
-      idHashType: type.IdHashType.None
+      ])
     }
   ];
 
-  // const exprType: [string, type.CustomType] = [
-  //   "Expr",
-  //   {
-  //     body: type.customTypeBodySum([
-  //       {
-  //         name: "NumberLiteral",
-  //         description: "数値リテラル `123`",
-  //         parameter: type.tagParameterJust(type.typeUInt32)
-  //       },
-  //       {
-  //         name: "StringLiteral",
-  //         description: '文字列リテラル `"text"` エスケープする必要はない',
-  //         parameter: type.tagParameterJust(type.typeString)
-  //       },
-  //       {
-  //         name: "BooleanLiteral",
-  //         description: "真偽値リテラル",
-  //         parameter: type.tagParameterJust(type.str)
-  //       }
-  //     ]),
-  //     description: "式",
-  //     idHashType: type.IdHashType.None
-  //   }
-  // ];
+  const exprType: [string, type.CustomType] = [
+    "Expr",
+    {
+      body: type.customTypeBodySum([
+        {
+          name: "NumberLiteral",
+          description: "数値リテラル `123`",
+          parameter: type.tagParameterJust(type.typeUInt32())
+        },
+        {
+          name: "StringLiteral",
+          description: '文字列リテラル `"text"` エスケープする必要はない',
+          parameter: type.tagParameterJust(type.typeString())
+        },
+        {
+          name: "BooleanLiteral",
+          description: "真偽値リテラル",
+          parameter: type.tagParameterJust(type.typeBool())
+        },
+        {
+          name: "NullLiteral",
+          description: "nullリテラル",
+          parameter: type.tagParameterNothing
+        },
+        {
+          name: "UnaryOperator",
+          description: "",
+          parameter: type.tagParameterJust(type.typeCustom("UnaryOperator"))
+        }
+      ]),
+      description: "式"
+    }
+  ];
+
+  const unaryOperatorType: [string, type.CustomType] = [
+    "UnaryOperator",
+    {
+      body: type.customTypeBodySum([
+        {
+          name: "Minus",
+          parameter: type.tagParameterNothing,
+          description: "単項マイナス"
+        },
+        {
+          name: "LogicalNot",
+          parameter: type.tagParameterNothing,
+          description: "論理否定"
+        },
+        {
+          name: "BitwiseNot",
+          parameter: type.tagParameterNothing,
+          description: "ビット否定"
+        }
+      ]),
+      description: "1つの式に対する演算子"
+    }
+  ];
   const data: ReadonlyMap<string, type.CustomType> = new Map([
-    typeCustomType,
-    dictionaryType
+    exprType,
+    unaryOperatorType
   ]);
   const typeDefinitionTypeScriptCode = generator.toNodeJsOrBrowserCodeAsTypeScript(
     t.generateTypeScriptCode(data, false)

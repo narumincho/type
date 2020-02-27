@@ -91,7 +91,6 @@ export const typeCustom = (string_: string): Type => ({
 export type CustomType = {
   description: string;
   body: CustomTypeBody;
-  idHashType: IdHashType;
 };
 
 export type CustomTypeBody =
@@ -133,12 +132,6 @@ export type TagParameter =
 export const enum TagParameter_ {
   Just,
   Nothing
-}
-
-export const enum IdHashType {
-  Id,
-  Hash,
-  None
 }
 
 export const customTypeBodySum = (
