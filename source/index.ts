@@ -1,6 +1,7 @@
 import * as elm from "./elm";
 import * as typeDefinitionTypeScript from "./typeDefinition/typeScript";
 import * as binaryConverterTypeScriptEncoder from "./binaryConverter/typeScript/encoder";
+import * as binaryConverterTypeScriptDecoder from "./binaryConverter/typeScript/decoder";
 import * as type from "./type";
 import * as generator from "js-ts-code-generator";
 
@@ -22,10 +23,15 @@ export const generateTypeScriptCode = (
     customTypeDictionary,
     isBrowser
   );
+  const decoderCode = binaryConverterTypeScriptDecoder.generateCode(
+    customTypeDictionary,
+    isBrowser
+  );
   return {
     exportFunctionMap: new Map([
       ...typeDefinitionCode.exportFunctionMap,
-      ...encoderCode
+      ...encoderCode,
+      ...decoderCode
     ]),
     exportConstEnumMap: typeDefinitionCode.exportConstEnumMap,
     exportTypeAliasMap: typeDefinitionCode.exportTypeAliasMap,

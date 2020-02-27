@@ -7,60 +7,21 @@ export const generateCode = (
   customTypeDictionary: ReadonlyMap<string, type.CustomType>,
   isBrowser: boolean
 ): ReadonlyMap<string, generator.ExportFunction> => {
-  let needEncodeTypeList: Array<type.Type> = [type.typeUInt32];
-  for (const customType of customTypeDictionary.values()) {
-    needEncodeTypeList = needEncodeTypeList.concat(
-      customTypeCollectType(customType)
-    );
-  }
-  const uniqueNeedEncodeTypeList = typeListUnique(needEncodeTypeList);
+  const needEncodeTypeList = type.customTypeDictionaryCollectType(
+    customTypeDictionary
+  );
   let typeEncoderList: ReadonlyArray<[string, generator.ExportFunction]> = [];
-  for (const uniqueNeedEncodeType of uniqueNeedEncodeTypeList) {
+  for (const uniqueNeedEncodeType of needEncodeTypeList) {
     typeEncoderList = typeEncoderList.concat(
       encodeCode(uniqueNeedEncodeType, isBrowser)
     );
   }
 
   return new Map(
-    [...customTypeDictionary.entries()]
+    [...customTypeDictionary]
       .map(([name, customType]) => customCode(name, customType))
       .concat(typeEncoderList)
   );
-};
-
-const customTypeCollectType = (
-  customType: type.CustomType
-): ReadonlyArray<type.Type> => {
-  switch (customType.body._) {
-    case type.CustomType_.Product:
-      return customType.body.memberNameAndTypeArray.map(
-        memberNameAndType => memberNameAndType.memberType
-      );
-
-    case type.CustomType_.Sum: {
-      const typeList: Array<type.Type> = [];
-      for (const tagNameAndParameter of customType.body
-        .tagNameAndParameterArray) {
-        switch (tagNameAndParameter.parameter._) {
-          case type.TagParameter_.Just:
-            typeList.push(tagNameAndParameter.parameter.type_);
-        }
-      }
-      return typeList;
-    }
-  }
-};
-
-const typeListUnique = (
-  list: ReadonlyArray<type.Type>
-): ReadonlyArray<type.Type> => {
-  const resultList: Array<type.Type> = [];
-  for (const type_ of list) {
-    if (!resultList.some(resultElement => type.equal(type_, resultElement))) {
-      resultList.push(type_);
-    }
-  }
-  return resultList;
 };
 
 /**
