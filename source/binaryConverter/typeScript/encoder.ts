@@ -7,60 +7,21 @@ export const generateCode = (
   customTypeDictionary: ReadonlyMap<string, type.CustomType>,
   isBrowser: boolean
 ): ReadonlyMap<string, generator.ExportFunction> => {
-  let needEncodeTypeList: Array<type.Type> = [type.typeUInt32];
-  for (const customType of customTypeDictionary.values()) {
-    needEncodeTypeList = needEncodeTypeList.concat(
-      customTypeCollectType(customType)
-    );
-  }
-  const uniqueNeedEncodeTypeList = typeListUnique(needEncodeTypeList);
+  const needEncodeTypeList = type.customTypeDictionaryCollectType(
+    customTypeDictionary
+  );
   let typeEncoderList: ReadonlyArray<[string, generator.ExportFunction]> = [];
-  for (const uniqueNeedEncodeType of uniqueNeedEncodeTypeList) {
+  for (const uniqueNeedEncodeType of needEncodeTypeList) {
     typeEncoderList = typeEncoderList.concat(
-      encodeCode(uniqueNeedEncodeType, isBrowser)
+      typeToEncodeCode(uniqueNeedEncodeType, isBrowser)
     );
   }
 
   return new Map(
-    [...customTypeDictionary.entries()]
+    [...customTypeDictionary]
       .map(([name, customType]) => customCode(name, customType))
       .concat(typeEncoderList)
   );
-};
-
-const customTypeCollectType = (
-  customType: type.CustomType
-): ReadonlyArray<type.Type> => {
-  switch (customType.body._) {
-    case type.CustomType_.Product:
-      return customType.body.memberNameAndTypeArray.map(
-        memberNameAndType => memberNameAndType.memberType
-      );
-
-    case type.CustomType_.Sum: {
-      const typeList: Array<type.Type> = [];
-      for (const tagNameAndParameter of customType.body
-        .tagNameAndParameterArray) {
-        switch (tagNameAndParameter.parameter._) {
-          case type.TagParameter_.Just:
-            typeList.push(tagNameAndParameter.parameter.type_);
-        }
-      }
-      return typeList;
-    }
-  }
-};
-
-const typeListUnique = (
-  list: ReadonlyArray<type.Type>
-): ReadonlyArray<type.Type> => {
-  const resultList: Array<type.Type> = [];
-  for (const type_ of list) {
-    if (!resultList.some(resultElement => type.equal(type_, resultElement))) {
-      resultList.push(type_);
-    }
-  }
-  return resultList;
 };
 
 /**
@@ -235,13 +196,13 @@ const encodeHexString = (byteSize: number): generator.ExportFunction => ({
    ========================================
 */
 
-const listCode = (type_: type.Type): generator.ExportFunction => ({
+const listCode = (elementType: type.Type): generator.ExportFunction => ({
   document: "",
   parameterList: [
     {
       name: "list",
       document: "",
-      typeExpr: typeScript.typeToGeneratorType(type_)
+      typeExpr: typeScript.typeToGeneratorType(elementType)
     }
   ],
   returnType: readonlyArrayNumber,
@@ -266,7 +227,7 @@ const listCode = (type_: type.Type): generator.ExportFunction => ({
         expr.localVariable(["result"]),
         null,
         expr.callMethod(expr.localVariable(["result"]), "concat", [
-          encodeVarEval(type_, expr.localVariable(["element"]))
+          encodeVarEval(elementType, expr.localVariable(["element"]))
         ])
       )
     ]),
@@ -274,7 +235,12 @@ const listCode = (type_: type.Type): generator.ExportFunction => ({
   ]
 });
 
-export const encodeCode = (
+/* ========================================
+                 Type
+   ========================================
+*/
+
+export const typeToEncodeCode = (
   type_: type.Type,
   isBrowser: boolean
 ): ReadonlyArray<[string, generator.ExportFunction]> => {
@@ -295,7 +261,7 @@ export const encodeCode = (
     case type.Type_.List:
       return [
         [name, listCode(type_.type_)] as [string, generator.ExportFunction]
-      ].concat(encodeCode(type_.type_, isBrowser));
+      ].concat(typeToEncodeCode(type_.type_, isBrowser));
 
     case type.Type_.Custom:
       return [];

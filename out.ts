@@ -124,3 +124,23 @@ export const encodeUInt32 = (num: number): ReadonlyArray<number> => {
  */
 export const encodeString = (text: string): ReadonlyArray<number> =>
   Array["from"](new a.TextEncoder().encode(text));
+
+/**
+ *
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ */
+export const decodeType = (
+  index: number,
+  binary: Uint8Array
+): { result: Type; nextIndex: number } => {};
+
+/**
+ *
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ */
+export const decodeDictionaryType = (
+  index: number,
+  binary: Uint8Array
+): { result: DictionaryType; nextIndex: number } => {};

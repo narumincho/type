@@ -154,6 +154,53 @@ export const toTypeName = (type_: Type): string => {
   }
 };
 
+/**
+ * デコーダー、エンコーダに必要な型を集める。必ずUInt32は入る
+ */
+export const customTypeDictionaryCollectType = (
+  customTypeDictionary: ReadonlyMap<string, CustomType>
+): ReadonlyArray<Type> => {
+  let needTypeList: ReadonlyArray<Type> = [typeUInt32];
+  for (const customType of customTypeDictionary.values()) {
+    needTypeList = needTypeList.concat(customTypeCollectType(customType));
+  }
+  return typeListUnique(needTypeList);
+};
+
+const customTypeCollectType = (customType: CustomType): ReadonlyArray<Type> => {
+  switch (customType.body._) {
+    case CustomType_.Product:
+      return customType.body.memberNameAndTypeArray.map(
+        memberNameAndType => memberNameAndType.memberType
+      );
+
+    case CustomType_.Sum: {
+      const typeList: Array<Type> = [];
+      for (const tagNameAndParameter of customType.body
+        .tagNameAndParameterArray) {
+        switch (tagNameAndParameter.parameter._) {
+          case TagParameter_.Just:
+            typeList.push(tagNameAndParameter.parameter.type_);
+        }
+      }
+      return typeList;
+    }
+  }
+};
+
+/**
+ * 型の重複をなくす
+ */
+const typeListUnique = (list: ReadonlyArray<Type>): ReadonlyArray<Type> => {
+  const resultList: Array<Type> = [];
+  for (const type_ of list) {
+    if (!resultList.some(resultElement => equal(type_, resultElement))) {
+      resultList.push(type_);
+    }
+  }
+  return resultList;
+};
+
 export const equal = (a: Type, b: Type): boolean => {
   switch (a._) {
     case Type_.UInt32:
