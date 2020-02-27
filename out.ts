@@ -1,3 +1,4 @@
+import * as a from "util";
 /**
  * 型
  */
@@ -73,19 +74,19 @@ export const typeCustom = (string_: string): Type => ({
  * @param type_
  */
 export const encodeType = (type_: Type): ReadonlyArray<number> => {
-  let a: Array<number> = [];
-  a = a.concat(encodeUInt32(type_._));
+  let b: Array<number> = [];
+  b = b.concat(encodeUInt32(type_._));
   if (type_._ === 2) {
-    return a.concat(encodeString(type_.string_));
+    return b.concat(encodeString(type_.string_));
   }
   if (type_._ === 3) {
-    return a.concat(encodeString(type_.string_));
+    return b.concat(encodeString(type_.string_));
   }
   if (type_._ === 4) {
-    return a.concat(encodeType(type_.type_));
+    return b.concat(encodeType(type_.type_));
   }
   if (type_._ === 5) {
-    return a.concat(encodeString(type_.string_));
+    return b.concat(encodeString(type_.string_));
   }
   throw new Error("Typetype tag index error. index = " + type_._.toString());
 };
@@ -105,14 +106,21 @@ export const encodeDictionaryType = (
  */
 export const encodeUInt32 = (num: number): ReadonlyArray<number> => {
   num = Math.floor(Math.max(0, Math.min(num, 4294967295)));
-  const a: Array<number> = [];
+  const b: Array<number> = [];
   while (true) {
-    const b: number = num & 127;
+    const c: number = num & 127;
     num = num >>> 7;
     if (num === 0) {
-      a.push(b);
-      return a;
+      b.push(c);
+      return b;
     }
-    a.push(b | 128);
+    b.push(c | 128);
   }
 };
+
+/**
+ * stringからバイナリに変換するコード. このコードはNode.js用なのでutilのTextDecoderを使う
+ * @param text
+ */
+export const encodeString = (text: string): ReadonlyArray<number> =>
+  Array["from"](new a.TextEncoder().encode(text));

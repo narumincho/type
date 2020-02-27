@@ -159,7 +159,7 @@ export const equal = (a: Type, b: Type): boolean => {
     case Type_.UInt32:
       return b._ === Type_.UInt32;
     case Type_.String:
-      return b._ === Type_.UInt32;
+      return b._ === Type_.String;
     case Type_.Id:
       return b._ === Type_.Id && b.string_ === a.string_;
     case Type_.Hash:

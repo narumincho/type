@@ -15,8 +15,10 @@ export const generateCode = (
   }
   const uniqueNeedEncodeTypeList = typeListUnique(needEncodeTypeList);
   let typeEncoderList: ReadonlyArray<[string, generator.ExportFunction]> = [];
-  for (const type_ of uniqueNeedEncodeTypeList) {
-    typeEncoderList = typeEncoderList.concat(encodeCode(type_, isBrowser));
+  for (const uniqueNeedEncodeType of uniqueNeedEncodeTypeList) {
+    typeEncoderList = typeEncoderList.concat(
+      encodeCode(uniqueNeedEncodeType, isBrowser)
+    );
   }
 
   return new Map(
