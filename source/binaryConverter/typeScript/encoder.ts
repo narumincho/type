@@ -19,7 +19,9 @@ export const generateCode = (
 
   return new Map(
     [...customTypeDictionary]
-      .map(([name, customType]) => customCode(name, customType))
+      .map(([name, customType]) =>
+        customCode(name, customType, customTypeDictionary)
+      )
       .concat(typeEncoderList)
   );
 };
@@ -275,7 +277,8 @@ export const typeToEncodeCode = (
 
 export const customCode = (
   customTypeName: string,
-  customType: type.CustomType
+  customType: type.CustomType,
+  customTypeDictionary: ReadonlyMap<string, type.CustomType>
 ): [string, generator.ExportFunction] => {
   const parameterName = typeScript.typeToMemberOrParameterName(
     type.typeCustom(customTypeName)
@@ -294,7 +297,8 @@ export const customCode = (
           customTypeName,
           customType.body.tagNameAndParameterArray,
           (memberName: string) =>
-            expr.get(expr.localVariable([parameterName]), memberName)
+            expr.get(expr.localVariable([parameterName]), memberName),
+          customTypeDictionary
         );
     }
   })();
@@ -337,7 +341,8 @@ export const customProductCode = (
 export const customSumCode = (
   customTypeName: string,
   tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
-  get: (memberName: string) => expr.Expr
+  get: (memberName: string) => expr.Expr,
+  customTypeDictionary: ReadonlyMap<string, type.CustomType>
 ): ReadonlyArray<generator.expr.Statement> => {
   const statementList: Array<generator.expr.Statement> = [
     expr.letVariableDefinition(
@@ -353,19 +358,17 @@ export const customSumCode = (
       ])
     )
   ];
-  for (const [
-    index,
-    tagNameAndParameter
-  ] of tagNameAndParameterArray.entries()) {
+  for (const tagNameAndParameter of tagNameAndParameterArray) {
     switch (tagNameAndParameter.parameter._) {
       case type.TagParameter_.Just:
         statementList.push(
           expr.ifStatement(
             expr.equal(
               get("_"),
-              expr.enumTag(
-                typeScript.customTypeNameToEnumName(customTypeName),
-                typeScript.tagNameToEnumTag(tagNameAndParameter.name)
+              typeScript.exprEnum(
+                customTypeName,
+                tagNameAndParameter.name,
+                customTypeDictionary
               )
             ),
             [

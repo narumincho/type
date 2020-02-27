@@ -46,7 +46,9 @@ export const toTypeAliasAndEnum = ([customTypeName, customType]: [
   switch (customType.body._) {
     case type.CustomType_.Sum:
       if (
-        isProductTypeAllNoParameter(customType.body.tagNameAndParameterArray)
+        typeScript.isProductTypeAllNoParameter(
+          customType.body.tagNameAndParameterArray
+        )
       ) {
         return {
           typeAlias: null,
@@ -55,7 +57,7 @@ export const toTypeAliasAndEnum = ([customTypeName, customType]: [
             new Map(
               customType.body.tagNameAndParameterArray.map(
                 (tagNameAndParameter, index) => [
-                  tagNameAndParameter.name,
+                  typeScript.tagNameToEnumTag(tagNameAndParameter.name),
                   index
                 ]
               )
@@ -83,7 +85,10 @@ export const toTypeAliasAndEnum = ([customTypeName, customType]: [
           typeScript.customTypeNameToEnumName(customTypeName),
           new Map(
             customType.body.tagNameAndParameterArray.map(
-              (tagNameAndParameter, index) => [tagNameAndParameter.name, index]
+              (tagNameAndParameter, index) => [
+                typeScript.tagNameToEnumTag(tagNameAndParameter.name),
+                index
+              ]
             )
           )
         ]
@@ -165,13 +170,16 @@ const customTypeDictionaryToTagFunctionList = (
     switch (customType.body._) {
       case type.CustomType_.Sum: {
         if (
-          isProductTypeAllNoParameter(customType.body.tagNameAndParameterArray)
+          typeScript.isProductTypeAllNoParameter(
+            customType.body.tagNameAndParameterArray
+          )
         ) {
           break;
         }
         const functionList = productTypeToTagFunctionList(
           customTypeName,
-          customType.body.tagNameAndParameterArray
+          customType.body.tagNameAndParameterArray,
+          customTypeDictionary
         );
         for (const [funcName, func] of functionList) {
           result.set(funcName, func);
@@ -184,7 +192,8 @@ const customTypeDictionaryToTagFunctionList = (
 
 const productTypeToTagFunctionList = (
   customTypeName: string,
-  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
+  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
+  customTypeDictionary: ReadonlyMap<string, type.CustomType>
 ): ReadonlyMap<string, generator.ExportFunction> => {
   const result = new Map<string, generator.ExportFunction>();
 
@@ -198,7 +207,11 @@ const productTypeToTagFunctionList = (
         returnType: generator.typeExpr.globalType(
           typeScript.customTypeToTypeName(customTypeName)
         ),
-        statementList: tagFunctionStatement(customTypeName, tagNameAndParameter)
+        statementList: tagFunctionStatement(
+          customTypeName,
+          tagNameAndParameter,
+          customTypeDictionary
+        )
       }
     );
   }
@@ -229,13 +242,15 @@ const tagFunctionParameter = (
 
 const tagFunctionStatement = (
   customTypeName: string,
-  tagNameAndParameter: type.TagNameAndParameter
+  tagNameAndParameter: type.TagNameAndParameter,
+  customTypeDictionary: ReadonlyMap<string, type.CustomType>
 ): ReadonlyArray<generator.expr.Statement> => {
   const tagField: [string, generator.expr.Expr] = [
     "_",
-    generator.expr.enumTag(
-      typeScript.customTypeNameToEnumName(customTypeName),
-      typeScript.tagNameToEnumTag(tagNameAndParameter.name)
+    typeScript.exprEnum(
+      customTypeName,
+      tagNameAndParameter.name,
+      customTypeDictionary
     )
   ];
 
@@ -268,11 +283,3 @@ const tagFunctionStatement = (
       ];
   }
 };
-
-const isProductTypeAllNoParameter = (
-  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
-): boolean =>
-  tagNameAndParameterArray.every(
-    tagNameAndParameter =>
-      tagNameAndParameter.parameter._ === type.TagParameter_.Nothing
-  );

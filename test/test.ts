@@ -2,6 +2,7 @@ import * as t from "../source/index";
 import { type } from "../source/index";
 import * as generator from "js-ts-code-generator";
 import * as fs from "fs";
+import { typeString, typeCustom } from "../source/type";
 
 describe("test", () => {
   const typeCustomType: [string, type.CustomType] = [
@@ -20,23 +21,55 @@ describe("test", () => {
           parameter: type.tagParameterNothing
         },
         {
+          name: "Bool",
+          description: "真偽値",
+          parameter: type.tagParameterNothing
+        },
+        {
+          name: "DateTime",
+          description: "日時",
+          parameter: type.tagParameterNothing
+        },
+        {
+          name: "List",
+          description: "リスト",
+          parameter: type.tagParameterJust(type.typeCustom("Type"))
+        },
+        {
+          name: "Maybe",
+          description: "Maybe",
+          parameter: type.tagParameterJust(type.typeCustom("Type"))
+        },
+        {
+          name: "Set",
+          description: "集合",
+          parameter: type.tagParameterJust(type.typeCustom("Type"))
+        },
+        {
+          name: "Dictionary",
+          description: "辞書型",
+          parameter: type.tagParameterJust(type.typeCustom("Type"))
+        },
+        {
           name: "Id",
-          description: "Id",
+          description:
+            "Id. データを識別するためのもの. カスタムの型名を指定する",
           parameter: type.tagParameterJust(type.typeString)
         },
         {
           name: "Hash",
-          description: "データを識別するもので, データに応じて1つに決まる。",
+          description: "Hash. データを識別するためのHash",
           parameter: type.tagParameterJust(type.typeString)
         },
         {
-          name: "List",
-          description: "リスト. 複数の要素を表現する",
-          parameter: type.tagParameterJust(type.typeCustom("Type"))
+          name: "Token",
+          description:
+            "トークン. データへのアクセスをするために必要になるもの. トークンの種類の名前を指定する",
+          parameter: type.tagParameterJust(type.typeString)
         },
         {
           name: "Custom",
-          description: "用意されていない型.",
+          description: "用意されていないアプリ特有の型.",
           parameter: type.tagParameterJust(type.typeString)
         }
       ]),
@@ -72,9 +105,9 @@ describe("test", () => {
     t.generateTypeScriptCode(data, false)
   );
   const elmCodeAsString: string = t.elm.generateCode("Data", data);
-  // fs.writeFile("out.ts", typeDefinitionTypeScriptCode, () => {
-  //   console.log("out put code at ./out.ts");
-  // });
+  fs.writeFile("out.ts", typeDefinitionTypeScriptCode, () => {
+    console.log("out put code at ./out.ts");
+  });
   it("type definition typeScript", () => {
     console.log(typeDefinitionTypeScriptCode);
     expect(typeof typeDefinitionTypeScriptCode === "string").toBe(true);

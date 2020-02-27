@@ -53,3 +53,41 @@ export const tagNameToEnumTag = (tagName: string): string => {
   }
   return name + "_";
 };
+
+export const exprEnum = (
+  customTypeName: string,
+  tagName: string,
+  customTypeDictionary: ReadonlyMap<string, type.CustomType>
+): generator.expr.Expr => {
+  const customType = customTypeDictionary.get(customTypeName);
+  if (customType === undefined) {
+    throw new Error(
+      "customTypeの定義を見つけられなかった customType=" + customTypeName
+    );
+  }
+  switch (customType.body._) {
+    case type.CustomType_.Sum:
+      if (
+        isProductTypeAllNoParameter(customType.body.tagNameAndParameterArray)
+      ) {
+        return generator.expr.enumTag(
+          customTypeToTypeName(customTypeName),
+          tagNameToEnumTag(tagName)
+        );
+      }
+      return generator.expr.enumTag(
+        customTypeToTypeName(customTypeName),
+        tagNameToEnumTag(tagName)
+      );
+    case type.CustomType_.Product:
+      throw new Error("enumを取得するのにcustom typeがsumじゃなかった");
+  }
+};
+
+export const isProductTypeAllNoParameter = (
+  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
+): boolean =>
+  tagNameAndParameterArray.every(
+    tagNameAndParameter =>
+      tagNameAndParameter.parameter._ === type.TagParameter_.Nothing
+  );
