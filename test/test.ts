@@ -1,5 +1,5 @@
-import * as t from "../source/index";
-import { type } from "../source/index";
+import * as t from "../source/main";
+import { type } from "../source/main";
 import * as generator from "js-ts-code-generator";
 import * as fs from "fs";
 import { typeString, typeCustom } from "../source/type";
@@ -97,10 +97,26 @@ describe("test", () => {
     }
   ];
 
-  const data: ReadonlyMap<string, type.CustomType> = new Map([
-    typeCustomType,
-    dictionaryType
-  ]);
+  const exprType: [string, type.CustomType] = [
+    "Expr",
+    {
+      body: type.customTypeBodySum([
+        {
+          name: "NumberLiteral",
+          description: "numberList",
+          parameter: type.tagParameterJust(type.typeUInt32)
+        },
+        {
+          name: "StringLiteral",
+          description: "stringLiteral",
+          parameter: type.tagParameterJust(type.typeString)
+        }
+      ]),
+      description: "式",
+      idHashType: type.IdHashType.None
+    }
+  ];
+  const data: ReadonlyMap<string, type.CustomType> = new Map([exprType]);
   const typeDefinitionTypeScriptCode = generator.toNodeJsOrBrowserCodeAsTypeScript(
     t.generateTypeScriptCode(data, false)
   );

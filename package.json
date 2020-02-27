@@ -2,7 +2,7 @@
   "name": "@narumincho/type",
   "version": "0.0.0",
   "description": "Generate TypeScript and Elm type definitions, encode and decode code",
-  "main": "distribution/index.js",
+  "main": "distribution/main.js",
   "scripts": {
     "test": "jest --watch --verbose false"
   },

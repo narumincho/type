@@ -76,7 +76,7 @@ export const exprEnum = (
         );
       }
       return generator.expr.enumTag(
-        customTypeToTypeName(customTypeName),
+        customTypeNameToEnumName(customTypeName),
         tagNameToEnumTag(tagName)
       );
     case type.CustomType_.Product:

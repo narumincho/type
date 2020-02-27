@@ -1,146 +1,47 @@
 import * as a from "util";
 /**
- * 型
+ * 式
  */
-export type Type =
-  | { _: Type_.UInt32 }
-  | { _: Type_.String }
-  | { _: Type_.TypedString; string_: string }
-  | { _: Type_.IdSet; string_: string }
-  | { _: Type_.HashSet; string_: string }
-  | { _: Type_.IdMap; string_: string }
-  | { _: Type_.Hash; string_: string }
-  | { _: Type_.List; string_: string }
-  | { _: Type_.Custom; string_: string };
-/**
- * キーと値
- */
-export type DictionaryType = { key: Type; value: Type };
-export const enum Type_ {
-  UInt32 = 0,
-  String = 1,
-  TypedString = 2,
-  IdSet = 3,
-  HashSet = 4,
-  IdMap = 5,
-  Hash = 6,
-  List = 7,
-  Custom = 8
+export type Expr =
+  | { _: Expr_.NumberLiteral; uInt32: number }
+  | { _: Expr_.StringLiteral; string_: string };
+export const enum Expr_ {
+  NumberLiteral = 0,
+  StringLiteral = 1
 }
 /**
- * 0～4294967295 32bit符号なし整数
-
+ * numberList
+ * @param uInt32
  */
-export const typeUInt32 = (): Type => ({ _: Type_.UInt32 });
-
-/**
- * 文字列
-
- */
-export const typeString = (): Type => ({ _: Type_.String });
-
-/**
- * 型付きの文字列
- * @param string_
- */
-export const typeTypedString = (string_: string): Type => ({
-  _: Type_.TypedString,
-  string_: string_
+export const exprNumberLiteral = (uInt32: number): Expr => ({
+  _: Expr_.NumberLiteral,
+  uInt32: uInt32
 });
 
 /**
- * Idの順番あり集合.
+ * stringLiteral
  * @param string_
  */
-export const typeIdSet = (string_: string): Type => ({
-  _: Type_.IdSet,
-  string_: string_
-});
-
-/**
- * Hashの順番あり集合
- * @param string_
- */
-export const typeHashSet = (string_: string): Type => ({
-  _: Type_.HashSet,
-  string_: string_
-});
-
-/**
- * Idと本体、と取得日時
- * @param string_
- */
-export const typeIdMap = (string_: string): Type => ({
-  _: Type_.IdMap,
-  string_: string_
-});
-
-/**
- * Hashと本体
- * @param string_
- */
-export const typeHash = (string_: string): Type => ({
-  _: Type_.Hash,
-  string_: string_
-});
-
-/**
- * リスト
- * @param string_
- */
-export const typeList = (string_: string): Type => ({
-  _: Type_.List,
-  string_: string_
-});
-
-/**
- * 用意されていないアプリ特有の型.
- * @param string_
- */
-export const typeCustom = (string_: string): Type => ({
-  _: Type_.Custom,
+export const exprStringLiteral = (string_: string): Expr => ({
+  _: Expr_.StringLiteral,
   string_: string_
 });
 
 /**
  *
- * @param type_
+ * @param expr
  */
-export const encodeType = (type_: Type): ReadonlyArray<number> => {
+export const encodeExpr = (expr: Expr): ReadonlyArray<number> => {
   let b: Array<number> = [];
-  b = b.concat(encodeUInt32(type_._));
-  if (type_._ === Type_.TypedString) {
-    return b.concat(encodeString(type_.string_));
+  b = b.concat(encodeUInt32(expr._));
+  if (expr._ === Expr_.NumberLiteral) {
+    return b.concat(encodeUInt32(expr.uInt32));
   }
-  if (type_._ === Type_.IdSet) {
-    return b.concat(encodeString(type_.string_));
+  if (expr._ === Expr_.StringLiteral) {
+    return b.concat(encodeString(expr.string_));
   }
-  if (type_._ === Type_.HashSet) {
-    return b.concat(encodeString(type_.string_));
-  }
-  if (type_._ === Type_.IdMap) {
-    return b.concat(encodeString(type_.string_));
-  }
-  if (type_._ === Type_.Hash) {
-    return b.concat(encodeString(type_.string_));
-  }
-  if (type_._ === Type_.List) {
-    return b.concat(encodeString(type_.string_));
-  }
-  if (type_._ === Type_.Custom) {
-    return b.concat(encodeString(type_.string_));
-  }
-  throw new Error("Type type tag index error. index = " + type_._.toString());
+  throw new Error("Expr type tag index error. index = " + expr._.toString());
 };
-
-/**
- *
- * @param dictionaryType
- */
-export const encodeDictionaryType = (
-  dictionaryType: DictionaryType
-): ReadonlyArray<number> =>
-  encodeType(dictionaryType.key).concat(encodeType(dictionaryType.value));
 
 /**
  * numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード
@@ -172,20 +73,10 @@ export const encodeString = (text: string): ReadonlyArray<number> =>
  * @param index バイナリを読み込み開始位置
  * @param binary バイナリ
  */
-export const decodeType = (
+export const decodeExpr = (
   index: number,
   binary: Uint8Array
-): { result: Type; nextIndex: number } => {};
-
-/**
- *
- * @param index バイナリを読み込み開始位置
- * @param binary バイナリ
- */
-export const decodeDictionaryType = (
-  index: number,
-  binary: Uint8Array
-): { result: DictionaryType; nextIndex: number } => {};
+): { result: Expr; nextIndex: number } => {};
 
 /**
  * UnsignedLeb128で表現されたバイナリをnumberの32bit符号なし整数の範囲の数値にに変換するコード
