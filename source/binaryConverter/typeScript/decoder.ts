@@ -30,7 +30,7 @@ export const generateCode = (
  * ```
  * を表現するコード
  */
-export const resultAndNextIndexReturnStatement = (
+export const returnStatement = (
   resultExpr: expr.Expr,
   nextIndexExpr: expr.Expr
 ): expr.Statement =>
@@ -81,12 +81,14 @@ export const returnType = (resultType: typeExpr.TypeExpr): typeExpr.TypeExpr =>
 
 const typeToDecodeCode = (
   type_: type.Type,
-  isBrowse: boolean
+  isBrowser: boolean
 ): ReadonlyArray<[string, generator.ExportFunction]> => {
   const name = decodeName(type_);
   switch (type_._) {
     case type.Type_.UInt32:
       return [[name, uInt32Code]];
+    case type.Type_.String:
+      return [[name, stringCode(isBrowser)]];
   }
   return [];
 };
@@ -151,7 +153,7 @@ export const uInt32Code: generator.ExportFunction = {
           )
         ),
         [
-          resultAndNextIndexReturnStatement(
+          returnStatement(
             expr.localVariable(["result"]),
             expr.addition(
               expr.addition(
@@ -167,6 +169,67 @@ export const uInt32Code: generator.ExportFunction = {
     expr.throwError(expr.stringLiteral("larger than 32-bits"))
   ]
 };
+/* ========================================
+                  String
+   ========================================
+*/
+/**
+ * バイナリからstringに変換するコード
+ * ブラウザではグローバルのTextDecoderを使い、node.jsではutilのTextDecoderを使う
+ */
+export const stringCode = (isBrowser: boolean): generator.ExportFunction => ({
+  document:
+    "バイナリからstringに変換する." +
+    (isBrowser
+      ? "このコードはブラウザ用でグローバルのTextDecoderを使う."
+      : "このコードはNode.js用でutilのTextDecoderを使う"),
+  parameterList: parameterList,
+  returnType: returnType(typeExpr.typeString),
+  statementList: [
+    expr.variableDefinition(
+      ["length"],
+      returnType(typeExpr.typeNumber),
+      decodeVarEval(
+        type.typeUInt32,
+        expr.localVariable(["index"]),
+        expr.localVariable(["binary"])
+      )
+    ),
+    returnStatement(
+      expr.callMethod(
+        expr.newExpr(
+          isBrowser
+            ? expr.globalVariable("TextDecoder")
+            : expr.importedVariable("util", "TextDecoder"),
+          []
+        ),
+        "decode",
+        [
+          expr.callMethod(expr.localVariable(["binary"]), "slice", [
+            expr.addition(
+              expr.localVariable(["index"]),
+              expr.get(expr.localVariable(["length"]), "nextIndex")
+            ),
+            expr.addition(
+              expr.addition(
+                expr.localVariable(["index"]),
+                expr.get(expr.localVariable(["length"]), "nextIndex")
+              ),
+              expr.get(expr.localVariable(["length"]), "result")
+            )
+          ])
+        ]
+      ),
+      expr.addition(
+        expr.addition(
+          expr.localVariable(["index"]),
+          expr.get(expr.localVariable(["length"]), "nextIndex")
+        ),
+        expr.get(expr.localVariable(["length"]), "result")
+      )
+    )
+  ]
+});
 
 /* ========================================
                   Custom
@@ -193,5 +256,9 @@ const decodeName = (type_: type.Type): string => {
   return "decode" + type.toTypeName(type_);
 };
 
-export const decodeVarEval = (type_: type.Type, data: expr.Expr): expr.Expr =>
-  expr.call(expr.globalVariable(decodeName(type_)), [data]);
+export const decodeVarEval = (
+  type_: type.Type,
+  index: expr.Expr,
+  binary: expr.Expr
+): expr.Expr =>
+  expr.call(expr.globalVariable(decodeName(type_)), [index, binary]);
