@@ -2,7 +2,6 @@ import * as t from "../source/main";
 import { type } from "../source/main";
 import * as generator from "js-ts-code-generator";
 import * as fs from "fs";
-import { typeString, typeCustom } from "../source/type";
 
 describe("test", () => {
   const typeCustomType: [string, type.CustomType] = [
@@ -36,21 +35,6 @@ describe("test", () => {
           parameter: type.tagParameterJust(type.typeCustom("Type"))
         },
         {
-          name: "Maybe",
-          description: "Maybe",
-          parameter: type.tagParameterJust(type.typeCustom("Type"))
-        },
-        {
-          name: "Set",
-          description: "集合",
-          parameter: type.tagParameterJust(type.typeCustom("Type"))
-        },
-        {
-          name: "Dictionary",
-          description: "辞書型",
-          parameter: type.tagParameterJust(type.typeCustom("Type"))
-        },
-        {
           name: "Id",
           description:
             "Id. データを識別するためのもの. カスタムの型名を指定する",
@@ -69,7 +53,7 @@ describe("test", () => {
         },
         {
           name: "Custom",
-          description: "用意されていないアプリ特有の型.",
+          description: "用意されていないアプリ特有の型",
           parameter: type.tagParameterJust(type.typeString)
         }
       ]),
@@ -97,26 +81,34 @@ describe("test", () => {
     }
   ];
 
-  const exprType: [string, type.CustomType] = [
-    "Expr",
-    {
-      body: type.customTypeBodySum([
-        {
-          name: "NumberLiteral",
-          description: "numberList",
-          parameter: type.tagParameterJust(type.typeUInt32)
-        },
-        {
-          name: "StringLiteral",
-          description: "stringLiteral",
-          parameter: type.tagParameterJust(type.typeString)
-        }
-      ]),
-      description: "式",
-      idHashType: type.IdHashType.None
-    }
-  ];
-  const data: ReadonlyMap<string, type.CustomType> = new Map([exprType]);
+  // const exprType: [string, type.CustomType] = [
+  //   "Expr",
+  //   {
+  //     body: type.customTypeBodySum([
+  //       {
+  //         name: "NumberLiteral",
+  //         description: "数値リテラル `123`",
+  //         parameter: type.tagParameterJust(type.typeUInt32)
+  //       },
+  //       {
+  //         name: "StringLiteral",
+  //         description: '文字列リテラル `"text"` エスケープする必要はない',
+  //         parameter: type.tagParameterJust(type.typeString)
+  //       },
+  //       {
+  //         name: "BooleanLiteral",
+  //         description: "真偽値リテラル",
+  //         parameter: type.tagParameterJust(type.str)
+  //       }
+  //     ]),
+  //     description: "式",
+  //     idHashType: type.IdHashType.None
+  //   }
+  // ];
+  const data: ReadonlyMap<string, type.CustomType> = new Map([
+    typeCustomType,
+    dictionaryType
+  ]);
   const typeDefinitionTypeScriptCode = generator.toNodeJsOrBrowserCodeAsTypeScript(
     t.generateTypeScriptCode(data, false)
   );
