@@ -76,19 +76,19 @@ export const typeCustom = (string_: string): Type => ({
 export const encodeType = (type_: Type): ReadonlyArray<number> => {
   let b: Array<number> = [];
   b = b.concat(encodeUInt32(type_._));
-  if (type_._ === 2) {
+  if (type_._ === Type_.Id) {
     return b.concat(encodeString(type_.string_));
   }
-  if (type_._ === 3) {
+  if (type_._ === Type_.Hash) {
     return b.concat(encodeString(type_.string_));
   }
-  if (type_._ === 4) {
+  if (type_._ === Type_.List) {
     return b.concat(encodeType(type_.type_));
   }
-  if (type_._ === 5) {
+  if (type_._ === Type_.Custom) {
     return b.concat(encodeString(type_.string_));
   }
-  throw new Error("Typetype tag index error. index = " + type_._.toString());
+  throw new Error("Type type tag index error. index = " + type_._.toString());
 };
 
 /**

@@ -394,27 +394,36 @@ export const customSumCode = (
     switch (tagNameAndParameter.parameter._) {
       case type.TagParameter_.Just:
         statementList.push(
-          expr.ifStatement(expr.equal(get("_"), expr.numberLiteral(index)), [
-            expr.returnStatement(
-              expr.callMethod(expr.localVariable(["result"]), "concat", [
-                encodeVarEval(
-                  tagNameAndParameter.parameter.type_,
-                  get(
-                    typeScript.typeToMemberOrParameterName(
-                      tagNameAndParameter.parameter.type_
+          expr.ifStatement(
+            expr.equal(
+              get("_"),
+              expr.enumTag(
+                typeScript.customTypeNameToEnumName(customTypeName),
+                typeScript.tagNameToEnumTag(tagNameAndParameter.name)
+              )
+            ),
+            [
+              expr.returnStatement(
+                expr.callMethod(expr.localVariable(["result"]), "concat", [
+                  encodeVarEval(
+                    tagNameAndParameter.parameter.type_,
+                    get(
+                      typeScript.typeToMemberOrParameterName(
+                        tagNameAndParameter.parameter.type_
+                      )
                     )
                   )
-                )
-              ])
-            )
-          ])
+                ])
+              )
+            ]
+          )
         );
     }
   }
   return statementList.concat([
     expr.throwError(
       expr.addition(
-        expr.stringLiteral(customTypeName + "type tag index error. index = "),
+        expr.stringLiteral(customTypeName + " type tag index error. index = "),
         expr.callMethod(get("_"), "toString", [])
       )
     )
