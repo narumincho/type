@@ -89,6 +89,8 @@ const typeToDecodeCode = (
       return [[name, uInt32Code]];
     case type.Type_.String:
       return [[name, stringCode(isBrowser)]];
+    case type.Type_.Id:
+      return [];
   }
   return [];
 };
@@ -227,6 +229,65 @@ export const stringCode = (isBrowser: boolean): generator.ExportFunction => ({
         ),
         expr.get(expr.localVariable(["length"]), "result")
       )
+    )
+  ]
+});
+
+/* ========================================
+            HexString (Id / Hash)
+   ========================================
+*/
+
+const hexStringCode = (
+  byteSize: number,
+  customTypeName: string
+): generator.ExportFunction => ({
+  document: "",
+  parameterList,
+  returnType: returnType(
+    typeScript.typeToGeneratorType(type.typeCustom(customTypeName))
+  ),
+  statementList: [
+    returnStatement(
+      expr.callMethod(expr.globalVariable("Array"), "from", [
+        expr.callMethod(
+          expr.callMethod(
+            expr.callMethod(expr.localVariable(["binary"]), "slice", [
+              expr.localVariable(["index"]),
+              expr.addition(
+                expr.localVariable(["index"]),
+                expr.numberLiteral(byteSize)
+              )
+            ]),
+            "map",
+            [
+              expr.lambdaWithReturn(
+                [
+                  {
+                    name: ["n"],
+                    typeExpr: typeExpr.typeNumber
+                  }
+                ],
+                typeExpr.typeString,
+                [
+                  expr.evaluateExpr(
+                    expr.callMethod(
+                      expr.callMethod(expr.localVariable(["n"]), "toString", [
+                        expr.numberLiteral(16)
+                      ]),
+                      "padStart",
+                      [expr.numberLiteral(2), expr.stringLiteral("0")]
+                    )
+                  )
+                ]
+              )
+            ]
+          ),
+          "join",
+          [expr.stringLiteral("")]
+        )
+      ]),
+      expr.addition(expr.localVariable(["index"]), expr.numberLiteral(byteSize))
     )
   ]
 });
