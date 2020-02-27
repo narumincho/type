@@ -38,23 +38,23 @@ describe("test", () => {
           name: "Id",
           description:
             "Id. データを識別するためのもの. カスタムの型名を指定する",
-          parameter: type.tagParameterJust(type.typeString)
+          parameter: type.tagParameterJust(type.typeString())
         },
         {
           name: "Hash",
           description: "Hash. データを識別するためのHash",
-          parameter: type.tagParameterJust(type.typeString)
+          parameter: type.tagParameterJust(type.typeString())
         },
         {
-          name: "Token",
+          name: "AccessToken",
           description:
             "トークン. データへのアクセスをするために必要になるもの. トークンの種類の名前を指定する",
-          parameter: type.tagParameterJust(type.typeString)
+          parameter: type.tagParameterNothing
         },
         {
           name: "Custom",
           description: "用意されていないアプリ特有の型",
-          parameter: type.tagParameterJust(type.typeString)
+          parameter: type.tagParameterJust(type.typeString())
         }
       ]),
       idHashType: type.IdHashType.Id

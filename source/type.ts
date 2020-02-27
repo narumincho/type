@@ -10,7 +10,7 @@ export type Type =
   | { _: Type_.List; type_: Type }
   | { _: Type_.Id; string_: string }
   | { _: Type_.Hash; string_: string }
-  | { _: Type_.Token; string_: string }
+  | { _: Type_.AccessToken }
   | { _: Type_.Custom; string_: string };
 /**
  * キーと値
@@ -23,7 +23,7 @@ export const enum Type_ {
   List = 4,
   Id = 5,
   Hash = 6,
-  Token = 7,
+  AccessToken = 7,
   Custom = 8
 }
 /**
@@ -75,9 +75,8 @@ export const typeHash = (string_: string): Type => ({
  * トークン. データへのアクセスをするために必要になるもの. トークンの種類の名前を指定する
  * @param string_
  */
-export const typeToken = (string_: string): Type => ({
-  _: Type_.Token,
-  string_: string_
+export const typeToken = (): Type => ({
+  _: Type_.AccessToken
 });
 
 /**
@@ -185,8 +184,8 @@ export const toTypeName = (type_: Type): string => {
       return customTypeToTypeName(type_.string_) + "Id";
     case Type_.Hash:
       return customTypeToTypeName(type_.string_) + "Hash";
-    case Type_.Token:
-      return customTypeToTypeName(type_.string_) + "Token";
+    case Type_.AccessToken:
+      return "AccessToken";
     case Type_.Custom:
       return customTypeToTypeName(type_.string_);
   }
@@ -232,14 +231,19 @@ const customTypeCollectType = (customType: CustomType): ReadonlyArray<Type> => {
 const typeListUnique = (list: ReadonlyArray<Type>): ReadonlyArray<Type> => {
   const resultList: Array<Type> = [];
   for (const type_ of list) {
-    if (!resultList.some(resultElement => equal(type_, resultElement))) {
+    if (
+      !resultList.some(resultElement => equalByStructure(type_, resultElement))
+    ) {
       resultList.push(type_);
     }
   }
   return resultList;
 };
 
-export const equal = (a: Type, b: Type): boolean => {
+/**
+ * エンコーダ、デコーダーのコードを作る上でかぶらないように比較する
+ */
+export const equalByStructure = (a: Type, b: Type): boolean => {
   switch (a._) {
     case Type_.UInt32:
       return b._ === Type_.UInt32;
@@ -248,13 +252,13 @@ export const equal = (a: Type, b: Type): boolean => {
     case Type_.Bool:
       return b._ === Type_.Bool;
     case Type_.Id:
-      return b._ === Type_.Id && b.string_ === a.string_;
+      return b._ === Type_.Id;
     case Type_.Hash:
-      return b._ === Type_.Hash && b.string_ === a.string_;
+      return b._ === Type_.Hash;
     case Type_.List:
-      return b._ === Type_.List && equal(a.type_, b.type_);
-    case Type_.Token:
-      return b._ === Type_.Token && b.string_ === a.string_;
+      return b._ === Type_.List && equalByStructure(a.type_, b.type_);
+    case Type_.AccessToken:
+      return b._ === Type_.AccessToken;
     case Type_.Custom:
       return b._ === Type_.Custom && b.string_ === a.string_;
   }

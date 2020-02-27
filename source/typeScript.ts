@@ -13,6 +13,8 @@ export const typeToGeneratorType = (
       return generator.typeExpr.typeNumber;
     case type.Type_.String:
       return generator.typeExpr.typeString;
+    case type.Type_.Bool:
+      return generator.typeExpr.typeBoolean;
     case type.Type_.Id:
       return generator.typeExpr.globalType(
         customTypeToTypeName(type_.string_) + "id"
@@ -21,6 +23,9 @@ export const typeToGeneratorType = (
       return generator.typeExpr.globalType(
         customTypeToTypeName(type_.string_) + "Hash"
       );
+    case type.Type_.AccessToken:
+      return generator.typeExpr.globalType("AccessToken");
+
     case type.Type_.List:
       return generator.typeExpr.readonlyArrayType(
         typeToGeneratorType(type_.type_)

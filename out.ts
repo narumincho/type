@@ -10,7 +10,7 @@ export type Type =
   | { _: Type_.List; type_: Type }
   | { _: Type_.Id; string_: string }
   | { _: Type_.Hash; string_: string }
-  | { _: Type_.Token; string_: string }
+  | { _: Type_.AccessToken }
   | { _: Type_.Custom; string_: string };
 /**
  * キーと値
@@ -24,7 +24,7 @@ export const enum Type_ {
   List = 4,
   Id = 5,
   Hash = 6,
-  Token = 7,
+  AccessToken = 7,
   Custom = 8
 }
 /**
@@ -80,12 +80,9 @@ export const typeHash = (string_: string): Type => ({
 
 /**
  * トークン. データへのアクセスをするために必要になるもの. トークンの種類の名前を指定する
- * @param string_
+
  */
-export const typeToken = (string_: string): Type => ({
-  _: Type_.Token,
-  string_: string_
-});
+export const typeAccessToken = (): Type => ({ _: Type_.AccessToken });
 
 /**
  * 用意されていないアプリ特有の型
@@ -110,9 +107,6 @@ export const encodeType = (type_: Type): ReadonlyArray<number> => {
     return b.concat(encodeString(type_.string_));
   }
   if (type_._ === Type_.Hash) {
-    return b.concat(encodeString(type_.string_));
-  }
-  if (type_._ === Type_.Token) {
     return b.concat(encodeString(type_.string_));
   }
   if (type_._ === Type_.Custom) {
@@ -149,7 +143,7 @@ export const encodeUInt32 = (num: number): ReadonlyArray<number> => {
 };
 
 /**
- * stringからバイナリに変換するコード. このコードはNode.js用なのでutilのTextDecoderを使う
+ * stringからバイナリに変換する. このコードはNode.js用なのでutilのTextDecoderを使う
  * @param text
  */
 export const encodeString = (text: string): ReadonlyArray<number> =>

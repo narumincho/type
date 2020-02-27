@@ -192,7 +192,7 @@ export const stringCode = (isBrowser: boolean): generator.ExportFunction => ({
       ["length"],
       returnType(typeExpr.typeNumber),
       decodeVarEval(
-        type.typeUInt32,
+        type.typeUInt32(),
         expr.localVariable(["index"]),
         expr.localVariable(["binary"])
       )

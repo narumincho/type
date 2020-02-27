@@ -124,7 +124,7 @@ const uInt32Code: generator.ExportFunction = {
  */
 const stringCode = (isBrowser: boolean): generator.ExportFunction => ({
   document:
-    "stringからバイナリに変換するコード. このコードは" +
+    "stringからバイナリに変換する. このコードは" +
     (isBrowser
       ? "ブラウザ用なのでグローバルのTextDecoderを使う"
       : "Node.js用なのでutilのTextDecoderを使う"),
@@ -149,6 +149,30 @@ const stringCode = (isBrowser: boolean): generator.ExportFunction => ({
     )
   ]
 });
+
+/* ========================================
+                  Bool
+   ========================================
+*/
+
+const boolCode: generator.ExportFunction = {
+  document: "boolからバイナリに変換する",
+  parameterList: [
+    { name: "value", typeExpr: typeExpr.typeBoolean, document: "" }
+  ],
+  returnType: readonlyArrayNumber,
+  statementList: [
+    expr.returnStatement(
+      expr.arrayLiteral([
+        expr.conditionalOperator(
+          expr.localVariable(["value"]),
+          expr.numberLiteral(1),
+          expr.numberLiteral(0)
+        )
+      ])
+    )
+  ]
+};
 
 /* ========================================
             HexString (Id / Hash)
@@ -219,7 +243,7 @@ const listCode = (elementType: type.Type): generator.ExportFunction => ({
       null,
       expr.callMethod(expr.localVariable(["result"]), "concat", [
         encodeVarEval(
-          type.typeUInt32,
+          type.typeUInt32(),
           expr.get(expr.localVariable(["list"]), "length")
         )
       ])
@@ -254,11 +278,17 @@ export const typeToEncodeCode = (
     case type.Type_.String:
       return [[name, stringCode(isBrowser)]];
 
+    case type.Type_.Bool:
+      return [[name, boolCode]];
+
     case type.Type_.Id:
-      return [[name, encodeHexString(16)]];
+      return [["encodeId", encodeHexString(16)]];
 
     case type.Type_.Hash:
-      return [[name, encodeHexString(32)]];
+      return [["encodeHash", encodeHexString(32)]];
+
+    case type.Type_.AccessToken:
+      return [["encodeToken", encodeHexString(32)]];
 
     case type.Type_.List:
       return [
@@ -354,7 +384,7 @@ export const customSumCode = (
       expr.localVariable(["result"]),
       null,
       expr.callMethod(expr.localVariable(["result"]), "concat", [
-        encodeVarEval(type.typeUInt32, get("_"))
+        encodeVarEval(type.typeUInt32(), get("_"))
       ])
     )
   ];
