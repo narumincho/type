@@ -13,7 +13,7 @@ export const generateCode = (
   let typeEncoderList: ReadonlyArray<[string, generator.ExportFunction]> = [];
   for (const uniqueNeedEncodeType of needEncodeTypeList) {
     typeEncoderList = typeEncoderList.concat(
-      encodeCode(uniqueNeedEncodeType, isBrowser)
+      typeToEncodeCode(uniqueNeedEncodeType, isBrowser)
     );
   }
 
@@ -196,13 +196,13 @@ const encodeHexString = (byteSize: number): generator.ExportFunction => ({
    ========================================
 */
 
-const listCode = (type_: type.Type): generator.ExportFunction => ({
+const listCode = (elementType: type.Type): generator.ExportFunction => ({
   document: "",
   parameterList: [
     {
       name: "list",
       document: "",
-      typeExpr: typeScript.typeToGeneratorType(type_)
+      typeExpr: typeScript.typeToGeneratorType(elementType)
     }
   ],
   returnType: readonlyArrayNumber,
@@ -227,7 +227,7 @@ const listCode = (type_: type.Type): generator.ExportFunction => ({
         expr.localVariable(["result"]),
         null,
         expr.callMethod(expr.localVariable(["result"]), "concat", [
-          encodeVarEval(type_, expr.localVariable(["element"]))
+          encodeVarEval(elementType, expr.localVariable(["element"]))
         ])
       )
     ]),
@@ -235,7 +235,12 @@ const listCode = (type_: type.Type): generator.ExportFunction => ({
   ]
 });
 
-export const encodeCode = (
+/* ========================================
+                 Type
+   ========================================
+*/
+
+export const typeToEncodeCode = (
   type_: type.Type,
   isBrowser: boolean
 ): ReadonlyArray<[string, generator.ExportFunction]> => {
@@ -256,7 +261,7 @@ export const encodeCode = (
     case type.Type_.List:
       return [
         [name, listCode(type_.type_)] as [string, generator.ExportFunction]
-      ].concat(encodeCode(type_.type_, isBrowser));
+      ].concat(typeToEncodeCode(type_.type_, isBrowser));
 
     case type.Type_.Custom:
       return [];
