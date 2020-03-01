@@ -120,11 +120,44 @@ export const encodeStringList = (
   return result;
 };
 
+export const encodeList = <T>(
+  list: ReadonlyArray<T>,
+  encodeFunction: (input: T) => ReadonlyArray<number>
+): ReadonlyArray<number> => {
+  let result: Array<number> = [];
+  for (const element of list) {
+    result = result.concat(encodeFunction(element));
+  }
+  return result;
+};
+
+type UserId = string & { _userId: never };
+
 type User = {
+  id: UserId;
   name: string;
   age: number;
 };
 
 export const encodeUser = (user: User): ReadonlyArray<number> => {
-  return encodeString(user.name).concat(encodeUInt32(user.age));
+  return encodeId(user.id)
+    .concat(encodeString(user.name))
+    .concat(encodeUInt32(user.age));
+};
+
+export const decodeUser = (
+  index: number,
+  binary: Uint8Array
+): { result: User; nextIndex: number } => {
+  const idAndIndex = decodeId(index, binary);
+  const nameAndIndex = decodeString(idAndIndex.nextIndex, binary);
+  const ageAndIndex = decodeUInt32(nameAndIndex.nextIndex, binary);
+  return {
+    result: {
+      id: idAndIndex.result as UserId,
+      name: nameAndIndex.result,
+      age: ageAndIndex.result
+    },
+    nextIndex: ageAndIndex.nextIndex
+  };
 };
