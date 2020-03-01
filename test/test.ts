@@ -144,9 +144,7 @@ describe("test", () => {
     t.generateTypeScriptCode(data, false)
   );
   const elmCodeAsString: string = t.elm.generateCode("Data", data);
-  fs.writeFile("out.ts", typeDefinitionTypeScriptCode, () => {
-    console.log("out put code at ./out.ts");
-  });
+  fs.writeFile("out.tsx", typeDefinitionTypeScriptCode, () => {});
   it("type definition typeScript", () => {
     console.log(typeDefinitionTypeScriptCode);
     expect(typeof typeDefinitionTypeScriptCode === "string").toBe(true);

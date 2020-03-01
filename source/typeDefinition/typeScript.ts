@@ -245,9 +245,6 @@ const tagFunctionStatement = (
   tagNameAndParameter: type.TagNameAndParameter,
   customTypeDictionary: ReadonlyMap<string, type.CustomType>
 ): ReadonlyArray<generator.expr.Statement> => {
-  console.log("customTypeName", customTypeName);
-  console.log("tagNameAndParameter.name", tagNameAndParameter.name);
-
   const tagField: [string, generator.expr.Expr] = [
     "_",
     typeScript.exprEnum(

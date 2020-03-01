@@ -28,11 +28,7 @@ export const generateTypeScriptCode = (
     isBrowser
   );
   return {
-    exportFunctionMap: new Map([
-      ...typeDefinitionCode.exportFunctionMap,
-      ...encoderCode,
-      ...decoderCode
-    ]),
+    exportFunctionMap: new Map([...typeDefinitionCode.exportFunctionMap]),
     exportConstEnumMap: typeDefinitionCode.exportConstEnumMap,
     exportTypeAliasMap: typeDefinitionCode.exportTypeAliasMap,
     statementList: []

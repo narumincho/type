@@ -111,12 +111,16 @@ const typeToElmType = (type_: type.Type): string => {
       return "Int";
     case type.Type_.String:
       return "String";
+    case type.Type_.Bool:
+      return "Bool";
     case type.Type_.Id:
       return customTypeToIdTypeName(type_.string_);
     case type.Type_.Hash:
       return customTypeToHashTypeName(type_.string_);
     case type.Type_.List:
       return "(List " + typeToElmType(type_.type_) + ")";
+    case type.Type_.AccessToken:
+      return "AccessToken";
     case type.Type_.Custom: {
       return customTypeToTypeName(type_.string_);
     }
