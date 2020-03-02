@@ -11,6 +11,7 @@ export const generateCode = (
     data.definitionFunction(uInt32Code),
     data.definitionFunction(stringCode(isBrowser)),
     data.definitionFunction(boolCode),
+    data.definitionFunction(dateTimeCode),
     data.definitionFunction(listCode()),
     data.definitionFunction(hexStringCode(16, idName)),
     data.definitionFunction(hexStringCode(32, hashOrAccessTokenName))
@@ -87,6 +88,12 @@ export const returnType = (resultType: data.Type): data.Type =>
       ["nextIndex", { type_: data.typeNumber, document: "" }]
     ])
   );
+
+const getResult = (resultAndNextIndexExpr: data.Expr): data.Expr =>
+  data.get(resultAndNextIndexExpr, "result");
+
+const getNextIndex = (resultAndNextIndexExpr: data.Expr): data.Expr =>
+  data.get(resultAndNextIndexExpr, "nextIndex");
 
 /* ========================================
                   UInt32
@@ -219,23 +226,18 @@ export const stringCode = (isBrowser: boolean): data.Function => ({
           data.callMethod(parameterBinary, "slice", [
             data.addition(
               parameterIndex,
-              data.get(
-                data.variable(generator.identifer.fromString("length")),
-                "nextIndex"
+              getNextIndex(
+                data.variable(generator.identifer.fromString("length"))
               )
             ),
             data.addition(
               data.addition(
                 parameterIndex,
-                data.get(
-                  data.variable(generator.identifer.fromString("length")),
-                  "nextIndex"
+                getNextIndex(
+                  data.variable(generator.identifer.fromString("length"))
                 )
               ),
-              data.get(
-                data.variable(generator.identifer.fromString("length")),
-                "result"
-              )
+              getResult(data.variable(generator.identifer.fromString("length")))
             )
           ])
         ]
@@ -243,15 +245,9 @@ export const stringCode = (isBrowser: boolean): data.Function => ({
       data.addition(
         data.addition(
           parameterIndex,
-          data.get(
-            data.variable(generator.identifer.fromString("length")),
-            "nextIndex"
-          )
+          getNextIndex(data.variable(generator.identifer.fromString("length")))
         ),
-        data.get(
-          data.variable(generator.identifer.fromString("length")),
-          "result"
-        )
+        getResult(data.variable(generator.identifer.fromString("length")))
       )
     )
   ]
@@ -275,6 +271,35 @@ const boolCode: data.Function = {
         data.numberLiteral(0)
       ),
       data.addition(parameterIndex, data.numberLiteral(1))
+    )
+  ]
+};
+/* ========================================
+                DateTime
+   ========================================
+*/
+const dateTimeName = generator.identifer.fromString("decodeDateTime");
+
+const dateTimeCode: data.Function = {
+  name: dateTimeName,
+  document: "",
+  parameterList,
+  returnType: returnType(data.dateType),
+  typeParameterList: [],
+  statementList: [
+    data.statementVariableDefinition(
+      generator.identifer.fromString("result"),
+      returnType(data.typeNumber),
+      decodeVarEval(type.typeUInt32, parameterIndex, parameterBinary)
+    ),
+    returnStatement(
+      data.newExpr(data.globalObjects(generator.identifer.fromString("Date")), [
+        data.multiplication(
+          getResult(data.variable(generator.identifer.fromString("result"))),
+          data.numberLiteral(1000)
+        )
+      ]),
+      getNextIndex(data.variable(generator.identifer.fromString("result")))
     )
   ]
 };
