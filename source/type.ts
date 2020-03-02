@@ -7,6 +7,7 @@ export type Type =
   | { _: "UInt32" }
   | { _: "String" }
   | { _: "Bool" }
+  | { _: "DateTime" }
   | { _: "List"; type_: Type }
   | { _: "Maybe"; type_: Type }
   | { _: "Result"; result: Result }
@@ -33,6 +34,11 @@ export const typeString: Type = { _: "String" };
 
  */
 export const typeBool: Type = { _: "Bool" };
+
+/**
+ * 日時
+ */
+export const typeDateTime: Type = { _: "DateTime" };
 
 /**
  * リスト
