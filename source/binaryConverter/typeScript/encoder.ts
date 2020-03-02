@@ -604,27 +604,19 @@ export const customCode = (customType: type.CustomType): data.Function => {
   const parameterName = typeScript.typeToMemberOrParameterName(
     type.typeCustom(customType.name)
   );
+  const parameterVar = data.variable(parameterName);
 
-  const returnExpr = ((): ReadonlyArray<data.Statement> => {
+  const statementList = ((): ReadonlyArray<data.Statement> => {
     switch (customType.body._) {
       case "Product":
         return customProductCode(
           customType.body.memberNameAndTypeArray,
-          (memberName: string) =>
-            data.get(
-              data.variable(generator.identifer.fromString(parameterName)),
-              memberName
-            )
+          parameterVar
         );
       case "Sum":
         return customSumCode(
-          customType.name,
           customType.body.tagNameAndParameterArray,
-          (memberName: string) =>
-            data.get(
-              data.variable(generator.identifer.fromString(parameterName)),
-              memberName
-            )
+          parameterVar
         );
     }
   })();
@@ -641,81 +633,92 @@ export const customCode = (customType: type.CustomType): data.Function => {
     ],
     typeParameterList: [],
     returnType: readonlyArrayNumber,
-    statementList: returnExpr
+    statementList
   };
 };
 
 export const customProductCode = (
   memberNameAndTypeArray: ReadonlyArray<type.MemberNameAndType>,
-  get: (memberName: string) => data.Expr
+  parameter: data.Expr
 ): ReadonlyArray<data.Statement> => {
   let e = encodeVarEval(
     memberNameAndTypeArray[0].memberType,
-    get(memberNameAndTypeArray[0].name)
+    data.get(parameter, memberNameAndTypeArray[0].name)
   );
   for (const memberNameAndType of memberNameAndTypeArray.slice(1)) {
     e = data.callMethod(e, "concat", [
-      encodeVarEval(memberNameAndType.memberType, get(memberNameAndType.name))
+      encodeVarEval(
+        memberNameAndType.memberType,
+        data.get(parameter, memberNameAndType.name)
+      )
     ]);
   }
   return [data.statementReturn(e)];
 };
 
 export const customSumCode = (
-  customTypeName: string,
   tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
-  get: (memberName: string) => data.Expr
+  parameter: data.Expr
 ): ReadonlyArray<data.Statement> => {
-  const statementList: Array<data.Statement> = [
-    data.statementLetVariableDefinition(
-      generator.identifer.fromString("result"),
-      data.arrayType(data.typeNumber),
-      data.arrayLiteral([])
-    ),
-    data.statementSet(
-      data.variable(generator.identifer.fromString("result")),
-      null,
-      data.callMethod(
-        data.variable(generator.identifer.fromString("result")),
-        "concat",
-        [encodeVarEval(type.typeUInt32, get("_"))]
+  if (typeScript.isProductTypeAllNoParameter(tagNameAndParameterArray)) {
+    return [
+      data.statementSwitch({
+        expr: parameter,
+        patternList: tagNameAndParameterArray.map(
+          (tagNameAndParameter, index) =>
+            tagNameAndParameterToSwitchPattern(
+              tagNameAndParameter,
+              index,
+              parameter
+            )
+        )
+      })
+    ];
+  }
+  return [
+    data.statementSwitch({
+      expr: data.get(parameter, "_"),
+      patternList: tagNameAndParameterArray.map((tagNameAndParameter, index) =>
+        tagNameAndParameterToSwitchPattern(
+          tagNameAndParameter,
+          index,
+          parameter
+        )
       )
-    )
+    })
   ];
-  for (const tagNameAndParameter of tagNameAndParameterArray) {
+};
+
+const tagNameAndParameterToSwitchPattern = (
+  tagNameAndParameter: type.TagNameAndParameter,
+  index: number,
+  parameter: data.Expr
+): data.Pattern => {
+  const returnExpr = ((): data.Expr => {
     switch (tagNameAndParameter.parameter._) {
       case "Just":
-        statementList.push(
-          data.statementIf(
-            data.equal(get("_"), data.stringLiteral(tagNameAndParameter.name)),
-            [
-              data.statementReturn(
-                data.callMethod(
-                  data.variable(generator.identifer.fromString("result")),
-                  "concat",
-                  [
-                    encodeVarEval(
-                      tagNameAndParameter.parameter.value,
-                      get(
-                        typeScript.typeToMemberOrParameterName(
-                          tagNameAndParameter.parameter.value
-                        )
-                      )
-                    )
-                  ]
+        return data.callMethod(
+          data.arrayLiteral([data.numberLiteral(index)]),
+          "concat",
+          [
+            encodeVarEval(
+              tagNameAndParameter.parameter.value,
+              data.get(
+                parameter,
+                typeScript.typeToMemberOrParameterName(
+                  tagNameAndParameter.parameter.value
                 )
               )
-            ]
-          )
+            )
+          ]
         );
+
+      case "Nothing":
+        return data.arrayLiteral([data.numberLiteral(index)]);
     }
-  }
-  return statementList.concat([
-    data.statementThrowError(
-      data.addition(
-        data.stringLiteral(customTypeName + " type tag index error. index = "),
-        data.callMethod(get("_"), "toString", [])
-      )
-    )
-  ]);
+  })();
+  return {
+    caseTag: tagNameAndParameter.name,
+    statementList: [data.statementReturn(returnExpr)]
+  };
 };

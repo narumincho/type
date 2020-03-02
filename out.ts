@@ -229,27 +229,41 @@ export const encodeHashOrAccessToken = (id: string): ReadonlyArray<number> => {
  *
  */
 export const encodeCustomType = (type_: Type): ReadonlyArray<number> => {
-  let result: Array<number> = [];
-  result = result.concat(encodeUInt32(type_._));
-  if (type_._ === "List") {
-    return result.concat(encodeCustomType(type_.type_));
+  switch (type_._) {
+    case "UInt32": {
+      return [0];
+    }
+    case "String": {
+      return [1];
+    }
+    case "Bool": {
+      return [2];
+    }
+    case "DateTime": {
+      return [3];
+    }
+    case "List": {
+      return [4].concat(encodeCustomType(type_.type_));
+    }
+    case "Maybe": {
+      return [5].concat(encodeCustomType(type_.type_));
+    }
+    case "Result": {
+      return [6].concat(encodeCustomResultType(type_.resultType));
+    }
+    case "Id": {
+      return [7].concat(encodeString(type_.string_));
+    }
+    case "Hash": {
+      return [8].concat(encodeString(type_.string_));
+    }
+    case "AccessToken": {
+      return [9];
+    }
+    case "Custom": {
+      return [10].concat(encodeString(type_.string_));
+    }
   }
-  if (type_._ === "Maybe") {
-    return result.concat(encodeCustomType(type_.type_));
-  }
-  if (type_._ === "Result") {
-    return result.concat(encodeCustomResultType(type_.resultType));
-  }
-  if (type_._ === "Id") {
-    return result.concat(encodeString(type_.string_));
-  }
-  if (type_._ === "Hash") {
-    return result.concat(encodeString(type_.string_));
-  }
-  if (type_._ === "Custom") {
-    return result.concat(encodeString(type_.string_));
-  }
-  throw new Error("Type type tag index error. index = " + type_._.toString());
 };
 
 /**
