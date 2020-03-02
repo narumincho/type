@@ -17,9 +17,9 @@ export type Type =
   | { _: "Custom"; string_: string };
 
 export type Result = { ok: Type; error: Type };
+
 /**
  * 0～4294967295 32bit符号なし整数
-
  */
 export const typeUInt32: Type = { _: "UInt32" };
 
