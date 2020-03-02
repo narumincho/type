@@ -1,12 +1,12 @@
 import * as generator from "js-ts-code-generator";
-import { expr, typeExpr } from "js-ts-code-generator";
+import { data as d } from "js-ts-code-generator";
 import * as type from "../../type";
 import * as typeScript from "../../typeScript";
 
 export const generateCode = (
   customTypeDictionary: ReadonlyMap<string, type.CustomType>,
   isBrowser: boolean
-): ReadonlyMap<string, generator.ExportFunction> => {
+): ReadonlyArray<d.Definition> => {
   const needDecodeTypeList = type.customTypeDictionaryCollectType(
     customTypeDictionary
   );

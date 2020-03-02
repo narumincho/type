@@ -15,22 +15,19 @@ export {
 export const generateTypeScriptCode = (
   customTypeDictionary: ReadonlyMap<string, type.CustomType>,
   isBrowser: boolean
-): generator.Code => {
-  const typeDefinitionCode = typeDefinitionTypeScript.generateCode(
-    customTypeDictionary
-  );
-  const encoderCode = binaryConverterTypeScriptEncoder.generateCode(
-    customTypeDictionary,
-    isBrowser
-  );
-  const decoderCode = binaryConverterTypeScriptDecoder.generateCode(
-    customTypeDictionary,
-    isBrowser
-  );
+): generator.data.Code => {
   return {
-    exportFunctionMap: new Map([...typeDefinitionCode.exportFunctionMap]),
-    exportConstEnumMap: typeDefinitionCode.exportConstEnumMap,
-    exportTypeAliasMap: typeDefinitionCode.exportTypeAliasMap,
+    exportDefinitionList: [
+      ...typeDefinitionTypeScript.generateCode(customTypeDictionary),
+      ...binaryConverterTypeScriptEncoder.generateCode(
+        customTypeDictionary,
+        isBrowser
+      ),
+      ...binaryConverterTypeScriptDecoder.generateCode(
+        customTypeDictionary,
+        isBrowser
+      )
+    ],
     statementList: []
   };
 };

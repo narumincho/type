@@ -140,11 +140,12 @@ describe("test", () => {
     exprType,
     unaryOperatorType
   ]);
-  const typeDefinitionTypeScriptCode = generator.toNodeJsOrBrowserCodeAsTypeScript(
-    t.generateTypeScriptCode(data, false)
+  const typeDefinitionTypeScriptCode = generator.generateCodeAsString(
+    t.generateTypeScriptCode(data, false),
+    "TypeScript"
   );
   const elmCodeAsString: string = t.elm.generateCode("Data", data);
-  fs.writeFile("out.tsx", typeDefinitionTypeScriptCode, () => {});
+  fs.promises.writeFile("out.tsx", typeDefinitionTypeScriptCode);
   it("type definition typeScript", () => {
     console.log(typeDefinitionTypeScriptCode);
     expect(typeof typeDefinitionTypeScriptCode === "string").toBe(true);

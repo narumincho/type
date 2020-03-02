@@ -6,7 +6,7 @@ import * as typeScript from "../../typeScript";
 export const generateCode = (
   customTypeDictionary: ReadonlyMap<string, type.CustomType>,
   isBrowser: boolean
-): ReadonlyMap<string, generator.ExportFunction> => {
+): ReadonlyMap<generator.data.Definition> => {
   const needEncodeTypeList = type.customTypeDictionaryCollectType(
     customTypeDictionary
   );
