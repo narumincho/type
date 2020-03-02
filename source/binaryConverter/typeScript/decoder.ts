@@ -7,12 +7,18 @@ export const generateCode = (
   customTypeList: ReadonlyArray<type.CustomType>,
   isBrowser: boolean
 ): ReadonlyArray<data.Definition> => {
-  return [];
+  return [
+    data.definitionFunction(uInt32Code),
+    data.definitionFunction(stringCode(isBrowser)),
+    data.definitionFunction(boolCode),
+    data.definitionFunction(hexStringCode(16, idName)),
+    data.definitionFunction(hexStringCode(32, hashOrAccessTokenName))
+  ];
 };
-
-const decodeName = (type_: type.Type): generator.identifer.Identifer => {
-  return generator.identifer.fromString("decode" + type.toTypeName(type_));
-};
+const idName = generator.identifer.fromString("decodeId");
+const hashOrAccessTokenName = generator.identifer.fromString(
+  "decodeHashOrAccessToken"
+);
 
 export const decodeVarEval = (
   type_: type.Type,
@@ -73,36 +79,16 @@ export const returnType = (resultType: data.Type): data.Type =>
   );
 
 /* ========================================
-                  Type
-   ========================================
-*/
-
-const typeToDecodeCode = (
-  type_: type.Type,
-  isBrowser: boolean
-): ReadonlyArray<[string, data.Function]> => {
-  const name = decodeName(type_);
-  switch (type_._) {
-    case "UInt32":
-      return [[name, uInt32Code]];
-    case "String":
-      return [[name, stringCode(isBrowser)]];
-    case "Id":
-      return [];
-  }
-  return [];
-};
-
-/* ========================================
                   UInt32
    ========================================
 */
 
+const uInt32Name = generator.identifer.fromString("decodeUInt32");
 /**
  * UnsignedLeb128で表現されたバイナリをnumberの32bit符号なし整数の範囲の数値にに変換するコード
  */
-export const uInt32Code: data.Function = {
-  name: decodeName(type.typeUInt32),
+const uInt32Code: data.Function = {
+  name: uInt32Name,
   document:
     "UnsignedLeb128で表現されたバイナリをnumberの32bit符号なし整数の範囲の数値にに変換するコード",
   parameterList,
@@ -185,12 +171,14 @@ export const uInt32Code: data.Function = {
                   String
    ========================================
 */
+const stringName = generator.identifer.fromString("decodeString");
+
 /**
  * バイナリからstringに変換するコード
  * ブラウザではグローバルのTextDecoderを使い、node.jsではutilのTextDecoderを使う
  */
 export const stringCode = (isBrowser: boolean): data.Function => ({
-  name: decodeName(type.typeString),
+  name: stringName,
   document:
     "バイナリからstringに変換する." +
     (isBrowser
@@ -258,12 +246,33 @@ export const stringCode = (isBrowser: boolean): data.Function => ({
     )
   ]
 });
+/* ========================================
+                  Bool
+   ========================================
+*/
+const boolName = generator.identifer.fromString("decodeBool");
+
+const boolCode: data.Function = {
+  name: boolName,
+  document: "",
+  parameterList,
+  returnType: returnType(data.typeBoolean),
+  typeParameterList: [],
+  statementList: [
+    returnStatement(
+      data.notEqual(
+        data.getByExpr(parameterBinary, parameterIndex),
+        data.numberLiteral(0)
+      ),
+      data.addition(parameterIndex, data.numberLiteral(1))
+    )
+  ]
+};
 
 /* ========================================
             HexString (Id / Hash)
    ========================================
 */
-
 const hexStringCode = (
   byteSize: number,
   functionName: generator.identifer.Identifer
