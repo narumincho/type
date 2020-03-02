@@ -7,7 +7,24 @@ export const generateCode = (
   customTypeList: ReadonlyArray<type.CustomType>,
   isBrowser: boolean
 ): ReadonlyArray<data.Definition> => {
-  return [];
+  return [
+    data.definitionFunction(uInt32Code),
+    data.definitionFunction(stringCode(isBrowser)),
+    data.definitionFunction(boolCode),
+    data.definitionFunction(listCode),
+    data.definitionFunction(
+      encodeHexString(16, generator.identifer.fromString("encodeId"))
+    ),
+    data.definitionFunction(
+      encodeHexString(
+        32,
+        generator.identifer.fromString("encodeHashOrAccessToken")
+      )
+    ),
+    ...customTypeList.map(customType =>
+      data.definitionFunction(customCode(customType))
+    )
+  ];
 };
 
 /**
@@ -320,12 +337,9 @@ const listCode: data.Function = ((): data.Function => {
    ========================================
 */
 
-export const customCode = (
-  customTypeName: string,
-  customType: type.CustomType
-): data.Function => {
+export const customCode = (customType: type.CustomType): data.Function => {
   const parameterName = typeScript.typeToMemberOrParameterName(
-    type.typeCustom(customTypeName)
+    type.typeCustom(customType.name)
   );
 
   const returnExpr = ((): ReadonlyArray<data.Statement> => {
@@ -341,7 +355,7 @@ export const customCode = (
         );
       case "Sum":
         return customSumCode(
-          customTypeName,
+          customType.name,
           customType.body.tagNameAndParameterArray,
           (memberName: string) =>
             data.get(
@@ -353,13 +367,13 @@ export const customCode = (
   })();
 
   return {
-    name: encodeName(type.typeCustom(customTypeName)),
+    name: encodeName(type.typeCustom(customType.name)),
     document: "",
     parameterList: [
       {
         name: generator.identifer.fromString(parameterName),
         document: "",
-        type_: typeScript.typeToGeneratorType(type.typeCustom(customTypeName))
+        type_: typeScript.typeToGeneratorType(type.typeCustom(customType.name))
       }
     ],
     typeParameterList: [],
