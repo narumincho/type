@@ -4,26 +4,10 @@ import * as type from "../../type";
 import * as typeScript from "../../typeScript";
 
 export const generateCode = (
-  customTypeDictionary: ReadonlyMap<string, type.CustomType>,
+  customTypeList: ReadonlyArray<type.CustomType>,
   isBrowser: boolean
-): ReadonlyArray<data.Function> => {
-  const needEncodeTypeList = type.customTypeDictionaryCollectType(
-    customTypeDictionary
-  );
-  let typeEncoderList: ReadonlyArray<data.Function> = [];
-  for (const uniqueNeedEncodeType of needEncodeTypeList) {
-    typeEncoderList = typeEncoderList.concat(
-      typeToEncodeCode(uniqueNeedEncodeType, isBrowser)
-    );
-  }
-
-  return new Map(
-    [...customTypeDictionary]
-      .map(([name, customType]) =>
-        customCode(name, customType, customTypeDictionary)
-      )
-      .concat(typeEncoderList)
-  );
+): ReadonlyArray<data.Definition> => {
+  return [];
 };
 
 /**
@@ -338,8 +322,7 @@ const listCode: data.Function = ((): data.Function => {
 
 export const customCode = (
   customTypeName: string,
-  customType: type.CustomType,
-  customTypeDictionary: ReadonlyMap<string, type.CustomType>
+  customType: type.CustomType
 ): data.Function => {
   const parameterName = typeScript.typeToMemberOrParameterName(
     type.typeCustom(customTypeName)
@@ -364,8 +347,7 @@ export const customCode = (
             data.get(
               data.variable(generator.identifer.fromString(parameterName)),
               memberName
-            ),
-          customTypeDictionary
+            )
         );
     }
   })();
@@ -375,11 +357,9 @@ export const customCode = (
     document: "",
     parameterList: [
       {
-        name: parameterName,
+        name: generator.identifer.fromString(parameterName),
         document: "",
-        typeExpr: typeScript.typeToGeneratorType(
-          type.typeCustom(customTypeName)
-        )
+        type_: typeScript.typeToGeneratorType(type.typeCustom(customTypeName))
       }
     ],
     typeParameterList: [],
@@ -407,8 +387,7 @@ export const customProductCode = (
 export const customSumCode = (
   customTypeName: string,
   tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
-  get: (memberName: string) => data.Expr,
-  customTypeDictionary: ReadonlyMap<string, type.CustomType>
+  get: (memberName: string) => data.Expr
 ): ReadonlyArray<data.Statement> => {
   const statementList: Array<data.Statement> = [
     data.statementLetVariableDefinition(
@@ -431,14 +410,7 @@ export const customSumCode = (
       case "Just":
         statementList.push(
           data.statementIf(
-            data.equal(
-              get("_"),
-              typeScript.exprEnum(
-                customTypeName,
-                tagNameAndParameter.name,
-                customTypeDictionary
-              )
-            ),
+            data.equal(get("_"), data.stringLiteral(tagNameAndParameter.name)),
             [
               data.statementReturn(
                 data.callMethod(
@@ -446,10 +418,10 @@ export const customSumCode = (
                   "concat",
                   [
                     encodeVarEval(
-                      tagNameAndParameter.parameter.t,
+                      tagNameAndParameter.parameter.value,
                       get(
                         typeScript.typeToMemberOrParameterName(
-                          tagNameAndParameter.parameter.t
+                          tagNameAndParameter.parameter.value
                         )
                       )
                     )

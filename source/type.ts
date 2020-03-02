@@ -94,6 +94,7 @@ export const typeCustom = (string_: string): Type => ({
 });
 
 export type CustomType = {
+  name: string;
   description: string;
   body: CustomTypeBody;
 };
@@ -123,7 +124,7 @@ export type MemberNameAndType = {
 export type Maybe<T> =
   | {
       _: "Just";
-      t: T;
+      value: T;
     }
   | {
       _: "Nothing";
@@ -145,7 +146,7 @@ export const customTypeBodyProduct = (
 
 export const maybeJust = <T>(t: T): Maybe<T> => ({
   _: "Just",
-  t
+  value: t
 });
 
 export const maybeNothing = <T>(): Maybe<T> => ({
@@ -166,6 +167,8 @@ export const toTypeName = (type_: Type): string => {
       return "String";
     case "Bool":
       return "Bool";
+    case "DateTime":
+      return "DateTime";
     case "List":
       return toTypeName(type_.type_) + "List";
     case "Maybe":

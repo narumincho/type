@@ -4,24 +4,10 @@ import * as type from "../../type";
 import * as typeScript from "../../typeScript";
 
 export const generateCode = (
-  customTypeDictionary: ReadonlyMap<string, type.CustomType>,
+  customTypeList: ReadonlyArray<type.CustomType>,
   isBrowser: boolean
 ): ReadonlyArray<data.Definition> => {
-  const needDecodeTypeList = type.customTypeDictionaryCollectType(
-    customTypeDictionary
-  );
-  let typeDecoderList: ReadonlyArray<[string, data.Function]> = [];
-  for (const uniqueNeedEncodeType of needDecodeTypeList) {
-    typeDecoderList = typeDecoderList.concat(
-      typeToDecodeCode(uniqueNeedEncodeType, isBrowser)
-    );
-  }
-
-  return new Map(
-    [...customTypeDictionary]
-      .map(([name, customType]) => customCode(name, customType))
-      .concat(typeDecoderList)
-  );
+  return [];
 };
 
 const decodeName = (type_: type.Type): generator.identifer.Identifer => {

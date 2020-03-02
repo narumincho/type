@@ -3,33 +3,31 @@ import * as c from "./case";
 
 export const generateCode = (
   moduleName: string,
-  customTypeDictionary: ReadonlyMap<string, type.CustomType>
+  customTypeList: ReadonlyArray<type.CustomType>
 ): string => {
   return (
-    moduleExportList(moduleName, customTypeDictionary) +
+    moduleExportList(moduleName, customTypeList) +
     "\n" +
     importList +
     "\n" +
-    [...customTypeDictionary.entries()]
-      .map(([name, customType]) => customTypeToCode(name, customType))
-      .join("\n\n")
+    customTypeList.map(customType => customTypeToCode(customType)).join("\n\n")
   );
 };
 
 const moduleExportList = (
   name: string,
-  customTypeDictionary: ReadonlyMap<string, type.CustomType>
+  customTypeDictionary: ReadonlyArray<type.CustomType>
 ): string => {
   return (
     "module " +
     name +
     " exposing (" +
-    [...customTypeDictionary.entries()]
-      .map(([name, customType]) => {
+    customTypeDictionary
+      .map(customType => {
         switch (customType.body._) {
-          case type.CustomType_.Sum:
+          case "Sum":
             return name;
-          case type.CustomType_.Product:
+          case "Product":
             return name + "(..)";
         }
       })
@@ -43,19 +41,18 @@ import Set
 import Map
 `;
 
-const customTypeToCode = (
-  name: string,
-  customType: type.CustomType
-): string => {
+const customTypeToCode = (customType: type.CustomType): string => {
   const comment = "{-| " + customType.description + " -}\n";
   switch (customType.body._) {
-    case type.CustomType_.Sum:
+    case "Sum":
       return (
-        comment + createType(name, customType.body.tagNameAndParameterArray)
+        comment +
+        createType(customType.name, customType.body.tagNameAndParameterArray)
       );
-    case type.CustomType_.Product:
+    case "Product":
       return (
-        comment + createTypeAlias(name, customType.body.memberNameAndTypeArray)
+        comment +
+        createTypeAlias(customType.name, customType.body.memberNameAndTypeArray)
       );
   }
 };
@@ -70,13 +67,13 @@ const createType = (
   tagNameAndParameterArray
     .map(tagNameAndParameter => {
       switch (tagNameAndParameter.parameter._) {
-        case type.TagParameter_.Just:
+        case "Just":
           return (
             tagNameAndParameter.name +
             " " +
-            typeToElmType(tagNameAndParameter.parameter.type_)
+            typeToElmType(tagNameAndParameter.parameter.value)
           );
-        case type.TagParameter_.Nothing:
+        case "Nothing":
           return tagNameAndParameter.name;
       }
     })
@@ -107,23 +104,34 @@ const createTypeAlias = (
 
 const typeToElmType = (type_: type.Type): string => {
   switch (type_._) {
-    case type.Type_.UInt32:
+    case "UInt32":
       return "Int";
-    case type.Type_.String:
+    case "String":
       return "String";
-    case type.Type_.Bool:
+    case "Bool":
       return "Bool";
-    case type.Type_.Id:
+    case "DateTime":
+      return "Time.Posix";
+    case "Id":
       return customTypeToIdTypeName(type_.string_);
-    case type.Type_.Hash:
+    case "Hash":
       return customTypeToHashTypeName(type_.string_);
-    case type.Type_.List:
-      return "(List " + typeToElmType(type_.type_) + ")";
-    case type.Type_.AccessToken:
+    case "AccessToken":
       return "AccessToken";
-    case type.Type_.Custom: {
+    case "List":
+      return "(List " + typeToElmType(type_.type_) + ")";
+    case "Maybe":
+      return "(Maybe " + typeToElmType(type_.type_) + ")";
+    case "Result":
+      return (
+        "(Result" +
+        typeToElmType(type_.result.error) +
+        " " +
+        typeToElmType(type_.result.ok) +
+        ")"
+      );
+    case "Custom":
       return customTypeToTypeName(type_.string_);
-    }
   }
 };
 

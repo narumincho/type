@@ -5,34 +5,82 @@ import * as c from "../case";
 import * as typeScript from "../typeScript";
 
 export const generateCode = (
-  customTypeDictionary: ReadonlyMap<string, type.CustomType>
+  customTypeList: ReadonlyArray<type.CustomType>
 ): ReadonlyArray<data.Definition> => {
-  const exportTypeAliasMap = new Map<string, data.ExportTypeAlias>();
-  for (const customType of customTypeDictionary.entries()) {
-    const definition = toTypeAliasAndEnum(customType);
-    if (definition.typeAlias !== null) {
-      exportTypeAliasMap.set(definition.typeAlias[0], definition.typeAlias[1]);
-    }
-    if (definition.enum !== null) {
-      exportConstEnumMap.set(definition.enum[0], definition.enum[1]);
-    }
-  }
-  return {
-    exportConstEnumMap,
-    exportTypeAliasMap,
-    exportFunctionMap: customTypeDictionaryToTagFunctionList(
-      customTypeDictionary
+  return [
+    data.definitionTypeAlias(maybeDefinition),
+    data.definitionTypeAlias(resultDefinition),
+    ...customTypeList.map(customType =>
+      data.definitionTypeAlias(customTypeToDefinition(customType))
     )
-  };
+  ];
 };
 
-export const toTypeAliasAndEnum = ([customTypeName, customType]: [
-  string,
-  type.CustomType
-]): {
-  typeAlias: [string, generator.ExportTypeAlias] | null;
-  enum: [string, generator.type.ExportConstEnumTagNameAndValueList] | null;
-} => {
+const maybeDefinition: data.TypeAlias = {
+  name: generator.identifer.fromString("Maybe"),
+  document: "Maybe",
+  parameterList: [generator.identifer.fromString("T")],
+  type_: data.typeUnion([
+    data.typeObject(
+      new Map([
+        ["_", { type_: data.typeStringLiteral("Just"), document: "" }],
+        [
+          "value",
+          {
+            type_: data.typeScopeInFile(generator.identifer.fromString("T")),
+            document: ""
+          }
+        ]
+      ])
+    ),
+    data.typeObject(
+      new Map([
+        ["_", { type_: data.typeStringLiteral("Nothing"), document: "" }]
+      ])
+    )
+  ])
+};
+
+const resultDefinition: data.TypeAlias = {
+  name: generator.identifer.fromString("Result"),
+  document: "Result",
+  parameterList: [
+    generator.identifer.fromString("ok"),
+    generator.identifer.fromString("error")
+  ],
+  type_: data.typeUnion([
+    data.typeObject(
+      new Map([
+        ["_", { type_: data.typeStringLiteral("Ok"), document: "" }],
+        [
+          "ok",
+          {
+            type_: data.typeScopeInFile(generator.identifer.fromString("ok")),
+            document: ""
+          }
+        ]
+      ])
+    ),
+    data.typeObject(
+      new Map([
+        ["_", { type_: data.typeStringLiteral("Error"), document: "" }],
+        [
+          "error",
+          {
+            type_: data.typeScopeInFile(
+              generator.identifer.fromString("error")
+            ),
+            document: ""
+          }
+        ]
+      ])
+    )
+  ])
+};
+
+export const customTypeToDefinition = (
+  customType: type.CustomType
+): data.TypeAlias => {
   switch (customType.body._) {
     case "Sum":
       if (
@@ -41,91 +89,56 @@ export const toTypeAliasAndEnum = ([customTypeName, customType]: [
         )
       ) {
         return {
-          typeAlias: null,
-          enum: [
-            typeScript.customTypeToTypeName(customTypeName),
-            new Map(
-              customType.body.tagNameAndParameterArray.map(
-                (tagNameAndParameter, index) => [
-                  typeScript.tagNameToEnumTag(tagNameAndParameter.name),
-                  index
-                ]
-              )
+          name: generator.identifer.fromString(customType.name),
+          document: customType.description,
+          parameterList: [],
+          type_: data.typeUnion(
+            customType.body.tagNameAndParameterArray.map(tagNameAndParameter =>
+              data.typeStringLiteral(tagNameAndParameter.name)
             )
-          ]
+          )
         };
       }
       return {
-        typeAlias: [
-          typeScript.customTypeToTypeName(customTypeName),
-          {
-            document: customType.description,
-            typeExpr: generator.typeExpr.union(
-              customType.body.tagNameAndParameterArray.map(
-                tagNameAndParameter =>
-                  tagNameAndParameterToObjectType(
-                    typeScript.customTypeNameToEnumName(customTypeName),
-                    tagNameAndParameter
-                  )
-              )
-            )
-          }
-        ],
-        enum: [
-          typeScript.customTypeNameToEnumName(customTypeName),
-          new Map(
-            customType.body.tagNameAndParameterArray.map(
-              (tagNameAndParameter, index) => [
-                typeScript.tagNameToEnumTag(tagNameAndParameter.name),
-                index
-              ]
-            )
+        name: generator.identifer.fromString(customType.name),
+        document: customType.description,
+        parameterList: [],
+        type_: data.typeUnion(
+          customType.body.tagNameAndParameterArray.map(tagNameAndParameter =>
+            tagNameAndParameterToObjectType(tagNameAndParameter)
           )
-        ]
+        )
       };
     case "Product":
       return {
-        typeAlias: [
-          typeScript.customTypeToTypeName(customTypeName),
-          {
-            document: customType.description,
-            typeExpr: generator.typeExpr.object(
-              new Map(
-                customType.body.memberNameAndTypeArray.map(
-                  memberNameAndType => [
-                    memberNameAndType.name,
-                    {
-                      typeExpr: typeScript.typeToGeneratorType(
-                        memberNameAndType.memberType
-                      ),
-                      document: memberNameAndType.description
-                    }
-                  ]
-                )
-              )
-            )
-          }
-        ],
-        enum: null
+        name: generator.identifer.fromString(customType.name),
+        document: customType.description,
+        parameterList: [],
+        type_: data.typeObject(
+          new Map(
+            customType.body.memberNameAndTypeArray.map(memberNameAndType => [
+              memberNameAndType.name,
+              {
+                type_: typeScript.typeToGeneratorType(
+                  memberNameAndType.memberType
+                ),
+                document: memberNameAndType.description
+              }
+            ])
+          )
+        )
       };
   }
 };
 
 const tagNameAndParameterToObjectType = (
-  enumName: string,
   tagNameAndParameter: type.TagNameAndParameter
 ): data.Type => {
-  const tagField: [
-    string,
-    { typeExpr: generator.typeExpr.TypeExpr; document: string }
-  ] = [
+  const tagField: [string, { type_: data.Type; document: string }] = [
     "_",
     {
       document: "",
-      typeExpr: generator.typeExpr.enumTagLiteral(
-        enumName,
-        typeScript.tagNameToEnumTag(tagNameAndParameter.name)
-      )
+      type_: data.typeStringLiteral(tagNameAndParameter.name)
     }
   ];
 
@@ -136,12 +149,12 @@ const tagNameAndParameterToObjectType = (
           tagField,
           [
             typeScript.typeToMemberOrParameterName(
-              tagNameAndParameter.parameter.type_
+              tagNameAndParameter.parameter.value
             ),
             {
               document: "",
-              typeExpr: typeScript.typeToGeneratorType(
-                tagNameAndParameter.parameter.type_
+              type_: typeScript.typeToGeneratorType(
+                tagNameAndParameter.parameter.value
               )
             }
           ]
@@ -152,11 +165,11 @@ const tagNameAndParameterToObjectType = (
   }
 };
 
-const customTypeDictionaryToTagFunctionList = (
-  customTypeDictionary: ReadonlyMap<string, type.CustomType>
-): ReadonlyMap<string, generator.ExportFunction> => {
-  const result = new Map<string, generator.ExportFunction>();
-  for (const [customTypeName, customType] of customTypeDictionary.entries()) {
+const customTypeListToTagFunctionList = (
+  customTypeList: ReadonlyArray<type.CustomType>
+): ReadonlyArray<data.Function> => {
+  const result: Array<data.Function> = [];
+  for (const customType of customTypeList) {
     switch (customType.body._) {
       case "Sum": {
         if (
@@ -167,12 +180,11 @@ const customTypeDictionaryToTagFunctionList = (
           break;
         }
         const functionList = productTypeToTagFunctionList(
-          customTypeName,
-          customType.body.tagNameAndParameterArray,
-          customTypeDictionary
+          customType.name,
+          customType.body.tagNameAndParameterArray
         );
-        for (const [funcName, func] of functionList) {
-          result.set(funcName, func);
+        for (const func of functionList) {
+          result.push(func);
         }
       }
     }
@@ -182,47 +194,43 @@ const customTypeDictionaryToTagFunctionList = (
 
 const productTypeToTagFunctionList = (
   customTypeName: string,
-  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
-  customTypeDictionary: ReadonlyMap<string, type.CustomType>
-): ReadonlyMap<string, generator.ExportFunction> => {
-  const result = new Map<string, generator.ExportFunction>();
+  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
+): ReadonlyArray<data.Function> => {
+  const result: Array<data.Function> = [];
 
   for (const tagNameAndParameter of tagNameAndParameterArray) {
-    result.set(
-      c.firstLowerCase(typeScript.customTypeToTypeName(customTypeName)) +
-        c.firstUpperCase(tagNameAndParameter.name),
-      {
-        document: tagNameAndParameter.description,
-        parameterList: tagFunctionParameter(tagNameAndParameter.parameter),
-        returnType: generator.typeExpr.globalType(
-          typeScript.customTypeToTypeName(customTypeName)
-        ),
-        statementList: tagFunctionStatement(
-          customTypeName,
-          tagNameAndParameter,
-          customTypeDictionary
-        )
-      }
-    );
+    result.push({
+      name: generator.identifer.fromString(
+        c.firstLowerCase(customTypeName) +
+          c.firstUpperCase(tagNameAndParameter.name)
+      ),
+      document: tagNameAndParameter.description,
+      parameterList: tagFunctionParameter(tagNameAndParameter.parameter),
+      typeParameterList: [],
+      returnType: data.typeScopeInFile(
+        generator.identifer.fromString(customTypeName)
+      ),
+      statementList: tagFunctionStatement(tagNameAndParameter)
+    });
   }
 
   return result;
 };
 
 const tagFunctionParameter = (
-  tagParameter: type.TagParameter
+  tagParameter: type.Maybe<type.Type>
 ): ReadonlyArray<{
-  readonly name: string;
+  readonly name: generator.identifer.Identifer;
   readonly document: string;
-  readonly typeExpr: generator.typeExpr.TypeExpr;
+  readonly type_: data.Type;
 }> => {
   switch (tagParameter._) {
     case "Just":
       return [
         {
-          name: typeScript.typeToMemberOrParameterName(tagParameter.type_),
+          name: typeScript.typeToMemberOrParameterName(tagParameter.value),
           document: "",
-          typeExpr: typeScript.typeToGeneratorType(tagParameter.type_)
+          type_: typeScript.typeToGeneratorType(tagParameter.value)
         }
       ];
     case "Nothing":
@@ -231,35 +239,29 @@ const tagFunctionParameter = (
 };
 
 const tagFunctionStatement = (
-  customTypeName: string,
-  tagNameAndParameter: type.TagNameAndParameter,
-  customTypeDictionary: ReadonlyMap<string, type.CustomType>
+  tagNameAndParameter: type.TagNameAndParameter
 ): ReadonlyArray<data.Statement> => {
   const tagField: [string, data.Expr] = [
     "_",
-    typeScript.exprEnum(
-      customTypeName,
-      tagNameAndParameter.name,
-      customTypeDictionary
-    )
+    data.stringLiteral(tagNameAndParameter.name)
   ];
 
   switch (tagNameAndParameter.parameter._) {
     case "Just":
       return [
-        generator.expr.returnStatement(
-          generator.expr.objectLiteral(
+        data.statementReturn(
+          data.objectLiteral(
             new Map([
               tagField,
               [
                 typeScript.typeToMemberOrParameterName(
-                  tagNameAndParameter.parameter.type_
+                  tagNameAndParameter.parameter.value
                 ),
-                generator.expr.localVariable([
+                data.variable(
                   typeScript.typeToMemberOrParameterName(
-                    tagNameAndParameter.parameter.type_
+                    tagNameAndParameter.parameter.value
                   )
-                ])
+                )
               ]
             ])
           )

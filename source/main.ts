@@ -13,18 +13,18 @@ export {
 };
 
 export const generateTypeScriptCode = (
-  customTypeDictionary: ReadonlyMap<string, type.CustomType>,
+  customTypeList: ReadonlyArray<type.CustomType>,
   isBrowser: boolean
 ): generator.data.Code => {
   return {
     exportDefinitionList: [
-      ...typeDefinitionTypeScript.generateCode(customTypeDictionary),
+      ...typeDefinitionTypeScript.generateCode(customTypeList),
       ...binaryConverterTypeScriptEncoder.generateCode(
-        customTypeDictionary,
+        customTypeList,
         isBrowser
       ),
       ...binaryConverterTypeScriptDecoder.generateCode(
-        customTypeDictionary,
+        customTypeList,
         isBrowser
       )
     ],
