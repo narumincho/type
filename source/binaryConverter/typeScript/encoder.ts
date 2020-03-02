@@ -275,7 +275,7 @@ const encodeHexString = (
 
 const listCode: data.Function = ((): data.Function => {
   const elementTypeName = generator.identifer.fromString("T");
-  const parameter = generator.identifer.fromString("list");
+  const parameterList = generator.identifer.fromString("list");
   const resultName = generator.identifer.fromString("result");
   const elementName = generator.identifer.fromString("element");
   const encodeFunctionName = generator.identifer.fromString("encodeFunction");
@@ -285,9 +285,9 @@ const listCode: data.Function = ((): data.Function => {
     document: "",
     parameterList: [
       {
-        name: parameter,
+        name: parameterList,
         document: "",
-        type_: data.typeScopeInFile(elementTypeName)
+        type_: data.readonlyArrayType(data.typeScopeInFile(elementTypeName))
       },
       {
         name: encodeFunctionName,
@@ -303,20 +303,10 @@ const listCode: data.Function = ((): data.Function => {
     statementList: [
       data.statementLetVariableDefinition(
         resultName,
-        data.arrayType(data.typeScopeInFile(elementTypeName)),
+        data.arrayType(data.typeNumber),
         data.arrayLiteral([])
       ),
-      data.statementSet(
-        data.variable(resultName),
-        null,
-        data.callMethod(data.variable(resultName), "concat", [
-          encodeVarEval(
-            type.typeUInt32,
-            data.get(data.variable(parameter), "length")
-          )
-        ])
-      ),
-      data.statementForOf(elementName, data.variable(parameter), [
+      data.statementForOf(elementName, data.variable(parameterList), [
         data.statementSet(
           data.variable(resultName),
           null,

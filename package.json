@@ -4,7 +4,7 @@
   "description": "Generate TypeScript and Elm type definitions, encode and decode code",
   "main": "distribution/main.js",
   "scripts": {
-    "test": "jest --watch --verbose false"
+    "test": "jest --verbose false"
   },
   "repository": {
     "type": "git",
@@ -30,7 +30,7 @@
     "typescript": "^3.8.3"
   },
   "dependencies": {
-    "js-ts-code-generator": "^0.2.1"
+    "js-ts-code-generator": "^0.2.2"
   },
   "jest": {
     "moduleFileExtensions": [

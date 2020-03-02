@@ -94,7 +94,7 @@ describe("test", () => {
     "TypeScript"
   );
   const elmCodeAsString: string = t.elm.generateCode("Data", customTypeList);
-  fs.promises.writeFile("out.tsx", typeDefinitionTypeScriptCode);
+  fs.promises.writeFile("out.ts", typeDefinitionTypeScriptCode);
   fs.promises.writeFile("out.elm", elmCodeAsString);
   it("type definition typeScript", () => {
     console.log(typeDefinitionTypeScriptCode);

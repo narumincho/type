@@ -9,5 +9,5 @@
     "outDir": "distribution",
     "declaration": true
   },
-  "exclude": ["test/**"]
+  "include": ["source/*"]
 }
