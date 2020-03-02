@@ -172,10 +172,30 @@ export const maybe = <T>(
 ): ReadonlyArray<number> => {
   switch (maybe._) {
     case "Just": {
-      return [1].concat(encodeFunction(maybe.value));
+      return [0].concat(encodeFunction(maybe.value));
     }
     case "Nothing": {
-      return [0];
+      return [1];
+    }
+  }
+};
+
+/**
+ *
+ *
+ */
+export const encodeResult = <ok, error>(
+  okEncodeFunction: (a: ok) => ReadonlyArray<number>,
+  errorEncodeFunction: (a: error) => ReadonlyArray<number>
+): ((a: Result<ok, error>) => ReadonlyArray<number>) => (
+  result: Result<ok, error>
+): ReadonlyArray<number> => {
+  switch (result._) {
+    case "Ok": {
+      return [0].concat(okEncodeFunction(result.ok));
+    }
+    case "Error": {
+      return [1].concat(errorEncodeFunction(result.error));
     }
   }
 };

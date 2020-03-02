@@ -14,20 +14,19 @@ export const generateCode = (
     data.definitionFunction(dateTimeCode),
     data.definitionFunction(listCode()),
     data.definitionFunction(maybeCode()),
-    data.definitionFunction(
-      encodeHexString(16, generator.identifer.fromString("encodeId"))
-    ),
-    data.definitionFunction(
-      encodeHexString(
-        32,
-        generator.identifer.fromString("encodeHashOrAccessToken")
-      )
-    ),
+    data.definitionFunction(resultCode()),
+    data.definitionFunction(encodeHexString(16, encodeIdName)),
+    data.definitionFunction(encodeHexString(32, encodeHashOrAccessTokenName)),
     ...customTypeList.map(customType =>
       data.definitionFunction(customCode(customType))
     )
   ];
 };
+
+const encodeIdName = generator.identifer.fromString("encodeId");
+const encodeHashOrAccessTokenName = generator.identifer.fromString(
+  "encodeHashOrAccessToken"
+);
 
 /**
  * `ReadonlyArray<number>`
@@ -54,11 +53,22 @@ const encodeFunctionExpr = (type_: type.Type): data.Expr => {
         encodeFunctionExpr(type_.type_)
       ]);
     case "Maybe":
-      return data.variable(maybeName);
+      return data.call(data.variable(maybeName), [
+        encodeFunctionExpr(type_.type_)
+      ]);
+    case "Result":
+      return data.call(data.variable(resultName), [
+        encodeFunctionExpr(type_.resultType.ok),
+        encodeFunctionExpr(type_.resultType.error)
+      ]);
+    case "Id":
+      return data.variable(encodeIdName);
+    case "Hash":
+    case "AccessToken":
+      return data.variable(encodeHashOrAccessTokenName);
     case "Custom":
       return data.variable(customName(type_.string_));
   }
-  return data.stringLiteral("not supported");
 };
 
 /* ========================================
@@ -458,7 +468,7 @@ const maybeCode = (): data.Function => {
                   statementList: [
                     data.statementReturn(
                       data.callMethod(
-                        data.arrayLiteral([data.numberLiteral(1)]),
+                        data.arrayLiteral([data.numberLiteral(0)]),
                         "concat",
                         [
                           data.call(encodeFunctionVar, [
@@ -473,7 +483,103 @@ const maybeCode = (): data.Function => {
                   caseTag: "Nothing",
                   statementList: [
                     data.statementReturn(
-                      data.arrayLiteral([data.numberLiteral(0)])
+                      data.arrayLiteral([data.numberLiteral(1)])
+                    )
+                  ]
+                }
+              ]
+            })
+          ]
+        )
+      )
+    ]
+  };
+};
+
+/* ========================================
+                Result
+   ========================================
+*/
+const resultName = generator.identifer.fromString("encodeResult");
+
+const resultCode = (): data.Function => {
+  const okName = generator.identifer.fromString("ok");
+  const okTypeVar = data.typeScopeInFile(okName);
+  const errorName = generator.identifer.fromString("error");
+  const errorTypeVar = data.typeScopeInFile(errorName);
+  const parameterResultName = generator.identifer.fromString("result");
+  const parameterResultVar = data.variable(parameterResultName);
+  const resultType = data.typeWithParameter(
+    data.typeScopeInFile(generator.identifer.fromString("Result")),
+    [okTypeVar, errorTypeVar]
+  );
+  const errorEncodeFunctionName = generator.identifer.fromString(
+    "errorEncodeFunction"
+  );
+  const okEncodeFunctionName = generator.identifer.fromString(
+    "okEncodeFunction"
+  );
+
+  return {
+    name: resultName,
+    document: "",
+    parameterList: [
+      {
+        name: okEncodeFunctionName,
+        document: "",
+        type_: data.typeFunction([okTypeVar], readonlyArrayNumber)
+      },
+      {
+        name: errorEncodeFunctionName,
+        document: "",
+        type_: data.typeFunction([errorTypeVar], readonlyArrayNumber)
+      }
+    ],
+    returnType: data.typeFunction([resultType], readonlyArrayNumber),
+    typeParameterList: [okName, errorName],
+    statementList: [
+      data.statementReturn(
+        data.lambda(
+          [
+            {
+              name: parameterResultName,
+              type_: resultType
+            }
+          ],
+          readonlyArrayNumber,
+          [
+            data.statementSwitch({
+              expr: data.get(parameterResultVar, "_"),
+              patternList: [
+                {
+                  caseTag: "Ok",
+                  statementList: [
+                    data.statementReturn(
+                      data.callMethod(
+                        data.arrayLiteral([data.numberLiteral(0)]),
+                        "concat",
+                        [
+                          data.call(data.variable(okEncodeFunctionName), [
+                            data.get(parameterResultVar, "ok")
+                          ])
+                        ]
+                      )
+                    )
+                  ]
+                },
+                {
+                  caseTag: "Error",
+                  statementList: [
+                    data.statementReturn(
+                      data.callMethod(
+                        data.arrayLiteral([data.numberLiteral(1)]),
+                        "concat",
+                        [
+                          data.call(data.variable(errorEncodeFunctionName), [
+                            data.get(parameterResultVar, "error")
+                          ])
+                        ]
+                      )
                     )
                   ]
                 }
