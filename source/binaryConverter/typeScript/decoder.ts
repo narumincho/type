@@ -403,40 +403,47 @@ const listCode = (): data.Function => {
     typeParameterList: [elementTypeName],
     statementList: [
       data.statementReturn(
-        data.lambda(parameterList, data.readonlyArrayType(elementTypeVar), [
-          data.statementVariableDefinition(
-            generator.identifer.fromString("length"),
-            data.typeNumber,
-            data.getByExpr(parameterBinary, parameterIndex)
-          ),
-          data.statementVariableDefinition(
-            resultName,
-            data.arrayType(elementTypeVar),
-            data.arrayLiteral([])
-          ),
-          data.statementFor(
-            generator.identifer.fromString("i"),
-            data.variable(generator.identifer.fromString("length")),
-            [
-              data.statementVariableDefinition(
-                resultAndNextIndexName,
-                returnType(elementTypeVar),
-                data.call(decodeFunctionVar, [parameterIndex, parameterBinary])
-              ),
-              data.statementEvaluateExpr(
-                data.callMethod(resultVar, "push", [
-                  data.get(resultAndNextIndexVar, "result")
-                ])
-              ),
-              data.statementSet(
-                parameterIndex,
-                null,
-                data.get(resultAndNextIndexVar, "nextIndex")
-              )
-            ]
-          ),
-          returnStatement(resultVar, parameterIndex)
-        ])
+        data.lambda(
+          parameterList,
+          returnType(data.readonlyArrayType(elementTypeVar)),
+          [
+            data.statementVariableDefinition(
+              generator.identifer.fromString("length"),
+              data.typeNumber,
+              data.getByExpr(parameterBinary, parameterIndex)
+            ),
+            data.statementVariableDefinition(
+              resultName,
+              data.arrayType(elementTypeVar),
+              data.arrayLiteral([])
+            ),
+            data.statementFor(
+              generator.identifer.fromString("i"),
+              data.variable(generator.identifer.fromString("length")),
+              [
+                data.statementVariableDefinition(
+                  resultAndNextIndexName,
+                  returnType(elementTypeVar),
+                  data.call(decodeFunctionVar, [
+                    parameterIndex,
+                    parameterBinary
+                  ])
+                ),
+                data.statementEvaluateExpr(
+                  data.callMethod(resultVar, "push", [
+                    getResult(resultAndNextIndexVar)
+                  ])
+                ),
+                data.statementSet(
+                  parameterIndex,
+                  null,
+                  getNextIndex(resultAndNextIndexVar)
+                )
+              ]
+            ),
+            returnStatement(resultVar, parameterIndex)
+          ]
+        )
       )
     ]
   };
