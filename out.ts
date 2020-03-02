@@ -165,6 +165,25 @@ export const encodeList = <T>(
  *
  *
  */
+export const maybe = <T>(
+  encodeFunction: (a: T) => ReadonlyArray<number>
+): ((a: Maybe<T>) => ReadonlyArray<number>) => (
+  maybe: Maybe<T>
+): ReadonlyArray<number> => {
+  switch (maybe._) {
+    case "Just": {
+      return [1].concat(encodeFunction(maybe.value));
+    }
+    case "Nothing": {
+      return [0];
+    }
+  }
+};
+
+/**
+ *
+ *
+ */
 export const encodeId = (id: string): ReadonlyArray<number> => {
   const result: Array<number> = [];
   for (let i = 0; i < 16; i += 1) {

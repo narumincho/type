@@ -1,4 +1,5 @@
 import { TextDecoder, TextEncoder } from "util";
+import * as type from "./type";
 
 /*
  * 各データのエンコーダ、デコーダーが書かれている
@@ -120,17 +121,6 @@ export const encodeStringList = (
   return result;
 };
 
-export const encodeList = <T>(
-  list: ReadonlyArray<T>,
-  encodeFunction: (input: T) => ReadonlyArray<number>
-): ReadonlyArray<number> => {
-  let result: Array<number> = [];
-  for (const element of list) {
-    result = result.concat(encodeFunction(element));
-  }
-  return result;
-};
-
 export const encodeListCurry = <T>(
   encodeFunction: (input: T) => ReadonlyArray<number>
 ): ((list: ReadonlyArray<T>) => ReadonlyArray<number>) => (
@@ -141,6 +131,19 @@ export const encodeListCurry = <T>(
     result = result.concat(encodeFunction(element));
   }
   return result;
+};
+
+export const encodeMaybe = <T>(
+  encodeFunction: (input: T) => ReadonlyArray<number>
+): ((maybe: type.Maybe<T>) => ReadonlyArray<number>) => (
+  maybe: type.Maybe<T>
+): ReadonlyArray<number> => {
+  switch (maybe._) {
+    case "Just":
+      return [1].concat(encodeFunction(maybe.value));
+    case "Nothing":
+      return [0];
+  }
 };
 
 type UserId = string & { _userId: never };

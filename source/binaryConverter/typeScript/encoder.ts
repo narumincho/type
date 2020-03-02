@@ -12,7 +12,8 @@ export const generateCode = (
     data.definitionFunction(stringCode(isBrowser)),
     data.definitionFunction(boolCode),
     data.definitionFunction(dateTimeCode),
-    data.definitionFunction(listCode),
+    data.definitionFunction(listCode()),
+    data.definitionFunction(maybeCode()),
     data.definitionFunction(
       encodeHexString(16, generator.identifer.fromString("encodeId"))
     ),
@@ -52,6 +53,8 @@ const encodeFunctionExpr = (type_: type.Type): data.Expr => {
       return data.call(data.variable(listName), [
         encodeFunctionExpr(type_.type_)
       ]);
+    case "Maybe":
+      return data.variable(maybeName);
     case "Custom":
       return data.variable(customName(type_.string_));
   }
@@ -335,7 +338,7 @@ const encodeHexString = (
 
 const listName = generator.identifer.fromString("encodeList");
 
-const listCode: data.Function = ((): data.Function => {
+const listCode = (): data.Function => {
   const elementTypeName = generator.identifer.fromString("T");
   const parameterList = generator.identifer.fromString("list");
   const resultName = generator.identifer.fromString("result");
@@ -395,7 +398,93 @@ const listCode: data.Function = ((): data.Function => {
       )
     ]
   };
-})();
+};
+
+/* ========================================
+                  Maybe
+   ========================================
+*/
+const maybeName = generator.identifer.fromString("encodeMaybe");
+
+const maybeCode = (): data.Function => {
+  const encodeFunctionName = generator.identifer.fromString("encodeFunction");
+  const encodeFunctionVar = data.variable(encodeFunctionName);
+  const elementTypeName = generator.identifer.fromString("T");
+  const maybeName = generator.identifer.fromString("maybe");
+  const maybeVar = data.variable(maybeName);
+
+  return {
+    name: maybeName,
+    document: "",
+    returnType: data.typeFunction(
+      [
+        data.typeWithParameter(
+          data.typeScopeInFile(generator.identifer.fromString("Maybe")),
+          [data.typeScopeInFile(elementTypeName)]
+        )
+      ],
+      readonlyArrayNumber
+    ),
+    parameterList: [
+      {
+        name: encodeFunctionName,
+        document: "",
+        type_: data.typeFunction(
+          [data.typeScopeInFile(elementTypeName)],
+          readonlyArrayNumber
+        )
+      }
+    ],
+    typeParameterList: [elementTypeName],
+    statementList: [
+      data.statementReturn(
+        data.lambda(
+          [
+            {
+              name: maybeName,
+              type_: data.typeWithParameter(
+                data.typeScopeInFile(generator.identifer.fromString("Maybe")),
+                [data.typeScopeInFile(elementTypeName)]
+              )
+            }
+          ],
+          readonlyArrayNumber,
+          [
+            data.statementSwitch({
+              expr: data.get(maybeVar, "_"),
+              patternList: [
+                {
+                  caseTag: "Just",
+                  statementList: [
+                    data.statementReturn(
+                      data.callMethod(
+                        data.arrayLiteral([data.numberLiteral(1)]),
+                        "concat",
+                        [
+                          data.call(encodeFunctionVar, [
+                            data.get(maybeVar, "value")
+                          ])
+                        ]
+                      )
+                    )
+                  ]
+                },
+                {
+                  caseTag: "Nothing",
+                  statementList: [
+                    data.statementReturn(
+                      data.arrayLiteral([data.numberLiteral(0)])
+                    )
+                  ]
+                }
+              ]
+            })
+          ]
+        )
+      )
+    ]
+  };
+};
 
 /* ========================================
                 Custom
