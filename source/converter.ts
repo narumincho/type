@@ -1,4 +1,5 @@
 import { TextDecoder, TextEncoder } from "util";
+import * as type from "./type";
 
 /*
  * 各データのエンコーダ、デコーダーが書かれている
@@ -120,11 +121,72 @@ export const encodeStringList = (
   return result;
 };
 
+export const encodeListCurry = <T>(
+  encodeFunction: (input: T) => ReadonlyArray<number>
+): ((list: ReadonlyArray<T>) => ReadonlyArray<number>) => (
+  list: ReadonlyArray<T>
+): ReadonlyArray<number> => {
+  let result: Array<number> = [];
+  for (const element of list) {
+    result = result.concat(encodeFunction(element));
+  }
+  return result;
+};
+
+export const encodeMaybe = <T>(
+  encodeFunction: (input: T) => ReadonlyArray<number>
+): ((maybe: type.Maybe<T>) => ReadonlyArray<number>) => (
+  maybe: type.Maybe<T>
+): ReadonlyArray<number> => {
+  switch (maybe._) {
+    case "Just":
+      return [0].concat(encodeFunction(maybe.value));
+    case "Nothing":
+      return [1];
+  }
+};
+
+export const encodeResult = <ok, error>(
+  okEncodeFunction: (input: ok) => ReadonlyArray<number>,
+  errorEncodeFunction: (input: error) => ReadonlyArray<number>
+): ((result: type.Result<ok, error>) => ReadonlyArray<number>) => (
+  result: type.Result<ok, error>
+): ReadonlyArray<number> => {
+  switch (result._) {
+    case "Ok":
+      return [0].concat(okEncodeFunction(result.ok));
+    case "Error":
+      return [1].concat(errorEncodeFunction(result.error));
+  }
+};
+
+type UserId = string & { _userId: never };
+
 type User = {
+  id: UserId;
   name: string;
   age: number;
 };
 
 export const encodeUser = (user: User): ReadonlyArray<number> => {
-  return encodeString(user.name).concat(encodeUInt32(user.age));
+  return encodeId(user.id)
+    .concat(encodeString(user.name))
+    .concat(encodeUInt32(user.age));
+};
+
+export const decodeUser = (
+  index: number,
+  binary: Uint8Array
+): { result: User; nextIndex: number } => {
+  const idAndIndex = decodeId(index, binary);
+  const nameAndIndex = decodeString(idAndIndex.nextIndex, binary);
+  const ageAndIndex = decodeUInt32(nameAndIndex.nextIndex, binary);
+  return {
+    result: {
+      id: idAndIndex.result as UserId,
+      name: nameAndIndex.result,
+      age: ageAndIndex.result
+    },
+    nextIndex: ageAndIndex.nextIndex
+  };
 };

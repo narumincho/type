@@ -1,208 +1,276 @@
 import * as a from "util";
 /**
+ * Maybe
+ */
+export type Maybe<T> = { _: "Just"; value: T } | { _: "Nothing" };
+
+/**
+ * Result
+ */
+export type Result<ok, error> =
+  | { _: "Ok"; ok: ok }
+  | { _: "Error"; error: error };
+
+/**
  * 型
  */
 export type Type =
-  | { _: Type_.UInt32 }
-  | { _: Type_.String }
-  | { _: Type_.Bool }
-  | { _: Type_.DateTime }
-  | { _: Type_.List; type_: Type }
-  | { _: Type_.Id; string_: string }
-  | { _: Type_.Hash; string_: string }
-  | { _: Type_.AccessToken }
-  | { _: Type_.Custom; string_: string };
+  | { _: "UInt32" }
+  | { _: "String" }
+  | { _: "Bool" }
+  | { _: "DateTime" }
+  | { _: "List"; type_: Type }
+  | { _: "Maybe"; type_: Type }
+  | { _: "Result"; resultType: ResultType }
+  | { _: "Id"; string_: string }
+  | { _: "Hash"; string_: string }
+  | { _: "AccessToken" }
+  | { _: "Custom"; string_: string };
+
 /**
- * キーと値
+ * 正常値と異常値
  */
-export type DictionaryType = { key: Type; value: Type };
-export const enum Type_ {
-  UInt32 = 0,
-  String = 1,
-  Bool = 2,
-  DateTime = 3,
-  List = 4,
-  Id = 5,
-  Hash = 6,
-  AccessToken = 7,
-  Custom = 8
-}
+export type ResultType = { ok: Type; error: Type };
+
 /**
  * 0～4294967295 32bit符号なし整数
-
  */
-export const typeUInt32 = (): Type => ({ _: Type_.UInt32 });
+export const typeUInt32: Type = { _: "UInt32" };
 
 /**
  * 文字列
-
  */
-export const typeString = (): Type => ({ _: Type_.String });
+export const typeString: Type = { _: "String" };
 
 /**
  * 真偽値
-
  */
-export const typeBool = (): Type => ({ _: Type_.Bool });
+export const typeBool: Type = { _: "Bool" };
 
 /**
  * 日時
-
  */
-export const typeDateTime = (): Type => ({ _: Type_.DateTime });
+export const typeDateTime: Type = { _: "DateTime" };
 
 /**
  * リスト
- * @param type_
+ *
  */
-export const typeList = (type_: Type): Type => ({
-  _: Type_.List,
-  type_: type_
+export const typeList = (type_: Type): Type => ({ _: "List", type_: type_ });
+
+/**
+ * Maybe
+ *
+ */
+export const typeMaybe = (type_: Type): Type => ({ _: "Maybe", type_: type_ });
+
+/**
+ * Result
+ *
+ */
+export const typeResult = (resultType: ResultType): Type => ({
+  _: "Result",
+  resultType: resultType
 });
 
 /**
  * Id. データを識別するためのもの. カスタムの型名を指定する
- * @param string_
+ *
  */
 export const typeId = (string_: string): Type => ({
-  _: Type_.Id,
+  _: "Id",
   string_: string_
 });
 
 /**
  * Hash. データを識別するためのHash
- * @param string_
+ *
  */
 export const typeHash = (string_: string): Type => ({
-  _: Type_.Hash,
+  _: "Hash",
   string_: string_
 });
 
 /**
  * トークン. データへのアクセスをするために必要になるもの. トークンの種類の名前を指定する
-
  */
-export const typeAccessToken = (): Type => ({ _: Type_.AccessToken });
+export const typeAccessToken: Type = { _: "AccessToken" };
 
 /**
  * 用意されていないアプリ特有の型
- * @param string_
+ *
  */
 export const typeCustom = (string_: string): Type => ({
-  _: Type_.Custom,
+  _: "Custom",
   string_: string_
 });
 
 /**
- *
- * @param type_
- */
-export const encodeType = (type_: Type): ReadonlyArray<number> => {
-  let b: Array<number> = [];
-  b = b.concat(encodeUInt32(type_._));
-  if (type_._ === Type_.List) {
-    return b.concat(encodeType(type_.type_));
-  }
-  if (type_._ === Type_.Id) {
-    return b.concat(encodeString(type_.string_));
-  }
-  if (type_._ === Type_.Hash) {
-    return b.concat(encodeString(type_.string_));
-  }
-  if (type_._ === Type_.Custom) {
-    return b.concat(encodeString(type_.string_));
-  }
-  throw new Error("Type type tag index error. index = " + type_._.toString());
-};
-
-/**
- *
- * @param dictionaryType
- */
-export const encodeDictionaryType = (
-  dictionaryType: DictionaryType
-): ReadonlyArray<number> =>
-  encodeType(dictionaryType.key).concat(encodeType(dictionaryType.value));
-
-/**
  * numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード
- * @param num
+ *
  */
 export const encodeUInt32 = (num: number): ReadonlyArray<number> => {
   num = Math.floor(Math.max(0, Math.min(num, 4294967295)));
-  const b: Array<number> = [];
+  const numberArray: Array<number> = [];
   while (true) {
-    const c: number = num & 127;
+    const b: number = num & 127;
     num = num >>> 7;
     if (num === 0) {
-      b.push(c);
-      return b;
+      numberArray.push(b);
+      return numberArray;
     }
-    b.push(c | 128);
+    numberArray.push(b | 128);
   }
 };
 
 /**
  * stringからバイナリに変換する. このコードはNode.js用なのでutilのTextDecoderを使う
- * @param text
+ *
  */
 export const encodeString = (text: string): ReadonlyArray<number> =>
   Array["from"](new a.TextEncoder().encode(text));
 
 /**
+ * boolからバイナリに変換する
  *
- * @param index バイナリを読み込み開始位置
- * @param binary バイナリ
  */
-export const decodeType = (
-  index: number,
-  binary: Uint8Array
-): { result: Type; nextIndex: number } => {};
+export const encodeBool = (value: boolean): ReadonlyArray<number> => [
+  value ? 1 : 0
+];
 
 /**
  *
- * @param index バイナリを読み込み開始位置
- * @param binary バイナリ
+ *
  */
-export const decodeDictionaryType = (
-  index: number,
-  binary: Uint8Array
-): { result: DictionaryType; nextIndex: number } => {};
+export const encodeDateTime = (dateTime: Date): ReadonlyArray<number> =>
+  encodeUInt32(Math.floor(dateTime.getTime() / 1000));
 
 /**
- * UnsignedLeb128で表現されたバイナリをnumberの32bit符号なし整数の範囲の数値にに変換するコード
- * @param index バイナリを読み込み開始位置
- * @param binary バイナリ
+ *
+ *
  */
-export const decodeUInt32 = (
-  index: number,
-  binary: Uint8Array
-): { result: number; nextIndex: number } => {
-  let b: number = 0;
-  for (let c = 0; c < 5; c += 1) {
-    const d: number = binary[index + c];
-    b |= (d & 127) << (7 * c);
-    if ((d & 8) === 0 && 0 <= b && b < 4294967295) {
-      return { result: b, nextIndex: index + c + 1 };
+export const encodeList = <T>(
+  encodeFunction: (a: T) => ReadonlyArray<number>
+): ((a: ReadonlyArray<T>) => ReadonlyArray<number>) => (
+  list: ReadonlyArray<T>
+): ReadonlyArray<number> => {
+  let result: Array<number> = [];
+  for (const element of list) {
+    result = result.concat(encodeFunction(element));
+  }
+  return result;
+};
+
+/**
+ *
+ *
+ */
+export const maybe = <T>(
+  encodeFunction: (a: T) => ReadonlyArray<number>
+): ((a: Maybe<T>) => ReadonlyArray<number>) => (
+  maybe: Maybe<T>
+): ReadonlyArray<number> => {
+  switch (maybe._) {
+    case "Just": {
+      return [0].concat(encodeFunction(maybe.value));
+    }
+    case "Nothing": {
+      return [1];
     }
   }
-  throw new Error("larger than 32-bits");
 };
 
 /**
- * バイナリからstringに変換する.このコードはNode.js用でutilのTextDecoderを使う
- * @param index バイナリを読み込み開始位置
- * @param binary バイナリ
+ *
+ *
  */
-export const decodeString = (
-  index: number,
-  binary: Uint8Array
-): { result: string; nextIndex: number } => {
-  const b: { result: number; nextIndex: number } = decodeUInt32(index, binary);
-  return {
-    result: new a.TextDecoder().decode(
-      binary.slice(index + b.nextIndex, index + b.nextIndex + b.result)
-    ),
-    nextIndex: index + b.nextIndex + b.result
-  };
+export const encodeResult = <ok, error>(
+  okEncodeFunction: (a: ok) => ReadonlyArray<number>,
+  errorEncodeFunction: (a: error) => ReadonlyArray<number>
+): ((a: Result<ok, error>) => ReadonlyArray<number>) => (
+  result: Result<ok, error>
+): ReadonlyArray<number> => {
+  switch (result._) {
+    case "Ok": {
+      return [0].concat(okEncodeFunction(result.ok));
+    }
+    case "Error": {
+      return [1].concat(errorEncodeFunction(result.error));
+    }
+  }
 };
+
+/**
+ *
+ *
+ */
+export const encodeId = (id: string): ReadonlyArray<number> => {
+  const result: Array<number> = [];
+  for (let i = 0; i < 16; i += 1) {
+    result[i] = Number.parseInt(id.slice(i * 2, i * 2 + 2), 16);
+  }
+  return result;
+};
+
+/**
+ *
+ *
+ */
+export const encodeHashOrAccessToken = (id: string): ReadonlyArray<number> => {
+  const result: Array<number> = [];
+  for (let i = 0; i < 32; i += 1) {
+    result[i] = Number.parseInt(id.slice(i * 2, i * 2 + 2), 16);
+  }
+  return result;
+};
+
+/**
+ *
+ *
+ */
+export const encodeCustomType = (type_: Type): ReadonlyArray<number> => {
+  switch (type_._) {
+    case "UInt32": {
+      return [0];
+    }
+    case "String": {
+      return [1];
+    }
+    case "Bool": {
+      return [2];
+    }
+    case "DateTime": {
+      return [3];
+    }
+    case "List": {
+      return [4].concat(encodeCustomType(type_.type_));
+    }
+    case "Maybe": {
+      return [5].concat(encodeCustomType(type_.type_));
+    }
+    case "Result": {
+      return [6].concat(encodeCustomResultType(type_.resultType));
+    }
+    case "Id": {
+      return [7].concat(encodeString(type_.string_));
+    }
+    case "Hash": {
+      return [8].concat(encodeString(type_.string_));
+    }
+    case "AccessToken": {
+      return [9];
+    }
+    case "Custom": {
+      return [10].concat(encodeString(type_.string_));
+    }
+  }
+};
+
+/**
+ *
+ *
+ */
+export const encodeCustomResultType = (
+  resultType: ResultType
+): ReadonlyArray<number> =>
+  encodeCustomType(resultType.ok).concat(encodeCustomType(resultType.error));

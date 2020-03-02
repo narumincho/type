@@ -13,28 +13,21 @@ export {
 };
 
 export const generateTypeScriptCode = (
-  customTypeDictionary: ReadonlyMap<string, type.CustomType>,
+  customTypeList: ReadonlyArray<type.CustomType>,
   isBrowser: boolean
-): generator.Code => {
-  const typeDefinitionCode = typeDefinitionTypeScript.generateCode(
-    customTypeDictionary
-  );
-  const encoderCode = binaryConverterTypeScriptEncoder.generateCode(
-    customTypeDictionary,
-    isBrowser
-  );
-  const decoderCode = binaryConverterTypeScriptDecoder.generateCode(
-    customTypeDictionary,
-    isBrowser
-  );
+): generator.data.Code => {
   return {
-    exportFunctionMap: new Map([
-      ...typeDefinitionCode.exportFunctionMap,
-      ...encoderCode,
-      ...decoderCode
-    ]),
-    exportConstEnumMap: typeDefinitionCode.exportConstEnumMap,
-    exportTypeAliasMap: typeDefinitionCode.exportTypeAliasMap,
+    exportDefinitionList: [
+      ...typeDefinitionTypeScript.generateCode(customTypeList),
+      ...binaryConverterTypeScriptEncoder.generateCode(
+        customTypeList,
+        isBrowser
+      ),
+      ...binaryConverterTypeScriptDecoder.generateCode(
+        customTypeList,
+        isBrowser
+      )
+    ],
     statementList: []
   };
 };
