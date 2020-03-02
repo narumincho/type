@@ -142,9 +142,17 @@ export const encodeBool = (value: boolean): ReadonlyArray<number> => [
  *
  *
  */
+export const encodeDateTime = (dateTime: Date): ReadonlyArray<number> =>
+  encodeUInt32(Math.floor(dateTime.getTime() / 1000));
+
+/**
+ *
+ *
+ */
 export const encodeList = <T>(
-  list: ReadonlyArray<T>,
   encodeFunction: (a: T) => ReadonlyArray<number>
+): ((a: ReadonlyArray<T>) => ReadonlyArray<number>) => (
+  list: ReadonlyArray<T>
 ): ReadonlyArray<number> => {
   let result: Array<number> = [];
   for (const element of list) {
@@ -181,17 +189,17 @@ export const encodeHashOrAccessToken = (id: string): ReadonlyArray<number> => {
  *
  *
  */
-export const encodeType = (type_: Type): ReadonlyArray<number> => {
+export const encodeCustomType = (type_: Type): ReadonlyArray<number> => {
   let result: Array<number> = [];
   result = result.concat(encodeUInt32(type_._));
   if (type_._ === "List") {
-    return result.concat(encodeType(type_.type_));
+    return result.concat(encodeCustomType(type_.type_));
   }
   if (type_._ === "Maybe") {
-    return result.concat(encodeType(type_.type_));
+    return result.concat(encodeCustomType(type_.type_));
   }
   if (type_._ === "Result") {
-    return result.concat(encodeResultType(type_.resultType));
+    return result.concat(encodeCustomResultType(type_.resultType));
   }
   if (type_._ === "Id") {
     return result.concat(encodeString(type_.string_));
@@ -209,7 +217,7 @@ export const encodeType = (type_: Type): ReadonlyArray<number> => {
  *
  *
  */
-export const encodeResultType = (
+export const encodeCustomResultType = (
   resultType: ResultType
 ): ReadonlyArray<number> =>
-  encodeType(resultType.ok).concat(encodeType(resultType.error));
+  encodeCustomType(resultType.ok).concat(encodeCustomType(resultType.error));

@@ -131,6 +131,18 @@ export const encodeList = <T>(
   return result;
 };
 
+export const encodeListCurry = <T>(
+  encodeFunction: (input: T) => ReadonlyArray<number>
+): ((list: ReadonlyArray<T>) => ReadonlyArray<number>) => (
+  list: ReadonlyArray<T>
+): ReadonlyArray<number> => {
+  let result: Array<number> = [];
+  for (const element of list) {
+    result = result.concat(encodeFunction(element));
+  }
+  return result;
+};
+
 type UserId = string & { _userId: never };
 
 type User = {

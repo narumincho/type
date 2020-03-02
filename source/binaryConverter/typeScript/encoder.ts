@@ -52,7 +52,10 @@ const encodeFunctionExpr = (type_: type.Type): data.Expr => {
       return data.call(data.variable(listName), [
         encodeFunctionExpr(type_.type_)
       ]);
+    case "Custom":
+      return data.variable(customName(type_.string_));
   }
+  return data.stringLiteral("not supported");
 };
 
 /* ========================================
@@ -344,11 +347,6 @@ const listCode: data.Function = ((): data.Function => {
     document: "",
     parameterList: [
       {
-        name: parameterList,
-        document: "",
-        type_: data.readonlyArrayType(data.typeScopeInFile(elementTypeName))
-      },
-      {
         name: encodeFunctionName,
         document: "",
         type_: data.typeFunction(
@@ -358,25 +356,43 @@ const listCode: data.Function = ((): data.Function => {
       }
     ],
     typeParameterList: [elementTypeName],
-    returnType: readonlyArrayNumber,
+    returnType: data.typeFunction(
+      [data.readonlyArrayType(data.typeScopeInFile(elementTypeName))],
+      readonlyArrayNumber
+    ),
     statementList: [
-      data.statementLetVariableDefinition(
-        resultName,
-        data.arrayType(data.typeNumber),
-        data.arrayLiteral([])
-      ),
-      data.statementForOf(elementName, data.variable(parameterList), [
-        data.statementSet(
-          data.variable(resultName),
-          null,
-          data.callMethod(data.variable(resultName), "concat", [
-            data.call(data.variable(encodeFunctionName), [
-              data.variable(elementName)
-            ])
-          ])
+      data.statementReturn(
+        data.lambda(
+          [
+            {
+              name: parameterList,
+              type_: data.readonlyArrayType(
+                data.typeScopeInFile(elementTypeName)
+              )
+            }
+          ],
+          readonlyArrayNumber,
+          [
+            data.statementLetVariableDefinition(
+              resultName,
+              data.arrayType(data.typeNumber),
+              data.arrayLiteral([])
+            ),
+            data.statementForOf(elementName, data.variable(parameterList), [
+              data.statementSet(
+                data.variable(resultName),
+                null,
+                data.callMethod(data.variable(resultName), "concat", [
+                  data.call(data.variable(encodeFunctionName), [
+                    data.variable(elementName)
+                  ])
+                ])
+              )
+            ]),
+            data.statementReturn(data.variable(resultName))
+          ]
         )
-      ]),
-      data.statementReturn(data.variable(resultName))
+      )
     ]
   };
 })();
