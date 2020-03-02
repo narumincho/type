@@ -6,7 +6,7 @@ import * as typeScript from "../typeScript";
 
 export const generateCode = (
   customTypeDictionary: ReadonlyMap<string, type.CustomType>
-): ReadonlyArray<generator.data.Definition> => {
+): ReadonlyArray<data.Definition> => {
   const exportTypeAliasMap = new Map<string, data.ExportTypeAlias>();
   for (const customType of customTypeDictionary.entries()) {
     const definition = toTypeAliasAndEnum(customType);
