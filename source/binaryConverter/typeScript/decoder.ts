@@ -26,7 +26,7 @@ export const decodeVarEval = (
  * ```
  * を表現するコード
  */
-export const returnStatement = (
+const returnStatement = (
   resultExpr: data.Expr,
   nextIndexExpr: data.Expr
 ): data.Statement =>

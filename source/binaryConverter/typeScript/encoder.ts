@@ -11,6 +11,7 @@ export const generateCode = (
     data.definitionFunction(uInt32Code),
     data.definitionFunction(stringCode(isBrowser)),
     data.definitionFunction(boolCode),
+    data.definitionFunction(dateTimeCode),
     data.definitionFunction(listCode),
     data.definitionFunction(
       encodeHexString(16, generator.identifer.fromString("encodeId"))
@@ -33,11 +34,25 @@ export const generateCode = (
  */
 const readonlyArrayNumber: data.Type = data.readonlyArrayType(data.typeNumber);
 
-export const encodeVarEval = (type_: type.Type, expr: data.Expr): data.Expr =>
-  data.call(data.variable(encodeName(type_)), [expr]);
+export const encodeVarEval = (type_: type.Type, expr: data.Expr): data.Expr => {
+  return data.call(encodeFunctionExpr(type_), [expr]);
+};
 
-const encodeName = (type_: type.Type): generator.identifer.Identifer => {
-  return generator.identifer.fromString("encode" + type.toTypeName(type_));
+const encodeFunctionExpr = (type_: type.Type): data.Expr => {
+  switch (type_._) {
+    case "UInt32":
+      return data.variable(uInt32Name);
+    case "String":
+      return data.variable(stringName);
+    case "Bool":
+      return data.variable(boolName);
+    case "DateTime":
+      return data.variable(dateTimeName);
+    case "List":
+      return data.call(data.variable(listName), [
+        encodeFunctionExpr(type_.type_)
+      ]);
+  }
 };
 
 /* ========================================
@@ -45,11 +60,13 @@ const encodeName = (type_: type.Type): generator.identifer.Identifer => {
    ========================================
 */
 
+const uInt32Name = generator.identifer.fromString("encodeUInt32");
+
 /**
  * numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード
  */
 const uInt32Code: data.Function = {
-  name: encodeName(type.typeUInt32),
+  name: uInt32Name,
   document:
     "numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード",
   parameterList: [
@@ -136,12 +153,13 @@ const uInt32Code: data.Function = {
    ========================================
 */
 
+const stringName = generator.identifer.fromString("encodeString");
 /**
  * stringからバイナリに変換するコード
  * ブラウザではグローバルのTextDecoderを使い、node.jsではutilのTextDecoderを使う
  */
 const stringCode = (isBrowser: boolean): data.Function => ({
-  name: encodeName(type.typeString),
+  name: stringName,
   document:
     "stringからバイナリに変換する. このコードは" +
     (isBrowser
@@ -187,9 +205,10 @@ const stringCode = (isBrowser: boolean): data.Function => ({
                   Bool
    ========================================
 */
+const boolName = generator.identifer.fromString("encodeBool");
 
 const boolCode: data.Function = {
-  name: encodeName(type.typeBool),
+  name: boolName,
   document: "boolからバイナリに変換する",
   parameterList: [
     {
@@ -209,6 +228,44 @@ const boolCode: data.Function = {
           data.numberLiteral(0)
         )
       ])
+    )
+  ]
+};
+
+/* ========================================
+                DateTime
+   ========================================
+*/
+
+const dateTimeName = generator.identifer.fromString("encodeDateTime");
+
+const dateTimeCode: data.Function = {
+  name: dateTimeName,
+  document: "",
+  parameterList: [
+    {
+      name: generator.identifer.fromString("dateTime"),
+      document: "",
+      type_: data.dateType
+    }
+  ],
+  returnType: readonlyArrayNumber,
+  typeParameterList: [],
+  statementList: [
+    data.statementReturn(
+      encodeVarEval(
+        type.typeUInt32,
+        data.callMathMethod("floor", [
+          data.division(
+            data.callMethod(
+              data.variable(generator.identifer.fromString("dateTime")),
+              "getTime",
+              []
+            ),
+            data.numberLiteral(1000)
+          )
+        ])
+      )
     )
   ]
 };
@@ -273,6 +330,8 @@ const encodeHexString = (
    ========================================
 */
 
+const listName = generator.identifer.fromString("encodeList");
+
 const listCode: data.Function = ((): data.Function => {
   const elementTypeName = generator.identifer.fromString("T");
   const parameterList = generator.identifer.fromString("list");
@@ -281,7 +340,7 @@ const listCode: data.Function = ((): data.Function => {
   const encodeFunctionName = generator.identifer.fromString("encodeFunction");
 
   return {
-    name: generator.identifer.fromString("encodeList"),
+    name: listName,
     document: "",
     parameterList: [
       {
@@ -327,6 +386,9 @@ const listCode: data.Function = ((): data.Function => {
    ========================================
 */
 
+const customName = (customTypeName: string): generator.identifer.Identifer =>
+  generator.identifer.fromString("encodeCustom" + customTypeName);
+
 export const customCode = (customType: type.CustomType): data.Function => {
   const parameterName = typeScript.typeToMemberOrParameterName(
     type.typeCustom(customType.name)
@@ -357,7 +419,7 @@ export const customCode = (customType: type.CustomType): data.Function => {
   })();
 
   return {
-    name: encodeName(type.typeCustom(customType.name)),
+    name: customName(customType.name),
     document: "",
     parameterList: [
       {
