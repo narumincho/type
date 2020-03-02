@@ -1,4 +1,5 @@
 import * as generator from "js-ts-code-generator";
+import { data } from "js-ts-code-generator";
 import * as type from "../type";
 import * as c from "../case";
 import * as typeScript from "../typeScript";
@@ -6,7 +7,7 @@ import * as typeScript from "../typeScript";
 export const generateCode = (
   customTypeDictionary: ReadonlyMap<string, type.CustomType>
 ): ReadonlyArray<generator.data.Definition> => {
-  const exportTypeAliasMap = new Map<string, generator.ExportTypeAlias>();
+  const exportTypeAliasMap = new Map<string, data.ExportTypeAlias>();
   for (const customType of customTypeDictionary.entries()) {
     const definition = toTypeAliasAndEnum(customType);
     if (definition.typeAlias !== null) {
@@ -33,7 +34,7 @@ export const toTypeAliasAndEnum = ([customTypeName, customType]: [
   enum: [string, generator.type.ExportConstEnumTagNameAndValueList] | null;
 } => {
   switch (customType.body._) {
-    case type.CustomType_.Sum:
+    case "Sum":
       if (
         typeScript.isProductTypeAllNoParameter(
           customType.body.tagNameAndParameterArray
@@ -82,7 +83,7 @@ export const toTypeAliasAndEnum = ([customTypeName, customType]: [
           )
         ]
       };
-    case type.CustomType_.Product:
+    case "Product":
       return {
         typeAlias: [
           typeScript.customTypeToTypeName(customTypeName),
@@ -113,7 +114,7 @@ export const toTypeAliasAndEnum = ([customTypeName, customType]: [
 const tagNameAndParameterToObjectType = (
   enumName: string,
   tagNameAndParameter: type.TagNameAndParameter
-): generator.typeExpr.TypeExpr => {
+): data.Type => {
   const tagField: [
     string,
     { typeExpr: generator.typeExpr.TypeExpr; document: string }
@@ -129,8 +130,8 @@ const tagNameAndParameterToObjectType = (
   ];
 
   switch (tagNameAndParameter.parameter._) {
-    case type.TagParameter_.Just:
-      return generator.typeExpr.object(
+    case "Just":
+      return data.typeObject(
         new Map([
           tagField,
           [
@@ -146,8 +147,8 @@ const tagNameAndParameterToObjectType = (
           ]
         ])
       );
-    case type.TagParameter_.Nothing:
-      return generator.typeExpr.object(new Map([tagField]));
+    case "Nothing":
+      return data.typeObject(new Map([tagField]));
   }
 };
 
@@ -157,7 +158,7 @@ const customTypeDictionaryToTagFunctionList = (
   const result = new Map<string, generator.ExportFunction>();
   for (const [customTypeName, customType] of customTypeDictionary.entries()) {
     switch (customType.body._) {
-      case type.CustomType_.Sum: {
+      case "Sum": {
         if (
           typeScript.isProductTypeAllNoParameter(
             customType.body.tagNameAndParameterArray
@@ -216,7 +217,7 @@ const tagFunctionParameter = (
   readonly typeExpr: generator.typeExpr.TypeExpr;
 }> => {
   switch (tagParameter._) {
-    case type.TagParameter_.Just:
+    case "Just":
       return [
         {
           name: typeScript.typeToMemberOrParameterName(tagParameter.type_),
@@ -224,7 +225,7 @@ const tagFunctionParameter = (
           typeExpr: typeScript.typeToGeneratorType(tagParameter.type_)
         }
       ];
-    case type.TagParameter_.Nothing:
+    case "Nothing":
       return [];
   }
 };
@@ -233,8 +234,8 @@ const tagFunctionStatement = (
   customTypeName: string,
   tagNameAndParameter: type.TagNameAndParameter,
   customTypeDictionary: ReadonlyMap<string, type.CustomType>
-): ReadonlyArray<generator.expr.Statement> => {
-  const tagField: [string, generator.expr.Expr] = [
+): ReadonlyArray<data.Statement> => {
+  const tagField: [string, data.Expr] = [
     "_",
     typeScript.exprEnum(
       customTypeName,
@@ -244,7 +245,7 @@ const tagFunctionStatement = (
   ];
 
   switch (tagNameAndParameter.parameter._) {
-    case type.TagParameter_.Just:
+    case "Just":
       return [
         generator.expr.returnStatement(
           generator.expr.objectLiteral(
@@ -264,11 +265,7 @@ const tagFunctionStatement = (
           )
         )
       ];
-    case type.TagParameter_.Nothing:
-      return [
-        generator.expr.returnStatement(
-          generator.expr.objectLiteral(new Map([tagField]))
-        )
-      ];
+    case "Nothing":
+      return [data.statementReturn(data.objectLiteral(new Map([tagField])))];
   }
 };

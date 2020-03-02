@@ -1,50 +1,41 @@
 import * as generator from "js-ts-code-generator";
+import { data } from "js-ts-code-generator";
 import * as type from "./type";
 import * as c from "./case";
 
 export const customTypeNameToEnumName = (customTypeName: string): string =>
   customTypeToTypeName(customTypeName) + "_";
 
-export const typeToGeneratorType = (
-  type_: type.Type
-): generator.typeExpr.TypeExpr => {
+export const typeToGeneratorType = (type_: type.Type): data.Type => {
   switch (type_._) {
-    case type.Type_.UInt32:
-      return generator.typeExpr.typeNumber;
-    case type.Type_.String:
-      return generator.typeExpr.typeString;
-    case type.Type_.Bool:
-      return generator.typeExpr.typeBoolean;
-    case type.Type_.Id:
-      return generator.typeExpr.globalType(
-        customTypeToTypeName(type_.string_) + "id"
-      );
-    case type.Type_.Hash:
-      return generator.typeExpr.globalType(
-        customTypeToTypeName(type_.string_) + "Hash"
-      );
-    case type.Type_.AccessToken:
-      return generator.typeExpr.globalType("AccessToken");
-
-    case type.Type_.List:
+    case "UInt32":
+      return data.typeNumber;
+    case "String":
+      return data.typeString;
+    case "Bool":
+      return data.typeBoolean;
+    case "List":
       return generator.typeExpr.readonlyArrayType(
         typeToGeneratorType(type_.type_)
       );
-    case type.Type_.Custom:
+    case "Id":
+      return data.typeScopeInFile(
+        generator.identifer.fromString(type_.string_ + "Id")
+      );
+    case "Hash":
+      return generator.typeExpr.globalType(
+        customTypeToTypeName(type_.string_) + "Hash"
+      );
+    case "AccessToken":
+      return generator.typeExpr.globalType("AccessToken");
+
+    case "Custom":
       return generator.typeExpr.globalType(customTypeToTypeName(type_.string_));
   }
 };
 
 export const typeToMemberOrParameterName = (type_: type.Type): string => {
   const name = c.firstLowerCase(type.toTypeName(type_));
-  if (generator.identifer.isIdentifer(name)) {
-    return name;
-  }
-  return name + "_";
-};
-
-export const customTypeToTypeName = (customTypeName: string): string => {
-  const name = type.customTypeToTypeName(customTypeName);
   if (generator.identifer.isIdentifer(name)) {
     return name;
   }
@@ -71,7 +62,7 @@ export const exprEnum = (
     );
   }
   switch (customType.body._) {
-    case type.CustomType_.Sum:
+    case "Sum":
       if (
         isProductTypeAllNoParameter(customType.body.tagNameAndParameterArray)
       ) {
@@ -84,7 +75,7 @@ export const exprEnum = (
         customTypeNameToEnumName(customTypeName),
         tagNameToEnumTag(tagName)
       );
-    case type.CustomType_.Product:
+    case "Product":
       throw new Error("enumを取得するのにcustom typeがsumじゃなかった");
   }
 };
