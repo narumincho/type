@@ -12,7 +12,8 @@ export const generateCode = (
     data.definitionTypeAlias(resultDefinition),
     ...customTypeList.map(customType =>
       data.definitionTypeAlias(customTypeToDefinition(customType))
-    )
+    ),
+    ...customTypeListToTagList(customTypeList)
   ];
 };
 
@@ -165,10 +166,10 @@ const tagNameAndParameterToObjectType = (
   }
 };
 
-const customTypeListToTagFunctionList = (
+const customTypeListToTagList = (
   customTypeList: ReadonlyArray<type.CustomType>
-): ReadonlyArray<data.Function> => {
-  const result: Array<data.Function> = [];
+): ReadonlyArray<data.Definition> => {
+  const result: Array<data.Definition> = [];
   for (const customType of customTypeList) {
     switch (customType.body._) {
       case "Sum": {
@@ -179,12 +180,12 @@ const customTypeListToTagFunctionList = (
         ) {
           break;
         }
-        const functionList = productTypeToTagFunctionList(
+        const definitionList = productTypeToTagList(
           customType.name,
           customType.body.tagNameAndParameterArray
         );
-        for (const func of functionList) {
-          result.push(func);
+        for (const definition of definitionList) {
+          result.push(definition);
         }
       }
     }
@@ -192,55 +193,19 @@ const customTypeListToTagFunctionList = (
   return result;
 };
 
-const productTypeToTagFunctionList = (
+const productTypeToTagList = (
   customTypeName: string,
-  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
-): ReadonlyArray<data.Function> => {
-  const result: Array<data.Function> = [];
-
-  for (const tagNameAndParameter of tagNameAndParameterArray) {
-    result.push({
-      name: generator.identifer.fromString(
-        c.firstLowerCase(customTypeName) +
-          c.firstUpperCase(tagNameAndParameter.name)
-      ),
-      document: tagNameAndParameter.description,
-      parameterList: tagFunctionParameter(tagNameAndParameter.parameter),
-      typeParameterList: [],
-      returnType: data.typeScopeInFile(
-        generator.identifer.fromString(customTypeName)
-      ),
-      statementList: tagFunctionStatement(tagNameAndParameter)
-    });
-  }
-
-  return result;
+  tagNameAndParameterList: ReadonlyArray<type.TagNameAndParameter>
+): ReadonlyArray<data.Definition> => {
+  return tagNameAndParameterList.map(tagNameAndParameter =>
+    tagNameAndParameterToTag(customTypeName, tagNameAndParameter)
+  );
 };
 
-const tagFunctionParameter = (
-  tagParameter: type.Maybe<type.Type>
-): ReadonlyArray<{
-  readonly name: generator.identifer.Identifer;
-  readonly document: string;
-  readonly type_: data.Type;
-}> => {
-  switch (tagParameter._) {
-    case "Just":
-      return [
-        {
-          name: typeScript.typeToMemberOrParameterName(tagParameter.value),
-          document: "",
-          type_: typeScript.typeToGeneratorType(tagParameter.value)
-        }
-      ];
-    case "Nothing":
-      return [];
-  }
-};
-
-const tagFunctionStatement = (
+const tagNameAndParameterToTag = (
+  customTypeName: string,
   tagNameAndParameter: type.TagNameAndParameter
-): ReadonlyArray<data.Statement> => {
+): data.Definition => {
   const tagField: [string, data.Expr] = [
     "_",
     data.stringLiteral(tagNameAndParameter.name)
@@ -248,26 +213,59 @@ const tagFunctionStatement = (
 
   switch (tagNameAndParameter.parameter._) {
     case "Just":
-      return [
-        data.statementReturn(
-          data.objectLiteral(
-            new Map([
-              tagField,
-              [
-                typeScript.typeToMemberOrParameterName(
-                  tagNameAndParameter.parameter.value
-                ),
-                data.variable(
+      return data.definitionFunction({
+        name: generator.identifer.fromString(
+          c.firstLowerCase(customTypeName) +
+            c.firstUpperCase(tagNameAndParameter.name)
+        ),
+        document: tagNameAndParameter.description,
+        parameterList: [
+          {
+            name: typeScript.typeToMemberOrParameterName(
+              tagNameAndParameter.parameter.value
+            ),
+            document: "",
+            type_: typeScript.typeToGeneratorType(
+              tagNameAndParameter.parameter.value
+            )
+          }
+        ],
+        typeParameterList: [],
+        returnType: data.typeScopeInFile(
+          generator.identifer.fromString(customTypeName)
+        ),
+        statementList: [
+          data.statementReturn(
+            data.objectLiteral(
+              new Map([
+                tagField,
+                [
                   typeScript.typeToMemberOrParameterName(
                     tagNameAndParameter.parameter.value
+                  ),
+                  data.variable(
+                    typeScript.typeToMemberOrParameterName(
+                      tagNameAndParameter.parameter.value
+                    )
                   )
-                )
-              ]
-            ])
+                ]
+              ])
+            )
           )
-        )
-      ];
+        ]
+      });
+
     case "Nothing":
-      return [data.statementReturn(data.objectLiteral(new Map([tagField])))];
+      return data.definitionVariable({
+        name: generator.identifer.fromString(
+          c.firstLowerCase(customTypeName) +
+            c.firstUpperCase(tagNameAndParameter.name)
+        ),
+        document: tagNameAndParameter.description,
+        type_: data.typeScopeInFile(
+          generator.identifer.fromString(customTypeName)
+        ),
+        expr: data.objectLiteral(new Map([tagField]))
+      });
   }
 };
