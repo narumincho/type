@@ -29,8 +29,8 @@ export const typeToGeneratorType = (type_: type.Type): data.Type => {
       return data.typeWithParameter(
         data.typeScopeInGlobal(generator.identifer.fromString("Result")),
         [
-          typeToGeneratorType(type_.result.error),
-          typeToGeneratorType(type_.result.ok)
+          typeToGeneratorType(type_.resultType.error),
+          typeToGeneratorType(type_.resultType.ok)
         ]
       );
 

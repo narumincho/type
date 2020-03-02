@@ -125,9 +125,9 @@ const typeToElmType = (type_: type.Type): string => {
     case "Result":
       return (
         "(Result" +
-        typeToElmType(type_.result.error) +
+        typeToElmType(type_.resultType.error) +
         " " +
-        typeToElmType(type_.result.ok) +
+        typeToElmType(type_.resultType.ok) +
         ")"
       );
     case "Custom":

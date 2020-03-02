@@ -1,6 +1,18 @@
 import * as c from "./case";
 
 /**
+ * Maybe
+ */
+export type Maybe<T> = { _: "Just"; value: T } | { _: "Nothing" };
+
+/**
+ * Result
+ */
+export type Result<ok, error> =
+  | { _: "Ok"; ok: ok }
+  | { _: "Error"; error: error };
+
+/**
  * 型
  */
 export type Type =
@@ -10,13 +22,16 @@ export type Type =
   | { _: "DateTime" }
   | { _: "List"; type_: Type }
   | { _: "Maybe"; type_: Type }
-  | { _: "Result"; result: Result }
+  | { _: "Result"; resultType: ResultType }
   | { _: "Id"; string_: string }
   | { _: "Hash"; string_: string }
   | { _: "AccessToken" }
   | { _: "Custom"; string_: string };
 
-export type Result = { ok: Type; error: Type };
+/**
+ * 正常値と異常値
+ */
+export type ResultType = { ok: Type; error: Type };
 
 /**
  * 0～4294967295 32bit符号なし整数
@@ -25,13 +40,11 @@ export const typeUInt32: Type = { _: "UInt32" };
 
 /**
  * 文字列
-
  */
 export const typeString: Type = { _: "String" };
 
 /**
  * 真偽値
-
  */
 export const typeBool: Type = { _: "Bool" };
 
@@ -42,25 +55,28 @@ export const typeDateTime: Type = { _: "DateTime" };
 
 /**
  * リスト
+ *
  */
-export const typeList = (type_: Type): Type => ({
-  _: "List",
-  type_: type_
-});
+export const typeList = (type_: Type): Type => ({ _: "List", type_: type_ });
 
 /**
  * Maybe
+ *
  */
-export const typeMaybe = (type_: Type): Type => ({
-  _: "Maybe",
-  type_: type_
-});
+export const typeMaybe = (type_: Type): Type => ({ _: "Maybe", type_: type_ });
 
-export const typeResult = (result: Result): Type => ({ _: "Result", result });
+/**
+ * Result
+ *
+ */
+export const typeResult = (resultType: ResultType): Type => ({
+  _: "Result",
+  resultType: resultType
+});
 
 /**
  * Id. データを識別するためのもの. カスタムの型名を指定する
- * @param string_
+ *
  */
 export const typeId = (string_: string): Type => ({
   _: "Id",
@@ -69,7 +85,7 @@ export const typeId = (string_: string): Type => ({
 
 /**
  * Hash. データを識別するためのHash
- * @param string_
+ *
  */
 export const typeHash = (string_: string): Type => ({
   _: "Hash",
@@ -78,15 +94,12 @@ export const typeHash = (string_: string): Type => ({
 
 /**
  * トークン. データへのアクセスをするために必要になるもの. トークンの種類の名前を指定する
- * @param string_
  */
-export const typeAccessToken = (): Type => ({
-  _: "AccessToken"
-});
+export const typeAccessToken: Type = { _: "AccessToken" };
 
 /**
  * 用意されていないアプリ特有の型
- * @param string_
+ *
  */
 export const typeCustom = (string_: string): Type => ({
   _: "Custom",
@@ -120,15 +133,6 @@ export type MemberNameAndType = {
   description: string;
   memberType: Type;
 };
-
-export type Maybe<T> =
-  | {
-      _: "Just";
-      value: T;
-    }
-  | {
-      _: "Nothing";
-    };
 
 export const customTypeBodySum = (
   tagNameAndParameterArray: ReadonlyArray<TagNameAndParameter>
@@ -175,7 +179,9 @@ export const toTypeName = (type_: Type): string => {
       return toTypeName(type_.type_) + "Maybe";
     case "Result":
       return (
-        toTypeName(type_.result.error) + toTypeName(type_.result.ok) + "Result"
+        toTypeName(type_.resultType.error) +
+        toTypeName(type_.resultType.ok) +
+        "Result"
       );
     case "Id":
       return customTypeToTypeName(type_.string_) + "Id";

@@ -72,12 +72,12 @@ describe("test", () => {
     description: "正常値と異常値",
     body: type.customTypeBodyProduct([
       {
-        name: "Ok",
+        name: "ok",
         description: "正常値",
         memberType: type.typeCustom("Type")
       },
       {
-        name: "Error",
+        name: "error",
         description: "異常値",
         memberType: type.typeCustom("Type")
       }

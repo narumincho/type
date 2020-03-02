@@ -29,7 +29,7 @@ export type Type =
 /**
  * 正常値と異常値
  */
-export type ResultType = { Ok: Type; Error: Type };
+export type ResultType = { ok: Type; error: Type };
 
 /**
  * 0～4294967295 32bit符号なし整数
