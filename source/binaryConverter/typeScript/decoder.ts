@@ -11,6 +11,7 @@ export const generateCode = (
     data.definitionFunction(uInt32Code),
     data.definitionFunction(stringCode(isBrowser)),
     data.definitionFunction(boolCode),
+    data.definitionFunction(listCode()),
     data.definitionFunction(hexStringCode(16, idName)),
     data.definitionFunction(hexStringCode(32, hashOrAccessTokenName))
   ];
@@ -24,7 +25,13 @@ export const decodeVarEval = (
   type_: type.Type,
   index: data.Expr,
   binary: data.Expr
-): data.Expr => data.call(data.variable(decodeName(type_)), [index, binary]);
+): data.Expr => {
+  switch (type_._) {
+    case "UInt32":
+      return data.call(data.variable(uInt32Name), [index, binary]);
+  }
+  return data.stringLiteral("まだサポートしていない");
+};
 
 /**
  * ```ts
@@ -48,6 +55,9 @@ const returnStatement = (
 const indexIdentifer = generator.identifer.fromString("index");
 const binaryIdentifer = generator.identifer.fromString("binary");
 
+/**
+ * ( index: number, binary: Uint8Array )
+ */
 const parameterList: ReadonlyArray<data.ParameterWithDocument> = [
   {
     name: indexIdentifer,
@@ -331,15 +341,96 @@ const hexStringCode = (
 });
 
 /* ========================================
+                  List
+   ========================================
+*/
+const listName = generator.identifer.fromString("decodeList");
+
+const listCode = (): data.Function => {
+  const elementTypeName = generator.identifer.fromString("T");
+  const elementTypeVar = data.typeScopeInFile(elementTypeName);
+  const decodeFunctionName = generator.identifer.fromString("decodeFunction");
+  const decodeFunctionVar = data.variable(decodeFunctionName);
+  const resultName = generator.identifer.fromString("result");
+  const resultVar = data.variable(resultName);
+  const resultAndNextIndexName = generator.identifer.fromString(
+    "resultAndNextIndex"
+  );
+  const resultAndNextIndexVar = data.variable(resultAndNextIndexName);
+
+  return {
+    name: listName,
+    document: "",
+    parameterList: [
+      {
+        name: decodeFunctionName,
+        document: "",
+        type_: data.typeFunction(
+          [data.typeNumber, data.uint8ArrayType],
+          returnType(elementTypeVar)
+        )
+      }
+    ],
+    returnType: data.typeFunction(
+      [data.typeNumber, data.uint8ArrayType],
+      returnType(data.readonlyArrayType(elementTypeVar))
+    ),
+    typeParameterList: [elementTypeName],
+    statementList: [
+      data.statementReturn(
+        data.lambda(parameterList, data.readonlyArrayType(elementTypeVar), [
+          data.statementVariableDefinition(
+            generator.identifer.fromString("length"),
+            data.typeNumber,
+            data.getByExpr(parameterBinary, parameterIndex)
+          ),
+          data.statementVariableDefinition(
+            resultName,
+            data.arrayType(elementTypeVar),
+            data.arrayLiteral([])
+          ),
+          data.statementFor(
+            generator.identifer.fromString("i"),
+            data.variable(generator.identifer.fromString("length")),
+            [
+              data.statementVariableDefinition(
+                resultAndNextIndexName,
+                returnType(elementTypeVar),
+                data.call(decodeFunctionVar, [parameterIndex, parameterBinary])
+              ),
+              data.statementEvaluateExpr(
+                data.callMethod(resultVar, "push", [
+                  data.get(resultAndNextIndexVar, "result")
+                ])
+              ),
+              data.statementSet(
+                parameterIndex,
+                null,
+                data.get(resultAndNextIndexVar, "nextIndex")
+              )
+            ]
+          ),
+          returnStatement(resultVar, parameterIndex)
+        ])
+      )
+    ]
+  };
+};
+
+/* ========================================
                   Custom
    ========================================
 */
+
+const customName = (customTypeName: string): generator.identifer.Identifer =>
+  generator.identifer.fromString("decodeCustom" + customTypeName);
+
 const customCode = (
   customTypeName: string,
   customType: type.CustomType
 ): data.Function => {
   return {
-    name: decodeName(type.typeCustom(customTypeName)),
+    name: customName(customTypeName),
     document: "",
     parameterList: parameterList,
     typeParameterList: [],

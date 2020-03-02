@@ -133,6 +133,31 @@ export const encodeListCurry = <T>(
   return result;
 };
 
+export const decodeList = <T>(
+  decodeFunction: (
+    index: number,
+    binary: Uint8Array
+  ) => { result: T; nextIndex: number }
+): ((
+  index: number,
+  binary: Uint8Array
+) => { result: ReadonlyArray<T>; nextIndex: number }) => (
+  index: number,
+  binary: Uint8Array
+): { result: ReadonlyArray<T>; nextIndex: number } => {
+  const length = binary[index];
+  const result: Array<T> = [];
+  for (let i = 0; i < length; i++) {
+    const resultAndNextIndex = decodeFunction(index, binary);
+    result.push(resultAndNextIndex.result);
+    index = resultAndNextIndex.nextIndex;
+  }
+  return {
+    result: result,
+    nextIndex: index
+  };
+};
+
 export const encodeMaybe = <T>(
   encodeFunction: (input: T) => ReadonlyArray<number>
 ): ((maybe: type.Maybe<T>) => ReadonlyArray<number>) => (
