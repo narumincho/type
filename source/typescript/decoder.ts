@@ -7,17 +7,18 @@ import * as tag from "./tag";
 export const generateCode = (
   customTypeList: ReadonlyArray<type.CustomType>,
   isBrowser: boolean
-): ReadonlyArray<ts.Definition> => {
+): ReadonlyArray<ts.Function> => {
   return [
-    ts.definitionFunction(uInt32Code),
-    ts.definitionFunction(stringCode(isBrowser)),
-    ts.definitionFunction(boolCode),
-    ts.definitionFunction(dateTimeCode),
-    ts.definitionFunction(listCode()),
-    ts.definitionFunction(maybeCode()),
-    ts.definitionFunction(resultCode()),
-    ts.definitionFunction(hexStringCode(16, idName)),
-    ts.definitionFunction(hexStringCode(32, tokenName))
+    uInt32Code,
+    stringCode(isBrowser),
+    boolCode,
+    dateTimeCode,
+    listCode(),
+    maybeCode(),
+    resultCode(),
+    hexStringCode(16, idName),
+    hexStringCode(32, tokenName),
+    ...customTypeList.map(customCode)
   ];
 };
 const idName = identifer.fromString("decodeId");
@@ -631,6 +632,18 @@ const customName = (customTypeName: string): identifer.Identifer =>
   identifer.fromString("decodeCustom" + customTypeName);
 
 const customCode = (customType: type.CustomType): ts.Function => {
+  const statementList = ((): ReadonlyArray<ts.Statement> => {
+    switch (customType.body._) {
+      case "Sum":
+        return customSumCode(
+          customType.name,
+          customType.body.tagNameAndParameterArray
+        );
+      case "Product":
+        return customProductCode(customType.body.memberNameAndTypeArray);
+    }
+  })();
+
   return {
     name: customName(customType.name),
     document: "",
@@ -639,8 +652,137 @@ const customCode = (customType: type.CustomType): ts.Function => {
     returnType: returnType(
       util.typeToGeneratorType(type.typeCustom(customType.name))
     ),
-    statementList: []
+    statementList: statementList
   };
+};
+
+const customSumCode = (
+  customTypeName: string,
+  tagNameAndParameterList: ReadonlyArray<type.TagNameAndParameter>
+): ReadonlyArray<ts.Statement> => {
+  const patternIndexAndNextIndexName = identifer.fromString("patternIndex");
+  const patternIndexAndNextIndexVar = ts.variable(patternIndexAndNextIndexName);
+
+  return [
+    ts.statementVariableDefinition(
+      patternIndexAndNextIndexName,
+      returnType(ts.typeNumber),
+      uInt32VarEval(parameterIndex, parameterBinary)
+    ),
+    ...tagNameAndParameterList.map((tagNameAndParameter, index) =>
+      tagNameAndParameterCode(
+        customTypeName,
+        tagNameAndParameter,
+        index,
+        patternIndexAndNextIndexVar
+      )
+    ),
+    ts.statementThrowError(
+      ts.stringLiteral("存在しないパターンを指定された 型を更新してください")
+    )
+  ];
+};
+
+const tagNameAndParameterCode = (
+  customTypeName: string,
+  tagNameAndParameter: type.TagNameAndParameter,
+  index: number,
+  patternIndexAndNextIndexVar: ts.Expr
+): ts.Statement => {
+  switch (tagNameAndParameter.parameter._) {
+    case "Just":
+      return ts.statementIf(
+        ts.equal(
+          getResult(patternIndexAndNextIndexVar),
+          ts.numberLiteral(index)
+        ),
+        [
+          ts.statementVariableDefinition(
+            identifer.fromString("result"),
+            returnType(
+              util.typeToGeneratorType(tagNameAndParameter.parameter.value)
+            ),
+            decodeVarEval(
+              tagNameAndParameter.parameter.value,
+              getNextIndex(patternIndexAndNextIndexVar),
+              parameterBinary
+            )
+          ),
+          returnStatement(
+            ts.call(
+              tag.customTypeVar(customTypeName, tagNameAndParameter.name),
+              [getResult(ts.variable(identifer.fromString("result")))]
+            ),
+            getNextIndex(ts.variable(identifer.fromString("result")))
+          )
+        ]
+      );
+    case "Nothing":
+      return ts.statementIf(
+        ts.equal(
+          getResult(patternIndexAndNextIndexVar),
+          ts.numberLiteral(index)
+        ),
+        [
+          returnStatement(
+            tag.customTypeVar(customTypeName, tagNameAndParameter.name),
+            getNextIndex(patternIndexAndNextIndexVar)
+          )
+        ]
+      );
+  }
+};
+
+const customProductCode = (
+  memberNameAndTypeList: ReadonlyArray<type.MemberNameAndType>
+): ReadonlyArray<ts.Statement> => {
+  const resultAndNextIndexNameIdentifer = (
+    memberNameAndType: type.MemberNameAndType
+  ): identifer.Identifer =>
+    identifer.fromString(memberNameAndType.name + "AndNextIndex");
+
+  const memberDecoderCode = memberNameAndTypeList.reduce<{
+    nextIndexExpr: ts.Expr;
+    statementList: ReadonlyArray<ts.Statement>;
+  }>(
+    (data, memberNameAndType) => {
+      const resultAndNextIndexName = resultAndNextIndexNameIdentifer(
+        memberNameAndType
+      );
+      const resultAndNextIndexVar = ts.variable(resultAndNextIndexName);
+
+      return {
+        nextIndexExpr: getNextIndex(resultAndNextIndexVar),
+        statementList: data.statementList.concat(
+          ts.statementVariableDefinition(
+            resultAndNextIndexName,
+            returnType(util.typeToGeneratorType(memberNameAndType.memberType)),
+            decodeVarEval(
+              memberNameAndType.memberType,
+              data.nextIndexExpr,
+              parameterBinary
+            )
+          )
+        )
+      };
+    },
+    { nextIndexExpr: parameterIndex, statementList: [] }
+  );
+  return memberDecoderCode.statementList.concat(
+    returnStatement(
+      ts.objectLiteral(
+        new Map(
+          memberNameAndTypeList.map((memberNameAndType): [string, ts.Expr] => [
+            memberNameAndType.name,
+            getResult(
+              ts.variable(resultAndNextIndexNameIdentifer(memberNameAndType))
+            )
+          ])
+        )
+      ),
+      memberDecoderCode.nextIndexExpr
+    )
+  );
 };
 
 const decodeVarEval = (

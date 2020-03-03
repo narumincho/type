@@ -5,20 +5,18 @@ import * as util from "./util";
 export const generateCode = (
   customTypeList: ReadonlyArray<type.CustomType>,
   isBrowser: boolean
-): ReadonlyArray<ts.Definition> => {
+): ReadonlyArray<ts.Function> => {
   return [
-    ts.definitionFunction(uInt32Code),
-    ts.definitionFunction(stringCode(isBrowser)),
-    ts.definitionFunction(boolCode),
-    ts.definitionFunction(dateTimeCode),
-    ts.definitionFunction(listCode()),
-    ts.definitionFunction(maybeCode()),
-    ts.definitionFunction(resultCode()),
-    ts.definitionFunction(encodeHexString(16, encodeIdName)),
-    ts.definitionFunction(encodeHexString(32, encodeTokenName)),
-    ...customTypeList.map(customType =>
-      ts.definitionFunction(customCode(customType))
-    )
+    uInt32Code,
+    stringCode(isBrowser),
+    boolCode,
+    dateTimeCode,
+    listCode(),
+    maybeCode(),
+    resultCode(),
+    encodeHexString(16, encodeIdName),
+    encodeHexString(32, encodeTokenName),
+    ...customTypeList.map(customType => customCode(customType))
   ];
 };
 

@@ -23,8 +23,12 @@ export const generateTypeScriptCode = (
         .generateTypeDefinition(schema)
         .map(data.definitionTypeAlias),
       ...tag.generate(schema.customTypeList),
-      ...encoder.generateCode(schema.customTypeList, isBrowser),
-      ...decoder.generateCode(schema.customTypeList, isBrowser)
+      ...encoder
+        .generateCode(schema.customTypeList, isBrowser)
+        .map(data.definitionFunction),
+      ...decoder
+        .generateCode(schema.customTypeList, isBrowser)
+        .map(data.definitionFunction)
     ],
     statementList: []
   };

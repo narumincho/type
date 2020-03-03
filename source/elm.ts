@@ -115,11 +115,8 @@ const typeToElmType = (type_: type.Type): string => {
     case "DateTime":
       return "Time.Posix";
     case "Id":
-      return customTypeToIdTypeName(type_.string_);
-    case "Hash":
-      return customTypeToHashTypeName(type_.string_);
-    case "AccessToken":
-      return "AccessToken";
+    case "Token":
+      return type_.string_;
     case "List":
       return "(List " + typeToElmType(type_.type_) + ")";
     case "Maybe":
@@ -136,12 +133,6 @@ const typeToElmType = (type_: type.Type): string => {
       return customTypeToTypeName(type_.string_);
   }
 };
-
-const customTypeToIdTypeName = (customTypeName: string): string =>
-  c.firstUpperCase(customTypeName) + "Id";
-
-const customTypeToHashTypeName = (customTypeName: string): string =>
-  c.firstUpperCase(customTypeName) + "Hash";
 
 const customTypeToTypeName = (customTypeName: string): string =>
   c.firstUpperCase(customTypeName);

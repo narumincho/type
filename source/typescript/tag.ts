@@ -146,7 +146,7 @@ const resultErrorCode: ts.Function = {
                   Custom
    ========================================
 */
-export const customTypeNameIdentifer = (
+const customTypeNameIdentifer = (
   customTypeName: string,
   tagName: string
 ): identifer.Identifer => {
@@ -154,6 +154,11 @@ export const customTypeNameIdentifer = (
     c.firstLowerCase(customTypeName) + c.firstUpperCase(tagName)
   );
 };
+
+export const customTypeVar = (
+  customTypeName: string,
+  tagName: string
+): ts.Expr => ts.variable(customTypeNameIdentifer(customTypeName, tagName));
 
 const customTypeCode = (
   customTypeList: ReadonlyArray<type.CustomType>

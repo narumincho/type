@@ -35,16 +35,8 @@ export const typeToGeneratorType = (type_: type.Type): ts.Type => {
       );
 
     case "Id":
-      return ts.typeScopeInFile(
-        generator.identifer.fromString(type_.string_ + "Id")
-      );
-    case "Hash":
-      return ts.typeScopeInFile(
-        generator.identifer.fromString(type_.string_ + "Hash")
-      );
-
-    case "AccessToken":
-      return ts.typeScopeInFile(generator.identifer.fromString("AccessToken"));
+    case "Token":
+      return ts.typeScopeInFile(generator.identifer.fromString(type_.string_));
 
     case "Custom":
       return ts.typeScopeInFile(generator.identifer.fromString(type_.string_));
