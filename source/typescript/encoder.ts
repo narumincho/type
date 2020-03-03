@@ -1,23 +1,23 @@
-import { data, identifer } from "js-ts-code-generator";
+import { data as ts, identifer } from "js-ts-code-generator";
 import * as type from "../type";
-import * as typeScript from "./type";
+import * as util from "./util";
 
 export const generateCode = (
   customTypeList: ReadonlyArray<type.CustomType>,
   isBrowser: boolean
-): ReadonlyArray<data.Definition> => {
+): ReadonlyArray<ts.Definition> => {
   return [
-    data.definitionFunction(uInt32Code),
-    data.definitionFunction(stringCode(isBrowser)),
-    data.definitionFunction(boolCode),
-    data.definitionFunction(dateTimeCode),
-    data.definitionFunction(listCode()),
-    data.definitionFunction(maybeCode()),
-    data.definitionFunction(resultCode()),
-    data.definitionFunction(encodeHexString(16, encodeIdName)),
-    data.definitionFunction(encodeHexString(32, encodeHashOrAccessTokenName)),
+    ts.definitionFunction(uInt32Code),
+    ts.definitionFunction(stringCode(isBrowser)),
+    ts.definitionFunction(boolCode),
+    ts.definitionFunction(dateTimeCode),
+    ts.definitionFunction(listCode()),
+    ts.definitionFunction(maybeCode()),
+    ts.definitionFunction(resultCode()),
+    ts.definitionFunction(encodeHexString(16, encodeIdName)),
+    ts.definitionFunction(encodeHexString(32, encodeHashOrAccessTokenName)),
     ...customTypeList.map(customType =>
-      data.definitionFunction(customCode(customType))
+      ts.definitionFunction(customCode(customType))
     )
   ];
 };
@@ -31,44 +31,7 @@ const encodeHashOrAccessTokenName = identifer.fromString(
  * `ReadonlyArray<number>`
  * を表現する
  */
-const readonlyArrayNumber: data.Type = data.readonlyArrayType(data.typeNumber);
-
-export const encodeVarEval = (type_: type.Type, expr: data.Expr): data.Expr => {
-  return data.call(encodeFunctionExpr(type_), [expr]);
-};
-
-const encodeFunctionExpr = (type_: type.Type): data.Expr => {
-  switch (type_._) {
-    case "UInt32":
-      return data.variable(uInt32Name);
-    case "String":
-      return data.variable(stringName);
-    case "Bool":
-      return data.variable(boolName);
-    case "DateTime":
-      return data.variable(dateTimeName);
-    case "List":
-      return data.call(data.variable(listName), [
-        encodeFunctionExpr(type_.type_)
-      ]);
-    case "Maybe":
-      return data.call(data.variable(maybeName), [
-        encodeFunctionExpr(type_.type_)
-      ]);
-    case "Result":
-      return data.call(data.variable(resultName), [
-        encodeFunctionExpr(type_.resultType.ok),
-        encodeFunctionExpr(type_.resultType.error)
-      ]);
-    case "Id":
-      return data.variable(encodeIdName);
-    case "Hash":
-    case "AccessToken":
-      return data.variable(encodeHashOrAccessTokenName);
-    case "Custom":
-      return data.variable(customName(type_.string_));
-  }
-};
+const readonlyArrayNumber: ts.Type = ts.readonlyArrayType(ts.typeNumber);
 
 /* ========================================
                   UInt32
@@ -80,81 +43,76 @@ const uInt32Name = identifer.fromString("encodeUInt32");
 /**
  * numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード
  */
-const uInt32Code: data.Function = {
+const uInt32Code: ts.Function = {
   name: uInt32Name,
   document:
     "numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード",
   parameterList: [
     {
       name: identifer.fromString("num"),
-      type_: data.typeNumber,
+      type_: ts.typeNumber,
       document: ""
     }
   ],
   typeParameterList: [],
   returnType: readonlyArrayNumber,
   statementList: [
-    data.statementSet(
-      data.variable(identifer.fromString("num")),
+    ts.statementSet(
+      ts.variable(identifer.fromString("num")),
       null,
-      data.callMathMethod("floor", [
-        data.callMathMethod("max", [
-          data.numberLiteral(0),
-          data.callMathMethod("min", [
-            data.variable(identifer.fromString("num")),
-            data.numberLiteral(2 ** 32 - 1)
+      ts.callMathMethod("floor", [
+        ts.callMathMethod("max", [
+          ts.numberLiteral(0),
+          ts.callMathMethod("min", [
+            ts.variable(identifer.fromString("num")),
+            ts.numberLiteral(2 ** 32 - 1)
           ])
         ])
       ])
     ),
-    data.statementVariableDefinition(
+    ts.statementVariableDefinition(
       identifer.fromString("numberArray"),
-      data.arrayType(data.typeNumber),
-      data.arrayLiteral([])
+      ts.arrayType(ts.typeNumber),
+      ts.arrayLiteral([])
     ),
-    data.statementWhileTrue([
-      data.statementVariableDefinition(
+    ts.statementWhileTrue([
+      ts.statementVariableDefinition(
         identifer.fromString("b"),
-        data.typeNumber,
-        data.bitwiseAnd(
-          data.variable(identifer.fromString("num")),
-          data.numberLiteral(0b1111111)
+        ts.typeNumber,
+        ts.bitwiseAnd(
+          ts.variable(identifer.fromString("num")),
+          ts.numberLiteral(0b1111111)
         )
       ),
-      data.statementSet(
-        data.variable(identifer.fromString("num")),
+      ts.statementSet(
+        ts.variable(identifer.fromString("num")),
         null,
-        data.unsignedRightShift(
-          data.variable(identifer.fromString("num")),
-          data.numberLiteral(7)
+        ts.unsignedRightShift(
+          ts.variable(identifer.fromString("num")),
+          ts.numberLiteral(7)
         )
       ),
-      data.statementIf(
-        data.equal(
-          data.variable(identifer.fromString("num")),
-          data.numberLiteral(0)
-        ),
+      ts.statementIf(
+        ts.equal(ts.variable(identifer.fromString("num")), ts.numberLiteral(0)),
         [
-          data.statementEvaluateExpr(
-            data.callMethod(
-              data.variable(identifer.fromString("numberArray")),
+          ts.statementEvaluateExpr(
+            ts.callMethod(
+              ts.variable(identifer.fromString("numberArray")),
               "push",
-              [data.variable(identifer.fromString("b"))]
+              [ts.variable(identifer.fromString("b"))]
             )
           ),
-          data.statementReturn(
-            data.variable(identifer.fromString("numberArray"))
-          )
+          ts.statementReturn(ts.variable(identifer.fromString("numberArray")))
         ]
       ),
-      data.statementEvaluateExpr(
-        data.callMethod(
-          data.variable(identifer.fromString("numberArray")),
+      ts.statementEvaluateExpr(
+        ts.callMethod(
+          ts.variable(identifer.fromString("numberArray")),
           "push",
           [
-            data.bitwiseOr(
-              data.variable(identifer.fromString("b")),
-              data.numberLiteral(0b10000000)
+            ts.bitwiseOr(
+              ts.variable(identifer.fromString("b")),
+              ts.numberLiteral(0b10000000)
             )
           ]
         )
@@ -173,7 +131,7 @@ const stringName = identifer.fromString("encodeString");
  * stringからバイナリに変換するコード
  * ブラウザではグローバルのTextDecoderを使い、node.jsではutilのTextDecoderを使う
  */
-const stringCode = (isBrowser: boolean): data.Function => ({
+const stringCode = (isBrowser: boolean): ts.Function => ({
   name: stringName,
   document:
     "stringからバイナリに変換する. このコードは" +
@@ -183,33 +141,29 @@ const stringCode = (isBrowser: boolean): data.Function => ({
   parameterList: [
     {
       name: identifer.fromString("text"),
-      type_: data.typeString,
+      type_: ts.typeString,
       document: ""
     }
   ],
   typeParameterList: [],
   returnType: readonlyArrayNumber,
   statementList: [
-    data.statementReturn(
-      data.callMethod(
-        data.globalObjects(identifer.fromString("Array")),
-        "from",
-        [
-          data.callMethod(
-            data.newExpr(
-              isBrowser
-                ? data.globalObjects(identifer.fromString("TextEncoder"))
-                : data.importedVariable(
-                    "util",
-                    identifer.fromString("TextEncoder")
-                  ),
-              []
-            ),
-            "encode",
-            [data.variable(identifer.fromString("text"))]
-          )
-        ]
-      )
+    ts.statementReturn(
+      ts.callMethod(ts.globalObjects(identifer.fromString("Array")), "from", [
+        ts.callMethod(
+          ts.newExpr(
+            isBrowser
+              ? ts.globalObjects(identifer.fromString("TextEncoder"))
+              : ts.importedVariable(
+                  "util",
+                  identifer.fromString("TextEncoder")
+                ),
+            []
+          ),
+          "encode",
+          [ts.variable(identifer.fromString("text"))]
+        )
+      ])
     )
   ]
 });
@@ -220,25 +174,25 @@ const stringCode = (isBrowser: boolean): data.Function => ({
 */
 const boolName = identifer.fromString("encodeBool");
 
-const boolCode: data.Function = {
+const boolCode: ts.Function = {
   name: boolName,
   document: "boolからバイナリに変換する",
   parameterList: [
     {
       name: identifer.fromString("value"),
-      type_: data.typeBoolean,
+      type_: ts.typeBoolean,
       document: ""
     }
   ],
   typeParameterList: [],
   returnType: readonlyArrayNumber,
   statementList: [
-    data.statementReturn(
-      data.arrayLiteral([
-        data.conditionalOperator(
-          data.variable(identifer.fromString("value")),
-          data.numberLiteral(1),
-          data.numberLiteral(0)
+    ts.statementReturn(
+      ts.arrayLiteral([
+        ts.conditionalOperator(
+          ts.variable(identifer.fromString("value")),
+          ts.numberLiteral(1),
+          ts.numberLiteral(0)
         )
       ])
     )
@@ -252,33 +206,32 @@ const boolCode: data.Function = {
 
 const dateTimeName = identifer.fromString("encodeDateTime");
 
-const dateTimeCode: data.Function = {
+const dateTimeCode: ts.Function = {
   name: dateTimeName,
   document: "",
   parameterList: [
     {
       name: identifer.fromString("dateTime"),
       document: "",
-      type_: data.dateType
+      type_: ts.dateType
     }
   ],
   returnType: readonlyArrayNumber,
   typeParameterList: [],
   statementList: [
-    data.statementReturn(
-      encodeVarEval(
-        type.typeUInt32,
-        data.callMathMethod("floor", [
-          data.division(
-            data.callMethod(
-              data.variable(identifer.fromString("dateTime")),
+    ts.statementReturn(
+      ts.call(ts.variable(uInt32Name), [
+        ts.callMathMethod("floor", [
+          ts.division(
+            ts.callMethod(
+              ts.variable(identifer.fromString("dateTime")),
               "getTime",
               []
             ),
-            data.numberLiteral(1000)
+            ts.numberLiteral(1000)
           )
         ])
-      )
+      ])
     )
   ]
 };
@@ -291,13 +244,13 @@ const dateTimeCode: data.Function = {
 const encodeHexString = (
   byteSize: number,
   functionName: identifer.Identifer
-): data.Function => {
+): ts.Function => {
   const idName = identifer.fromString("id");
-  const idVar = data.variable(idName);
+  const idVar = ts.variable(idName);
   const resultName = identifer.fromString("result");
-  const resultVar = data.variable(resultName);
+  const resultVar = ts.variable(resultName);
   const iName = identifer.fromString("i");
-  const iVar = data.variable(iName);
+  const iVar = ts.variable(iName);
 
   return {
     name: functionName,
@@ -305,35 +258,35 @@ const encodeHexString = (
     parameterList: [
       {
         name: idName,
-        type_: data.typeString,
+        type_: ts.typeString,
         document: ""
       }
     ],
     typeParameterList: [],
     returnType: readonlyArrayNumber,
     statementList: [
-      data.statementVariableDefinition(
+      ts.statementVariableDefinition(
         resultName,
-        data.arrayType(data.typeNumber),
-        data.arrayLiteral([])
+        ts.arrayType(ts.typeNumber),
+        ts.arrayLiteral([])
       ),
-      data.statementFor(iName, data.numberLiteral(byteSize), [
-        data.statementSet(
-          data.getByExpr(resultVar, iVar),
+      ts.statementFor(iName, ts.numberLiteral(byteSize), [
+        ts.statementSet(
+          ts.getByExpr(resultVar, iVar),
           null,
-          data.callNumberMethod("parseInt", [
-            data.callMethod(idVar, "slice", [
-              data.multiplication(iVar, data.numberLiteral(2)),
-              data.addition(
-                data.multiplication(iVar, data.numberLiteral(2)),
-                data.numberLiteral(2)
+          ts.callNumberMethod("parseInt", [
+            ts.callMethod(idVar, "slice", [
+              ts.multiplication(iVar, ts.numberLiteral(2)),
+              ts.addition(
+                ts.multiplication(iVar, ts.numberLiteral(2)),
+                ts.numberLiteral(2)
               )
             ]),
-            data.numberLiteral(16)
+            ts.numberLiteral(16)
           ])
         )
       ]),
-      data.statementReturn(resultVar)
+      ts.statementReturn(resultVar)
     ]
   };
 };
@@ -345,7 +298,7 @@ const encodeHexString = (
 
 const listName = identifer.fromString("encodeList");
 
-const listCode = (): data.Function => {
+const listCode = (): ts.Function => {
   const elementTypeName = identifer.fromString("T");
   const parameterList = identifer.fromString("list");
   const resultName = identifer.fromString("result");
@@ -359,47 +312,45 @@ const listCode = (): data.Function => {
       {
         name: encodeFunctionName,
         document: "",
-        type_: data.typeFunction(
-          [data.typeScopeInFile(elementTypeName)],
+        type_: ts.typeFunction(
+          [ts.typeScopeInFile(elementTypeName)],
           readonlyArrayNumber
         )
       }
     ],
     typeParameterList: [elementTypeName],
-    returnType: data.typeFunction(
-      [data.readonlyArrayType(data.typeScopeInFile(elementTypeName))],
+    returnType: ts.typeFunction(
+      [ts.readonlyArrayType(ts.typeScopeInFile(elementTypeName))],
       readonlyArrayNumber
     ),
     statementList: [
-      data.statementReturn(
-        data.lambda(
+      ts.statementReturn(
+        ts.lambda(
           [
             {
               name: parameterList,
-              type_: data.readonlyArrayType(
-                data.typeScopeInFile(elementTypeName)
-              )
+              type_: ts.readonlyArrayType(ts.typeScopeInFile(elementTypeName))
             }
           ],
           readonlyArrayNumber,
           [
-            data.statementLetVariableDefinition(
+            ts.statementLetVariableDefinition(
               resultName,
-              data.arrayType(data.typeNumber),
-              data.arrayLiteral([])
+              ts.arrayType(ts.typeNumber),
+              ts.arrayLiteral([])
             ),
-            data.statementForOf(elementName, data.variable(parameterList), [
-              data.statementSet(
-                data.variable(resultName),
+            ts.statementForOf(elementName, ts.variable(parameterList), [
+              ts.statementSet(
+                ts.variable(resultName),
                 null,
-                data.callMethod(data.variable(resultName), "concat", [
-                  data.call(data.variable(encodeFunctionName), [
-                    data.variable(elementName)
+                ts.callMethod(ts.variable(resultName), "concat", [
+                  ts.call(ts.variable(encodeFunctionName), [
+                    ts.variable(elementName)
                   ])
                 ])
               )
             ]),
-            data.statementReturn(data.variable(resultName))
+            ts.statementReturn(ts.variable(resultName))
           ]
         )
       )
@@ -413,21 +364,21 @@ const listCode = (): data.Function => {
 */
 const maybeName = identifer.fromString("encodeMaybe");
 
-const maybeCode = (): data.Function => {
+const maybeCode = (): ts.Function => {
   const encodeFunctionName = identifer.fromString("encodeFunction");
-  const encodeFunctionVar = data.variable(encodeFunctionName);
+  const encodeFunctionVar = ts.variable(encodeFunctionName);
   const elementTypeName = identifer.fromString("T");
   const maybeName = identifer.fromString("maybe");
-  const maybeVar = data.variable(maybeName);
+  const maybeVar = ts.variable(maybeName);
 
   return {
     name: maybeName,
     document: "",
-    returnType: data.typeFunction(
+    returnType: ts.typeFunction(
       [
-        data.typeWithParameter(
-          data.typeScopeInFile(identifer.fromString("Maybe")),
-          [data.typeScopeInFile(elementTypeName)]
+        ts.typeWithParameter(
+          ts.typeScopeInFile(identifer.fromString("Maybe")),
+          [ts.typeScopeInFile(elementTypeName)]
         )
       ],
       readonlyArrayNumber
@@ -436,40 +387,40 @@ const maybeCode = (): data.Function => {
       {
         name: encodeFunctionName,
         document: "",
-        type_: data.typeFunction(
-          [data.typeScopeInFile(elementTypeName)],
+        type_: ts.typeFunction(
+          [ts.typeScopeInFile(elementTypeName)],
           readonlyArrayNumber
         )
       }
     ],
     typeParameterList: [elementTypeName],
     statementList: [
-      data.statementReturn(
-        data.lambda(
+      ts.statementReturn(
+        ts.lambda(
           [
             {
               name: maybeName,
-              type_: data.typeWithParameter(
-                data.typeScopeInFile(identifer.fromString("Maybe")),
-                [data.typeScopeInFile(elementTypeName)]
+              type_: ts.typeWithParameter(
+                ts.typeScopeInFile(identifer.fromString("Maybe")),
+                [ts.typeScopeInFile(elementTypeName)]
               )
             }
           ],
           readonlyArrayNumber,
           [
-            data.statementSwitch({
-              expr: data.get(maybeVar, "_"),
+            ts.statementSwitch({
+              expr: ts.get(maybeVar, "_"),
               patternList: [
                 {
                   caseTag: "Just",
                   statementList: [
-                    data.statementReturn(
-                      data.callMethod(
-                        data.arrayLiteral([data.numberLiteral(0)]),
+                    ts.statementReturn(
+                      ts.callMethod(
+                        ts.arrayLiteral([ts.numberLiteral(0)]),
                         "concat",
                         [
-                          data.call(encodeFunctionVar, [
-                            data.get(maybeVar, "value")
+                          ts.call(encodeFunctionVar, [
+                            ts.get(maybeVar, "value")
                           ])
                         ]
                       )
@@ -479,9 +430,7 @@ const maybeCode = (): data.Function => {
                 {
                   caseTag: "Nothing",
                   statementList: [
-                    data.statementReturn(
-                      data.arrayLiteral([data.numberLiteral(1)])
-                    )
+                    ts.statementReturn(ts.arrayLiteral([ts.numberLiteral(1)]))
                   ]
                 }
               ]
@@ -499,15 +448,15 @@ const maybeCode = (): data.Function => {
 */
 const resultName = identifer.fromString("encodeResult");
 
-const resultCode = (): data.Function => {
+const resultCode = (): ts.Function => {
   const okName = identifer.fromString("ok");
-  const okTypeVar = data.typeScopeInFile(okName);
+  const okTypeVar = ts.typeScopeInFile(okName);
   const errorName = identifer.fromString("error");
-  const errorTypeVar = data.typeScopeInFile(errorName);
+  const errorTypeVar = ts.typeScopeInFile(errorName);
   const parameterResultName = identifer.fromString("result");
-  const parameterResultVar = data.variable(parameterResultName);
-  const resultType = data.typeWithParameter(
-    data.typeScopeInFile(identifer.fromString("Result")),
+  const parameterResultVar = ts.variable(parameterResultName);
+  const resultType = ts.typeWithParameter(
+    ts.typeScopeInFile(identifer.fromString("Result")),
     [okTypeVar, errorTypeVar]
   );
   const errorEncodeFunctionName = identifer.fromString("errorEncodeFunction");
@@ -520,19 +469,19 @@ const resultCode = (): data.Function => {
       {
         name: okEncodeFunctionName,
         document: "",
-        type_: data.typeFunction([okTypeVar], readonlyArrayNumber)
+        type_: ts.typeFunction([okTypeVar], readonlyArrayNumber)
       },
       {
         name: errorEncodeFunctionName,
         document: "",
-        type_: data.typeFunction([errorTypeVar], readonlyArrayNumber)
+        type_: ts.typeFunction([errorTypeVar], readonlyArrayNumber)
       }
     ],
-    returnType: data.typeFunction([resultType], readonlyArrayNumber),
+    returnType: ts.typeFunction([resultType], readonlyArrayNumber),
     typeParameterList: [okName, errorName],
     statementList: [
-      data.statementReturn(
-        data.lambda(
+      ts.statementReturn(
+        ts.lambda(
           [
             {
               name: parameterResultName,
@@ -541,19 +490,19 @@ const resultCode = (): data.Function => {
           ],
           readonlyArrayNumber,
           [
-            data.statementSwitch({
-              expr: data.get(parameterResultVar, "_"),
+            ts.statementSwitch({
+              expr: ts.get(parameterResultVar, "_"),
               patternList: [
                 {
                   caseTag: "Ok",
                   statementList: [
-                    data.statementReturn(
-                      data.callMethod(
-                        data.arrayLiteral([data.numberLiteral(0)]),
+                    ts.statementReturn(
+                      ts.callMethod(
+                        ts.arrayLiteral([ts.numberLiteral(0)]),
                         "concat",
                         [
-                          data.call(data.variable(okEncodeFunctionName), [
-                            data.get(parameterResultVar, "ok")
+                          ts.call(ts.variable(okEncodeFunctionName), [
+                            ts.get(parameterResultVar, "ok")
                           ])
                         ]
                       )
@@ -563,13 +512,13 @@ const resultCode = (): data.Function => {
                 {
                   caseTag: "Error",
                   statementList: [
-                    data.statementReturn(
-                      data.callMethod(
-                        data.arrayLiteral([data.numberLiteral(1)]),
+                    ts.statementReturn(
+                      ts.callMethod(
+                        ts.arrayLiteral([ts.numberLiteral(1)]),
                         "concat",
                         [
-                          data.call(data.variable(errorEncodeFunctionName), [
-                            data.get(parameterResultVar, "error")
+                          ts.call(ts.variable(errorEncodeFunctionName), [
+                            ts.get(parameterResultVar, "error")
                           ])
                         ]
                       )
@@ -593,13 +542,13 @@ const resultCode = (): data.Function => {
 const customName = (customTypeName: string): identifer.Identifer =>
   identifer.fromString("encodeCustom" + customTypeName);
 
-export const customCode = (customType: type.CustomType): data.Function => {
-  const parameterName = typeScript.typeToMemberOrParameterName(
+export const customCode = (customType: type.CustomType): ts.Function => {
+  const parameterName = util.typeToMemberOrParameterName(
     type.typeCustom(customType.name)
   );
-  const parameterVar = data.variable(parameterName);
+  const parameterVar = ts.variable(parameterName);
 
-  const statementList = ((): ReadonlyArray<data.Statement> => {
+  const statementList = ((): ReadonlyArray<ts.Statement> => {
     switch (customType.body._) {
       case "Product":
         return customProductCode(
@@ -621,7 +570,7 @@ export const customCode = (customType: type.CustomType): data.Function => {
       {
         name: identifer.fromString(parameterName),
         document: "",
-        type_: typeScript.typeToGeneratorType(type.typeCustom(customType.name))
+        type_: util.typeToGeneratorType(type.typeCustom(customType.name))
       }
     ],
     typeParameterList: [],
@@ -632,30 +581,30 @@ export const customCode = (customType: type.CustomType): data.Function => {
 
 export const customProductCode = (
   memberNameAndTypeArray: ReadonlyArray<type.MemberNameAndType>,
-  parameter: data.Expr
-): ReadonlyArray<data.Statement> => {
+  parameter: ts.Expr
+): ReadonlyArray<ts.Statement> => {
   let e = encodeVarEval(
     memberNameAndTypeArray[0].memberType,
-    data.get(parameter, memberNameAndTypeArray[0].name)
+    ts.get(parameter, memberNameAndTypeArray[0].name)
   );
   for (const memberNameAndType of memberNameAndTypeArray.slice(1)) {
-    e = data.callMethod(e, "concat", [
+    e = ts.callMethod(e, "concat", [
       encodeVarEval(
         memberNameAndType.memberType,
-        data.get(parameter, memberNameAndType.name)
+        ts.get(parameter, memberNameAndType.name)
       )
     ]);
   }
-  return [data.statementReturn(e)];
+  return [ts.statementReturn(e)];
 };
 
 export const customSumCode = (
   tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
-  parameter: data.Expr
-): ReadonlyArray<data.Statement> => {
-  if (typeScript.isProductTypeAllNoParameter(tagNameAndParameterArray)) {
+  parameter: ts.Expr
+): ReadonlyArray<ts.Statement> => {
+  if (util.isProductTypeAllNoParameter(tagNameAndParameterArray)) {
     return [
-      data.statementSwitch({
+      ts.statementSwitch({
         expr: parameter,
         patternList: tagNameAndParameterArray.map(
           (tagNameAndParameter, index) =>
@@ -669,8 +618,8 @@ export const customSumCode = (
     ];
   }
   return [
-    data.statementSwitch({
-      expr: data.get(parameter, "_"),
+    ts.statementSwitch({
+      expr: ts.get(parameter, "_"),
       patternList: tagNameAndParameterArray.map((tagNameAndParameter, index) =>
         tagNameAndParameterToSwitchPattern(
           tagNameAndParameter,
@@ -685,20 +634,20 @@ export const customSumCode = (
 const tagNameAndParameterToSwitchPattern = (
   tagNameAndParameter: type.TagNameAndParameter,
   index: number,
-  parameter: data.Expr
-): data.Pattern => {
-  const returnExpr = ((): data.Expr => {
+  parameter: ts.Expr
+): ts.Pattern => {
+  const returnExpr = ((): ts.Expr => {
     switch (tagNameAndParameter.parameter._) {
       case "Just":
-        return data.callMethod(
-          data.arrayLiteral([data.numberLiteral(index)]),
+        return ts.callMethod(
+          ts.arrayLiteral([ts.numberLiteral(index)]),
           "concat",
           [
             encodeVarEval(
               tagNameAndParameter.parameter.value,
-              data.get(
+              ts.get(
                 parameter,
-                typeScript.typeToMemberOrParameterName(
+                util.typeToMemberOrParameterName(
                   tagNameAndParameter.parameter.value
                 )
               )
@@ -707,11 +656,44 @@ const tagNameAndParameterToSwitchPattern = (
         );
 
       case "Nothing":
-        return data.arrayLiteral([data.numberLiteral(index)]);
+        return ts.arrayLiteral([ts.numberLiteral(index)]);
     }
   })();
   return {
     caseTag: tagNameAndParameter.name,
-    statementList: [data.statementReturn(returnExpr)]
+    statementList: [ts.statementReturn(returnExpr)]
   };
+};
+
+export const encodeVarEval = (type_: type.Type, expr: ts.Expr): ts.Expr => {
+  return ts.call(encodeFunctionExpr(type_), [expr]);
+};
+
+const encodeFunctionExpr = (type_: type.Type): ts.Expr => {
+  switch (type_._) {
+    case "UInt32":
+      return ts.variable(uInt32Name);
+    case "String":
+      return ts.variable(stringName);
+    case "Bool":
+      return ts.variable(boolName);
+    case "DateTime":
+      return ts.variable(dateTimeName);
+    case "List":
+      return ts.call(ts.variable(listName), [encodeFunctionExpr(type_.type_)]);
+    case "Maybe":
+      return ts.call(ts.variable(maybeName), [encodeFunctionExpr(type_.type_)]);
+    case "Result":
+      return ts.call(ts.variable(resultName), [
+        encodeFunctionExpr(type_.resultType.ok),
+        encodeFunctionExpr(type_.resultType.error)
+      ]);
+    case "Id":
+      return ts.variable(encodeIdName);
+    case "Hash":
+    case "AccessToken":
+      return ts.variable(encodeHashOrAccessTokenName);
+    case "Custom":
+      return ts.variable(customName(type_.string_));
+  }
 };

@@ -1,14 +1,14 @@
-import { data, identifer } from "js-ts-code-generator";
+import { data as ts, identifer } from "js-ts-code-generator";
 import * as type from "../type";
-import * as typeScript from "./type";
+import * as typeScript from "./util";
 
 export const generateTypeDefinition = (
   customTypeList: ReadonlyArray<type.CustomType>
-): ReadonlyArray<data.TypeAlias> => {
+): ReadonlyArray<ts.TypeAlias> => {
   return [
     maybeDefinition,
     resultDefinition,
-    ...customTypeList.map(customType => customTypeToDefinition(customType))
+    ...customTypeList.map(customTypeToDefinition)
   ];
 };
 
@@ -18,30 +18,28 @@ export const generateTypeDefinition = (
 */
 
 const maybeName = identifer.fromString("Maybe");
-export const maybeVar = (elementType: data.Type): data.Type =>
-  data.typeWithParameter(data.typeScopeInFile(maybeName), [elementType]);
+export const maybeVar = (elementType: ts.Type): ts.Type =>
+  ts.typeWithParameter(ts.typeScopeInFile(maybeName), [elementType]);
 
-const maybeDefinition: data.TypeAlias = {
+const maybeDefinition: ts.TypeAlias = {
   name: maybeName,
   document: "Maybe",
   parameterList: [identifer.fromString("T")],
-  type_: data.typeUnion([
-    data.typeObject(
+  type_: ts.typeUnion([
+    ts.typeObject(
       new Map([
-        ["_", { type_: data.typeStringLiteral("Just"), document: "" }],
+        ["_", { type_: ts.typeStringLiteral("Just"), document: "" }],
         [
           "value",
           {
-            type_: data.typeScopeInFile(identifer.fromString("T")),
+            type_: ts.typeScopeInFile(identifer.fromString("T")),
             document: ""
           }
         ]
       ])
     ),
-    data.typeObject(
-      new Map([
-        ["_", { type_: data.typeStringLiteral("Nothing"), document: "" }]
-      ])
+    ts.typeObject(
+      new Map([["_", { type_: ts.typeStringLiteral("Nothing"), document: "" }]])
     )
   ])
 };
@@ -52,33 +50,33 @@ const maybeDefinition: data.TypeAlias = {
 */
 
 const resultName = identifer.fromString("Result");
-export const resultVar = (okType: data.Type, errorType: data.Type): data.Type =>
-  data.typeWithParameter(data.typeScopeInFile(resultName), [okType, errorType]);
+export const resultVar = (okType: ts.Type, errorType: ts.Type): ts.Type =>
+  ts.typeWithParameter(ts.typeScopeInFile(resultName), [okType, errorType]);
 
-const resultDefinition: data.TypeAlias = {
+const resultDefinition: ts.TypeAlias = {
   name: resultName,
   document: "Result",
   parameterList: [identifer.fromString("ok"), identifer.fromString("error")],
-  type_: data.typeUnion([
-    data.typeObject(
+  type_: ts.typeUnion([
+    ts.typeObject(
       new Map([
-        ["_", { type_: data.typeStringLiteral("Ok"), document: "" }],
+        ["_", { type_: ts.typeStringLiteral("Ok"), document: "" }],
         [
           "ok",
           {
-            type_: data.typeScopeInFile(identifer.fromString("ok")),
+            type_: ts.typeScopeInFile(identifer.fromString("ok")),
             document: ""
           }
         ]
       ])
     ),
-    data.typeObject(
+    ts.typeObject(
       new Map([
-        ["_", { type_: data.typeStringLiteral("Error"), document: "" }],
+        ["_", { type_: ts.typeStringLiteral("Error"), document: "" }],
         [
           "error",
           {
-            type_: data.typeScopeInFile(identifer.fromString("error")),
+            type_: ts.typeScopeInFile(identifer.fromString("error")),
             document: ""
           }
         ]
@@ -86,6 +84,14 @@ const resultDefinition: data.TypeAlias = {
     )
   ])
 };
+/* ========================================
+                Id Hash
+   ========================================
+ */
+const idTypeNameIdentifer = (idTypeName: string): identifer.Identifer =>
+  identifer.fromString(idTypeName + "Id");
+
+const idTypeToDefinition = (): ts.TypeAlias => {};
 
 /* ========================================
                Custom Type
@@ -94,12 +100,12 @@ const resultDefinition: data.TypeAlias = {
 const customTypeNameIdentifer = (customTypeName: string): identifer.Identifer =>
   identifer.fromString(customTypeName);
 
-export const customTypeVar = (customTypeName: string): data.Type =>
-  data.typeScopeInFile(customTypeNameIdentifer(customTypeName));
+export const customTypeVar = (customTypeName: string): ts.Type =>
+  ts.typeScopeInFile(customTypeNameIdentifer(customTypeName));
 
 export const customTypeToDefinition = (
   customType: type.CustomType
-): data.TypeAlias => {
+): ts.TypeAlias => {
   switch (customType.body._) {
     case "Sum":
       if (
@@ -111,9 +117,9 @@ export const customTypeToDefinition = (
           name: identifer.fromString(customType.name),
           document: customType.description,
           parameterList: [],
-          type_: data.typeUnion(
+          type_: ts.typeUnion(
             customType.body.tagNameAndParameterArray.map(tagNameAndParameter =>
-              data.typeStringLiteral(tagNameAndParameter.name)
+              ts.typeStringLiteral(tagNameAndParameter.name)
             )
           )
         };
@@ -122,7 +128,7 @@ export const customTypeToDefinition = (
         name: identifer.fromString(customType.name),
         document: customType.description,
         parameterList: [],
-        type_: data.typeUnion(
+        type_: ts.typeUnion(
           customType.body.tagNameAndParameterArray.map(tagNameAndParameter =>
             tagNameAndParameterToObjectType(tagNameAndParameter)
           )
@@ -133,7 +139,7 @@ export const customTypeToDefinition = (
         name: customTypeNameIdentifer(customType.name),
         document: customType.description,
         parameterList: [],
-        type_: data.typeObject(
+        type_: ts.typeObject(
           new Map(
             customType.body.memberNameAndTypeArray.map(memberNameAndType => [
               memberNameAndType.name,
@@ -152,18 +158,18 @@ export const customTypeToDefinition = (
 
 const tagNameAndParameterToObjectType = (
   tagNameAndParameter: type.TagNameAndParameter
-): data.Type => {
-  const tagField: [string, { type_: data.Type; document: string }] = [
+): ts.Type => {
+  const tagField: [string, { type_: ts.Type; document: string }] = [
     "_",
     {
       document: "",
-      type_: data.typeStringLiteral(tagNameAndParameter.name)
+      type_: ts.typeStringLiteral(tagNameAndParameter.name)
     }
   ];
 
   switch (tagNameAndParameter.parameter._) {
     case "Just":
-      return data.typeObject(
+      return ts.typeObject(
         new Map([
           tagField,
           [
@@ -180,6 +186,6 @@ const tagNameAndParameterToObjectType = (
         ])
       );
     case "Nothing":
-      return data.typeObject(new Map([tagField]));
+      return ts.typeObject(new Map([tagField]));
   }
 };

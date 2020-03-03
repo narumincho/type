@@ -1,33 +1,33 @@
 import * as generator from "js-ts-code-generator";
-import { data } from "js-ts-code-generator";
+import { data as ts } from "js-ts-code-generator";
 import * as type from "../type";
 import * as c from "../case";
 
-export const typeToGeneratorType = (type_: type.Type): data.Type => {
+export const typeToGeneratorType = (type_: type.Type): ts.Type => {
   switch (type_._) {
     case "UInt32":
-      return data.typeNumber;
+      return ts.typeNumber;
 
     case "String":
-      return data.typeString;
+      return ts.typeString;
 
     case "Bool":
-      return data.typeBoolean;
+      return ts.typeBoolean;
 
     case "DateTime":
-      return data.dateType;
+      return ts.dateType;
 
     case "List":
-      return data.readonlyArrayType(typeToGeneratorType(type_.type_));
+      return ts.readonlyArrayType(typeToGeneratorType(type_.type_));
 
     case "Maybe":
-      return data.typeWithParameter(
-        data.typeScopeInGlobal(generator.identifer.fromString("Maybe")),
+      return ts.typeWithParameter(
+        ts.typeScopeInGlobal(generator.identifer.fromString("Maybe")),
         [typeToGeneratorType(type_.type_)]
       );
     case "Result":
-      return data.typeWithParameter(
-        data.typeScopeInGlobal(generator.identifer.fromString("Result")),
+      return ts.typeWithParameter(
+        ts.typeScopeInGlobal(generator.identifer.fromString("Result")),
         [
           typeToGeneratorType(type_.resultType.error),
           typeToGeneratorType(type_.resultType.ok)
@@ -35,23 +35,19 @@ export const typeToGeneratorType = (type_: type.Type): data.Type => {
       );
 
     case "Id":
-      return data.typeScopeInFile(
+      return ts.typeScopeInFile(
         generator.identifer.fromString(type_.string_ + "Id")
       );
     case "Hash":
-      return data.typeScopeInFile(
+      return ts.typeScopeInFile(
         generator.identifer.fromString(type_.string_ + "Hash")
       );
 
     case "AccessToken":
-      return data.typeScopeInFile(
-        generator.identifer.fromString("AccessToken")
-      );
+      return ts.typeScopeInFile(generator.identifer.fromString("AccessToken"));
 
     case "Custom":
-      return data.typeScopeInFile(
-        generator.identifer.fromString(type_.string_)
-      );
+      return ts.typeScopeInFile(generator.identifer.fromString(type_.string_));
   }
 };
 
