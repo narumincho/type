@@ -15,7 +15,7 @@ export const generateCode = (
     ts.definitionFunction(maybeCode()),
     ts.definitionFunction(resultCode()),
     ts.definitionFunction(encodeHexString(16, encodeIdName)),
-    ts.definitionFunction(encodeHexString(32, encodeHashOrAccessTokenName)),
+    ts.definitionFunction(encodeHexString(32, encodeTokenName)),
     ...customTypeList.map(customType =>
       ts.definitionFunction(customCode(customType))
     )
@@ -23,9 +23,7 @@ export const generateCode = (
 };
 
 const encodeIdName = identifer.fromString("encodeId");
-const encodeHashOrAccessTokenName = identifer.fromString(
-  "encodeHashOrAccessToken"
-);
+const encodeTokenName = identifer.fromString("encodeHashOrAccessToken");
 
 /**
  * `ReadonlyArray<number>`
@@ -237,7 +235,7 @@ const dateTimeCode: ts.Function = {
 };
 
 /* ========================================
-            HexString (Id / Hash)
+            HexString (Id / Token)
    ========================================
 */
 
@@ -690,9 +688,8 @@ const encodeFunctionExpr = (type_: type.Type): ts.Expr => {
       ]);
     case "Id":
       return ts.variable(encodeIdName);
-    case "Hash":
-    case "AccessToken":
-      return ts.variable(encodeHashOrAccessTokenName);
+    case "Token":
+      return ts.variable(encodeTokenName);
     case "Custom":
       return ts.variable(customName(type_.string_));
   }

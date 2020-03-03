@@ -3,14 +3,16 @@ import * as c from "./case";
 
 export const generateCode = (
   moduleName: string,
-  customTypeList: ReadonlyArray<type.CustomType>
+  schema: type.Schema
 ): string => {
   return (
-    moduleExportList(moduleName, customTypeList) +
+    moduleExportList(moduleName, schema.customTypeList) +
     "\n" +
     importList +
     "\n" +
-    customTypeList.map(customType => customTypeToCode(customType)).join("\n\n")
+    schema.customTypeList
+      .map(customType => customTypeToCode(customType))
+      .join("\n\n")
   );
 };
 

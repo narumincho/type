@@ -1,14 +1,16 @@
 import { data as ts, identifer } from "js-ts-code-generator";
 import * as type from "../type";
 import * as typeScript from "./util";
+import * as c from "../case";
 
 export const generateTypeDefinition = (
-  customTypeList: ReadonlyArray<type.CustomType>
+  schema: type.Schema
 ): ReadonlyArray<ts.TypeAlias> => {
   return [
     maybeDefinition,
     resultDefinition,
-    ...customTypeList.map(customTypeToDefinition)
+    ...schema.customTypeList.map(customTypeToDefinition),
+    ...schema.idOrHashTypeNameList.map(idOrTokenDefinition)
   ];
 };
 
@@ -85,13 +87,23 @@ const resultDefinition: ts.TypeAlias = {
   ])
 };
 /* ========================================
-                Id Hash
+                Id Token
    ========================================
  */
-const idTypeNameIdentifer = (idTypeName: string): identifer.Identifer =>
-  identifer.fromString(idTypeName + "Id");
 
-const idTypeToDefinition = (): ts.TypeAlias => {};
+const idOrTokenDefinition = (name: string): ts.TypeAlias => ({
+  name: identifer.fromString(name),
+  document: "",
+  parameterList: [],
+  type_: ts.typeIntersection(
+    ts.typeString,
+    ts.typeObject(
+      new Map([
+        ["_" + c.firstLowerCase(name), { type_: ts.typeNever, document: "" }]
+      ])
+    )
+  )
+});
 
 /* ========================================
                Custom Type

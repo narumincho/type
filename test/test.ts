@@ -45,19 +45,15 @@ describe("test", () => {
       },
       {
         name: "Id",
-        description: "Id. データを識別するためのもの. カスタムの型名を指定する",
-        parameter: type.maybeJust(type.typeString)
-      },
-      {
-        name: "Hash",
-        description: "Hash. データを識別するためのHash",
-        parameter: type.maybeJust(type.typeString)
-      },
-      {
-        name: "AccessToken",
         description:
-          "トークン. データへのアクセスをするために必要になるもの. トークンの種類の名前を指定する",
-        parameter: type.maybeNothing()
+          "データを識別するためのもの. カスタムの型名を指定する. 16byte. 16進数文字列で32文字",
+        parameter: type.maybeJust(type.typeString)
+      },
+      {
+        name: "Token",
+        description:
+          "データを識別するため. カスタムの型名を指定する. 32byte. 16進数文字列で64文字",
+        parameter: type.maybeJust(type.typeString)
       },
       {
         name: "Custom",
@@ -84,16 +80,16 @@ describe("test", () => {
     ])
   };
 
-  const customTypeList: ReadonlyArray<type.CustomType> = [
-    typeType,
-    resultTypeType
-  ];
+  const schema: type.Schema = {
+    customTypeList: [typeType, resultTypeType],
+    idOrHashTypeNameList: ["UserId", "FileToken"]
+  };
 
   const typeDefinitionTypeScriptCode = generator.generateCodeAsString(
-    t.generateTypeScriptCode(customTypeList, false),
+    t.generateTypeScriptCode(schema, false),
     "TypeScript"
   );
-  const elmCodeAsString: string = t.elm.generateCode("Data", customTypeList);
+  const elmCodeAsString: string = t.elm.generateCode("Data", schema);
   fs.promises.writeFile("out.ts", typeDefinitionTypeScriptCode);
   fs.promises.writeFile("out.elm", elmCodeAsString);
   it("type definition typeScript", () => {

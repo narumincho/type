@@ -17,11 +17,11 @@ export const generateCode = (
     ts.definitionFunction(maybeCode()),
     ts.definitionFunction(resultCode()),
     ts.definitionFunction(hexStringCode(16, idName)),
-    ts.definitionFunction(hexStringCode(32, hashOrAccessTokenName))
+    ts.definitionFunction(hexStringCode(32, tokenName))
   ];
 };
 const idName = identifer.fromString("decodeId");
-const hashOrAccessTokenName = identifer.fromString("decodeHashOrAccessToken");
+const tokenName = identifer.fromString("decodeHashOrAccessToken");
 
 const resultProperty = "result";
 const nextIndexProperty = "nextIndex";
@@ -648,7 +648,7 @@ const decodeVarEval = (
   indexExpr: ts.Expr,
   binaryExpr: ts.Expr
 ): ts.Expr => {
-  return ts.call(a, []);
+  return ts.call(decodeFunctionExpr(type_), [indexExpr, binaryExpr]);
 };
 
 const decodeFunctionExpr = (type_: type.Type): ts.Expr => {
@@ -671,6 +671,19 @@ const decodeFunctionExpr = (type_: type.Type): ts.Expr => {
         decodeFunctionExpr(type_.resultType.error)
       ]);
     case "Id":
-      return ts.typeAssertion(idName,  type_.string_)
+      return ts.typeAssertion(
+        ts.variable(idName),
+        ts.typeScopeInFile(identifer.fromString(type_.string_))
+      );
+    case "Token":
+      return ts.typeAssertion(
+        ts.variable(tokenName),
+        ts.typeFunction(
+          [ts.typeNumber, ts.uint8ArrayType],
+          returnType(ts.typeScopeInFile(identifer.fromString(type_.string_)))
+        )
+      );
+    case "Custom":
+      return ts.variable(customName(type_.string_));
   }
 };

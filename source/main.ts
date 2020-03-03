@@ -14,17 +14,17 @@ export {
 };
 
 export const generateTypeScriptCode = (
-  customTypeList: ReadonlyArray<type.CustomType>,
+  schema: type.Schema,
   isBrowser: boolean
 ): data.Code => {
   return {
     exportDefinitionList: [
       ...typeDefinition
-        .generateTypeDefinition(customTypeList)
+        .generateTypeDefinition(schema)
         .map(data.definitionTypeAlias),
-      ...tag.generate(customTypeList),
-      ...encoder.generateCode(customTypeList, isBrowser),
-      ...decoder.generateCode(customTypeList, isBrowser)
+      ...tag.generate(schema.customTypeList),
+      ...encoder.generateCode(schema.customTypeList, isBrowser),
+      ...decoder.generateCode(schema.customTypeList, isBrowser)
     ],
     statementList: []
   };

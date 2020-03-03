@@ -1,5 +1,10 @@
 import * as c from "./case";
 
+export type Schema = {
+  customTypeList: ReadonlyArray<CustomType>;
+  idOrHashTypeNameList: ReadonlyArray<string>;
+};
+
 /**
  * Maybe
  */
@@ -24,8 +29,7 @@ export type Type =
   | { _: "Maybe"; type_: Type }
   | { _: "Result"; resultType: ResultType }
   | { _: "Id"; string_: string }
-  | { _: "Hash"; string_: string }
-  | { _: "AccessToken" }
+  | { _: "Token"; string_: string }
   | { _: "Custom"; string_: string };
 
 /**
@@ -75,7 +79,7 @@ export const typeResult = (resultType: ResultType): Type => ({
 });
 
 /**
- * Id. データを識別するためのもの. カスタムの型名を指定する
+ * データを識別するためのもの. `UserId`などの型名を指定する. 16byte. 16進数文字列で32文字
  *
  */
 export const typeId = (string_: string): Type => ({
@@ -84,18 +88,13 @@ export const typeId = (string_: string): Type => ({
 });
 
 /**
- * Hash. データを識別するためのHash
+ * データを識別するため. `AccessToken`などの型名を指定する. 32byte. 16進数文字列で64文字
  *
  */
-export const typeHash = (string_: string): Type => ({
-  _: "Hash",
+export const typeToken = (string_: string): Type => ({
+  _: "Token",
   string_: string_
 });
-
-/**
- * トークン. データへのアクセスをするために必要になるもの. トークンの種類の名前を指定する
- */
-export const typeAccessToken: Type = { _: "AccessToken" };
 
 /**
  * 用意されていないアプリ特有の型
@@ -194,11 +193,8 @@ export const toTypeName = (type_: Type): string => {
         "Result"
       );
     case "Id":
-      return customTypeToTypeName(type_.string_) + "Id";
-    case "Hash":
-      return customTypeToTypeName(type_.string_) + "Hash";
-    case "AccessToken":
-      return "AccessToken";
+    case "Token":
+      return customTypeToTypeName(type_.string_);
     case "Custom":
       return customTypeToTypeName(type_.string_);
   }
