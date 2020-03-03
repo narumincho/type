@@ -1,6 +1,6 @@
 import { data, identifer } from "js-ts-code-generator";
 import * as type from "../type";
-import * as typeScript from "../typeScript";
+import * as typeScript from "./type";
 import * as c from "../case";
 import * as typeDef from "./typeDefinition";
 

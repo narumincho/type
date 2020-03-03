@@ -8,6 +8,5 @@
     "newLine": "LF",
     "outDir": "distribution",
     "declaration": true
-  },
-  "include": ["source/*"]
+  }
 }

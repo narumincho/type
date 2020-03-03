@@ -1,7 +1,7 @@
 import * as generator from "js-ts-code-generator";
 import { data } from "js-ts-code-generator";
-import * as type from "./type";
-import * as c from "./case";
+import * as type from "../type";
+import * as c from "../case";
 
 export const typeToGeneratorType = (type_: type.Type): data.Type => {
   switch (type_._) {

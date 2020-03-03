@@ -1,6 +1,6 @@
 import { data, identifer } from "js-ts-code-generator";
 import * as type from "../type";
-import * as typeScript from "../typeScript";
+import * as typeScript from "./type";
 import * as typeDef from "./typeDefinition";
 import * as tag from "./tag";
 
@@ -651,17 +651,14 @@ const resultCode = (): data.Function => {
 const customName = (customTypeName: string): identifer.Identifer =>
   identifer.fromString("decodeCustom" + customTypeName);
 
-const customCode = (
-  customTypeName: string,
-  customType: type.CustomType
-): data.Function => {
+const customCode = (customType: type.CustomType): data.Function => {
   return {
-    name: customName(customTypeName),
+    name: customName(customType.name),
     document: "",
     parameterList: parameterList,
     typeParameterList: [],
     returnType: returnType(
-      typeScript.typeToGeneratorType(type.typeCustom(customTypeName))
+      typeScript.typeToGeneratorType(type.typeCustom(customType.name))
     ),
     statementList: []
   };
