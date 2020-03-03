@@ -1,7 +1,7 @@
 import * as generator from "js-ts-code-generator";
 import { data } from "js-ts-code-generator";
-import * as type from "../../type";
-import * as typeScript from "../../typeScript";
+import * as type from "../type";
+import * as typeScript from "../typeScript";
 
 export const generateCode = (
   customTypeList: ReadonlyArray<type.CustomType>,
