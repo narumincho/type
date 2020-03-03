@@ -34,6 +34,9 @@ export const decodeVarEval = (
   return data.stringLiteral("まだサポートしていない");
 };
 
+const resultProperty = "result";
+const nextIndexProperty = "nextIndex";
+
 /**
  * ```ts
  * return { result: resultExpr, nextIndex: nextIndexExpr }
@@ -47,8 +50,8 @@ const returnStatement = (
   data.statementReturn(
     data.objectLiteral(
       new Map([
-        ["result", resultExpr],
-        ["nextIndex", nextIndexExpr]
+        [resultProperty, resultExpr],
+        [nextIndexProperty, nextIndexExpr]
       ])
     )
   );
@@ -84,16 +87,16 @@ const parameterBinary = data.variable(binaryIdentifer);
 export const returnType = (resultType: data.Type): data.Type =>
   data.typeObject(
     new Map([
-      ["result", { type_: resultType, document: "" }],
-      ["nextIndex", { type_: data.typeNumber, document: "" }]
+      [resultProperty, { type_: resultType, document: "" }],
+      [nextIndexProperty, { type_: data.typeNumber, document: "" }]
     ])
   );
 
 const getResult = (resultAndNextIndexExpr: data.Expr): data.Expr =>
-  data.get(resultAndNextIndexExpr, "result");
+  data.get(resultAndNextIndexExpr, resultProperty);
 
 const getNextIndex = (resultAndNextIndexExpr: data.Expr): data.Expr =>
-  data.get(resultAndNextIndexExpr, "nextIndex");
+  data.get(resultAndNextIndexExpr, nextIndexProperty);
 
 /* ========================================
                   UInt32
@@ -320,46 +323,47 @@ const hexStringCode = (
   statementList: [
     returnStatement(
       data.callMethod(
-        data.globalObjects(generator.identifer.fromString("Array")),
-        "from",
-        [
+        data.callMethod(
           data.callMethod(
-            data.callMethod(
+            data.globalObjects(generator.identifer.fromString("Array")),
+            "from",
+            [
               data.callMethod(parameterBinary, "slice", [
                 parameterIndex,
                 data.addition(parameterIndex, data.numberLiteral(byteSize))
-              ]),
-              "map",
+              ])
+            ]
+          ),
+          "map",
+          [
+            data.lambda(
               [
-                data.lambda(
-                  [
-                    {
-                      name: generator.identifer.fromString("n"),
-                      type_: data.typeNumber
-                    }
-                  ],
-                  data.typeString,
-                  [
-                    data.statementEvaluateExpr(
-                      data.callMethod(
-                        data.callMethod(
-                          data.variable(generator.identifer.fromString("n")),
-                          "toString",
-                          [data.numberLiteral(16)]
-                        ),
-                        "padStart",
-                        [data.numberLiteral(2), data.stringLiteral("0")]
-                      )
-                    )
-                  ]
+                {
+                  name: generator.identifer.fromString("n"),
+                  type_: data.typeNumber
+                }
+              ],
+              data.typeString,
+              [
+                data.statementReturn(
+                  data.callMethod(
+                    data.callMethod(
+                      data.variable(generator.identifer.fromString("n")),
+                      "toString",
+                      [data.numberLiteral(16)]
+                    ),
+                    "padStart",
+                    [data.numberLiteral(2), data.stringLiteral("0")]
+                  )
                 )
               ]
-            ),
-            "join",
-            [data.stringLiteral("")]
-          )
-        ]
+            )
+          ]
+        ),
+        "join",
+        [data.stringLiteral("")]
       ),
+
       data.addition(parameterIndex, data.numberLiteral(byteSize))
     )
   ]

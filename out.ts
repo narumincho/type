@@ -274,3 +274,141 @@ export const encodeCustomResultType = (
   resultType: ResultType
 ): ReadonlyArray<number> =>
   encodeCustomType(resultType.ok).concat(encodeCustomType(resultType.error));
+
+/**
+ * UnsignedLeb128で表現されたバイナリをnumberの32bit符号なし整数の範囲の数値にに変換するコード
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeUInt32 = (
+  index: number,
+  binary: Uint8Array
+): { result: number; nextIndex: number } => {
+  let result: number = 0;
+  for (let i = 0; i < 5; i += 1) {
+    const b: number = binary[index + i];
+    result |= (b & 127) << (7 * i);
+    if ((b & 8) === 0 && 0 <= result && result < 4294967295) {
+      return { result: result, nextIndex: index + i + 1 };
+    }
+  }
+  throw new Error("larger than 32-bits");
+};
+
+/**
+ * バイナリからstringに変換する.このコードはNode.js用でutilのTextDecoderを使う
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeString = (
+  index: number,
+  binary: Uint8Array
+): { result: string; nextIndex: number } => {
+  const length: { result: number; nextIndex: number } = decodeUInt32(
+    index,
+    binary
+  );
+  return {
+    result: new a.TextDecoder().decode(
+      binary.slice(
+        index + length.nextIndex,
+        index + length.nextIndex + length.result
+      )
+    ),
+    nextIndex: index + length.nextIndex + length.result
+  };
+};
+
+/**
+ *
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeBool = (
+  index: number,
+  binary: Uint8Array
+): { result: boolean; nextIndex: number } => ({
+  result: binary[index] !== 0,
+  nextIndex: index + 1
+});
+
+/**
+ *
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeDateTime = (
+  index: number,
+  binary: Uint8Array
+): { result: Date; nextIndex: number } => {
+  const result: { result: number; nextIndex: number } = decodeUInt32(
+    index,
+    binary
+  );
+  return {
+    result: new Date(result.result * 1000),
+    nextIndex: result.nextIndex
+  };
+};
+
+/**
+ *
+ *
+ */
+export const decodeList = <T>(
+  decodeFunction: (a: number, b: Uint8Array) => { result: T; nextIndex: number }
+): ((
+  a: number,
+  b: Uint8Array
+) => { result: ReadonlyArray<T>; nextIndex: number }) => (
+  index: number,
+  binary: Uint8Array
+): { result: ReadonlyArray<T>; nextIndex: number } => {
+  const length: number = binary[index];
+  const result: Array<T> = [];
+  for (let i = 0; i < length; i += 1) {
+    const resultAndNextIndex: { result: T; nextIndex: number } = decodeFunction(
+      index,
+      binary
+    );
+    result.push(resultAndNextIndex.result);
+    index = resultAndNextIndex.nextIndex;
+  }
+  return { result: result, nextIndex: index };
+};
+
+/**
+ *
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeId = (
+  index: number,
+  binary: Uint8Array
+): { result: string; nextIndex: number } => ({
+  result: Array["from"](binary.slice(index, index + 16))
+    .map((n: number): string => n.toString(16).padStart(2, "0"))
+    .join(""),
+  nextIndex: index + 16
+});
+
+/**
+ *
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeHashOrAccessToken = (
+  index: number,
+  binary: Uint8Array
+): { result: string; nextIndex: number } => ({
+  result: Array["from"](binary.slice(index, index + 32))
+    .map((n: number): string => n.toString(16).padStart(2, "0"))
+    .join(""),
+  nextIndex: index + 32
+});
