@@ -148,13 +148,23 @@ export const customTypeBodyProduct = (
   memberNameAndTypeArray
 });
 
-export const maybeJust = <T>(t: T): Maybe<T> => ({
+export const maybeJust = <T>(value: T): Maybe<T> => ({
   _: "Just",
-  value: t
+  value: value
 });
 
 export const maybeNothing = <T>(): Maybe<T> => ({
   _: "Nothing"
+});
+
+export const resultOk = <ok, error>(ok: ok): Result<ok, error> => ({
+  _: "Ok",
+  ok: ok
+});
+
+export const resultError = <ok, error>(error: error): Result<ok, error> => ({
+  _: "Error",
+  error: error
 });
 
 export const customTypeToTypeName = (customTypeName: string): string =>
