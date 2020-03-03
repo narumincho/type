@@ -1,5 +1,4 @@
-import * as generator from "js-ts-code-generator";
-import { data } from "js-ts-code-generator";
+import { data, identifer } from "js-ts-code-generator";
 import * as type from "../type";
 import * as typeScript from "../typeScript";
 
@@ -23,8 +22,8 @@ export const generateCode = (
   ];
 };
 
-const encodeIdName = generator.identifer.fromString("encodeId");
-const encodeHashOrAccessTokenName = generator.identifer.fromString(
+const encodeIdName = identifer.fromString("encodeId");
+const encodeHashOrAccessTokenName = identifer.fromString(
   "encodeHashOrAccessToken"
 );
 
@@ -76,7 +75,7 @@ const encodeFunctionExpr = (type_: type.Type): data.Expr => {
    ========================================
 */
 
-const uInt32Name = generator.identifer.fromString("encodeUInt32");
+const uInt32Name = identifer.fromString("encodeUInt32");
 
 /**
  * numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード
@@ -87,7 +86,7 @@ const uInt32Code: data.Function = {
     "numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード",
   parameterList: [
     {
-      name: generator.identifer.fromString("num"),
+      name: identifer.fromString("num"),
       type_: data.typeNumber,
       document: ""
     }
@@ -96,65 +95,65 @@ const uInt32Code: data.Function = {
   returnType: readonlyArrayNumber,
   statementList: [
     data.statementSet(
-      data.variable(generator.identifer.fromString("num")),
+      data.variable(identifer.fromString("num")),
       null,
       data.callMathMethod("floor", [
         data.callMathMethod("max", [
           data.numberLiteral(0),
           data.callMathMethod("min", [
-            data.variable(generator.identifer.fromString("num")),
+            data.variable(identifer.fromString("num")),
             data.numberLiteral(2 ** 32 - 1)
           ])
         ])
       ])
     ),
     data.statementVariableDefinition(
-      generator.identifer.fromString("numberArray"),
+      identifer.fromString("numberArray"),
       data.arrayType(data.typeNumber),
       data.arrayLiteral([])
     ),
     data.statementWhileTrue([
       data.statementVariableDefinition(
-        generator.identifer.fromString("b"),
+        identifer.fromString("b"),
         data.typeNumber,
         data.bitwiseAnd(
-          data.variable(generator.identifer.fromString("num")),
+          data.variable(identifer.fromString("num")),
           data.numberLiteral(0b1111111)
         )
       ),
       data.statementSet(
-        data.variable(generator.identifer.fromString("num")),
+        data.variable(identifer.fromString("num")),
         null,
         data.unsignedRightShift(
-          data.variable(generator.identifer.fromString("num")),
+          data.variable(identifer.fromString("num")),
           data.numberLiteral(7)
         )
       ),
       data.statementIf(
         data.equal(
-          data.variable(generator.identifer.fromString("num")),
+          data.variable(identifer.fromString("num")),
           data.numberLiteral(0)
         ),
         [
           data.statementEvaluateExpr(
             data.callMethod(
-              data.variable(generator.identifer.fromString("numberArray")),
+              data.variable(identifer.fromString("numberArray")),
               "push",
-              [data.variable(generator.identifer.fromString("b"))]
+              [data.variable(identifer.fromString("b"))]
             )
           ),
           data.statementReturn(
-            data.variable(generator.identifer.fromString("numberArray"))
+            data.variable(identifer.fromString("numberArray"))
           )
         ]
       ),
       data.statementEvaluateExpr(
         data.callMethod(
-          data.variable(generator.identifer.fromString("numberArray")),
+          data.variable(identifer.fromString("numberArray")),
           "push",
           [
             data.bitwiseOr(
-              data.variable(generator.identifer.fromString("b")),
+              data.variable(identifer.fromString("b")),
               data.numberLiteral(0b10000000)
             )
           ]
@@ -169,7 +168,7 @@ const uInt32Code: data.Function = {
    ========================================
 */
 
-const stringName = generator.identifer.fromString("encodeString");
+const stringName = identifer.fromString("encodeString");
 /**
  * stringからバイナリに変換するコード
  * ブラウザではグローバルのTextDecoderを使い、node.jsではutilのTextDecoderを使う
@@ -183,7 +182,7 @@ const stringCode = (isBrowser: boolean): data.Function => ({
       : "Node.js用なのでutilのTextDecoderを使う"),
   parameterList: [
     {
-      name: generator.identifer.fromString("text"),
+      name: identifer.fromString("text"),
       type_: data.typeString,
       document: ""
     }
@@ -193,23 +192,21 @@ const stringCode = (isBrowser: boolean): data.Function => ({
   statementList: [
     data.statementReturn(
       data.callMethod(
-        data.globalObjects(generator.identifer.fromString("Array")),
+        data.globalObjects(identifer.fromString("Array")),
         "from",
         [
           data.callMethod(
             data.newExpr(
               isBrowser
-                ? data.globalObjects(
-                    generator.identifer.fromString("TextEncoder")
-                  )
+                ? data.globalObjects(identifer.fromString("TextEncoder"))
                 : data.importedVariable(
                     "util",
-                    generator.identifer.fromString("TextEncoder")
+                    identifer.fromString("TextEncoder")
                   ),
               []
             ),
             "encode",
-            [data.variable(generator.identifer.fromString("text"))]
+            [data.variable(identifer.fromString("text"))]
           )
         ]
       )
@@ -221,14 +218,14 @@ const stringCode = (isBrowser: boolean): data.Function => ({
                   Bool
    ========================================
 */
-const boolName = generator.identifer.fromString("encodeBool");
+const boolName = identifer.fromString("encodeBool");
 
 const boolCode: data.Function = {
   name: boolName,
   document: "boolからバイナリに変換する",
   parameterList: [
     {
-      name: generator.identifer.fromString("value"),
+      name: identifer.fromString("value"),
       type_: data.typeBoolean,
       document: ""
     }
@@ -239,7 +236,7 @@ const boolCode: data.Function = {
     data.statementReturn(
       data.arrayLiteral([
         data.conditionalOperator(
-          data.variable(generator.identifer.fromString("value")),
+          data.variable(identifer.fromString("value")),
           data.numberLiteral(1),
           data.numberLiteral(0)
         )
@@ -253,14 +250,14 @@ const boolCode: data.Function = {
    ========================================
 */
 
-const dateTimeName = generator.identifer.fromString("encodeDateTime");
+const dateTimeName = identifer.fromString("encodeDateTime");
 
 const dateTimeCode: data.Function = {
   name: dateTimeName,
   document: "",
   parameterList: [
     {
-      name: generator.identifer.fromString("dateTime"),
+      name: identifer.fromString("dateTime"),
       document: "",
       type_: data.dateType
     }
@@ -274,7 +271,7 @@ const dateTimeCode: data.Function = {
         data.callMathMethod("floor", [
           data.division(
             data.callMethod(
-              data.variable(generator.identifer.fromString("dateTime")),
+              data.variable(identifer.fromString("dateTime")),
               "getTime",
               []
             ),
@@ -293,13 +290,13 @@ const dateTimeCode: data.Function = {
 
 const encodeHexString = (
   byteSize: number,
-  functionName: generator.identifer.Identifer
+  functionName: identifer.Identifer
 ): data.Function => {
-  const idName = generator.identifer.fromString("id");
+  const idName = identifer.fromString("id");
   const idVar = data.variable(idName);
-  const resultName = generator.identifer.fromString("result");
+  const resultName = identifer.fromString("result");
   const resultVar = data.variable(resultName);
-  const iName = generator.identifer.fromString("i");
+  const iName = identifer.fromString("i");
   const iVar = data.variable(iName);
 
   return {
@@ -346,14 +343,14 @@ const encodeHexString = (
    ========================================
 */
 
-const listName = generator.identifer.fromString("encodeList");
+const listName = identifer.fromString("encodeList");
 
 const listCode = (): data.Function => {
-  const elementTypeName = generator.identifer.fromString("T");
-  const parameterList = generator.identifer.fromString("list");
-  const resultName = generator.identifer.fromString("result");
-  const elementName = generator.identifer.fromString("element");
-  const encodeFunctionName = generator.identifer.fromString("encodeFunction");
+  const elementTypeName = identifer.fromString("T");
+  const parameterList = identifer.fromString("list");
+  const resultName = identifer.fromString("result");
+  const elementName = identifer.fromString("element");
+  const encodeFunctionName = identifer.fromString("encodeFunction");
 
   return {
     name: listName,
@@ -414,13 +411,13 @@ const listCode = (): data.Function => {
                   Maybe
    ========================================
 */
-const maybeName = generator.identifer.fromString("encodeMaybe");
+const maybeName = identifer.fromString("encodeMaybe");
 
 const maybeCode = (): data.Function => {
-  const encodeFunctionName = generator.identifer.fromString("encodeFunction");
+  const encodeFunctionName = identifer.fromString("encodeFunction");
   const encodeFunctionVar = data.variable(encodeFunctionName);
-  const elementTypeName = generator.identifer.fromString("T");
-  const maybeName = generator.identifer.fromString("maybe");
+  const elementTypeName = identifer.fromString("T");
+  const maybeName = identifer.fromString("maybe");
   const maybeVar = data.variable(maybeName);
 
   return {
@@ -429,7 +426,7 @@ const maybeCode = (): data.Function => {
     returnType: data.typeFunction(
       [
         data.typeWithParameter(
-          data.typeScopeInFile(generator.identifer.fromString("Maybe")),
+          data.typeScopeInFile(identifer.fromString("Maybe")),
           [data.typeScopeInFile(elementTypeName)]
         )
       ],
@@ -453,7 +450,7 @@ const maybeCode = (): data.Function => {
             {
               name: maybeName,
               type_: data.typeWithParameter(
-                data.typeScopeInFile(generator.identifer.fromString("Maybe")),
+                data.typeScopeInFile(identifer.fromString("Maybe")),
                 [data.typeScopeInFile(elementTypeName)]
               )
             }
@@ -500,25 +497,21 @@ const maybeCode = (): data.Function => {
                 Result
    ========================================
 */
-const resultName = generator.identifer.fromString("encodeResult");
+const resultName = identifer.fromString("encodeResult");
 
 const resultCode = (): data.Function => {
-  const okName = generator.identifer.fromString("ok");
+  const okName = identifer.fromString("ok");
   const okTypeVar = data.typeScopeInFile(okName);
-  const errorName = generator.identifer.fromString("error");
+  const errorName = identifer.fromString("error");
   const errorTypeVar = data.typeScopeInFile(errorName);
-  const parameterResultName = generator.identifer.fromString("result");
+  const parameterResultName = identifer.fromString("result");
   const parameterResultVar = data.variable(parameterResultName);
   const resultType = data.typeWithParameter(
-    data.typeScopeInFile(generator.identifer.fromString("Result")),
+    data.typeScopeInFile(identifer.fromString("Result")),
     [okTypeVar, errorTypeVar]
   );
-  const errorEncodeFunctionName = generator.identifer.fromString(
-    "errorEncodeFunction"
-  );
-  const okEncodeFunctionName = generator.identifer.fromString(
-    "okEncodeFunction"
-  );
+  const errorEncodeFunctionName = identifer.fromString("errorEncodeFunction");
+  const okEncodeFunctionName = identifer.fromString("okEncodeFunction");
 
   return {
     name: resultName,
@@ -597,8 +590,8 @@ const resultCode = (): data.Function => {
    ========================================
 */
 
-const customName = (customTypeName: string): generator.identifer.Identifer =>
-  generator.identifer.fromString("encodeCustom" + customTypeName);
+const customName = (customTypeName: string): identifer.Identifer =>
+  identifer.fromString("encodeCustom" + customTypeName);
 
 export const customCode = (customType: type.CustomType): data.Function => {
   const parameterName = typeScript.typeToMemberOrParameterName(
@@ -626,7 +619,7 @@ export const customCode = (customType: type.CustomType): data.Function => {
     document: "",
     parameterList: [
       {
-        name: generator.identifer.fromString(parameterName),
+        name: identifer.fromString(parameterName),
         document: "",
         type_: typeScript.typeToGeneratorType(type.typeCustom(customType.name))
       }

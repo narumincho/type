@@ -1,32 +1,30 @@
 import * as elm from "./elm";
-import * as typeDefinitionTypeScript from "./typescript/typeDefinition";
-import * as binaryConverterTypeScriptEncoder from "./typescript/encoder";
-import * as binaryConverterTypeScriptDecoder from "./typescript/decoder";
+import * as typeDefinition from "./typescript/typeDefinition";
+import * as encoder from "./typescript/encoder";
+import * as decoder from "./typescript/decoder";
+import * as tag from "./typeScript/tag";
 import * as type from "./type";
-import * as generator from "js-ts-code-generator";
+import { data } from "js-ts-code-generator";
 
 export {
   elm,
-  typeDefinitionTypeScript,
-  binaryConverterTypeScriptEncoder,
+  typeDefinition as typeDefinitionTypeScript,
+  encoder as binaryConverterTypeScriptEncoder,
   type
 };
 
 export const generateTypeScriptCode = (
   customTypeList: ReadonlyArray<type.CustomType>,
   isBrowser: boolean
-): generator.data.Code => {
+): data.Code => {
   return {
     exportDefinitionList: [
-      ...typeDefinitionTypeScript.generateCode(customTypeList),
-      ...binaryConverterTypeScriptEncoder.generateCode(
-        customTypeList,
-        isBrowser
-      ),
-      ...binaryConverterTypeScriptDecoder.generateCode(
-        customTypeList,
-        isBrowser
-      )
+      ...typeDefinition
+        .generateTypeDefinition(customTypeList)
+        .map(data.definitionTypeAlias),
+      ...tag.generate(customTypeList),
+      ...encoder.generateCode(customTypeList, isBrowser),
+      ...decoder.generateCode(customTypeList, isBrowser)
     ],
     statementList: []
   };

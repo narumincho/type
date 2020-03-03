@@ -1,26 +1,30 @@
-import * as generator from "js-ts-code-generator";
-import { data } from "js-ts-code-generator";
+import { data, identifer } from "js-ts-code-generator";
 import * as type from "../type";
-import * as c from "../case";
 import * as typeScript from "../typeScript";
 
-export const generateCode = (
+export const generateTypeDefinition = (
   customTypeList: ReadonlyArray<type.CustomType>
-): ReadonlyArray<data.Definition> => {
+): ReadonlyArray<data.TypeAlias> => {
   return [
-    data.definitionTypeAlias(maybeDefinition),
-    data.definitionTypeAlias(resultDefinition),
-    ...customTypeList.map(customType =>
-      data.definitionTypeAlias(customTypeToDefinition(customType))
-    ),
-    ...customTypeListToTagList(customTypeList)
+    maybeDefinition,
+    resultDefinition,
+    ...customTypeList.map(customType => customTypeToDefinition(customType))
   ];
 };
 
+/* ========================================
+                  Maybe
+   ========================================
+*/
+
+const maybeName = identifer.fromString("Maybe");
+export const maybeVar = (elementType: data.Type): data.Type =>
+  data.typeWithParameter(data.typeScopeInFile(maybeName), [elementType]);
+
 const maybeDefinition: data.TypeAlias = {
-  name: generator.identifer.fromString("Maybe"),
+  name: maybeName,
   document: "Maybe",
-  parameterList: [generator.identifer.fromString("T")],
+  parameterList: [identifer.fromString("T")],
   type_: data.typeUnion([
     data.typeObject(
       new Map([
@@ -28,7 +32,7 @@ const maybeDefinition: data.TypeAlias = {
         [
           "value",
           {
-            type_: data.typeScopeInFile(generator.identifer.fromString("T")),
+            type_: data.typeScopeInFile(identifer.fromString("T")),
             document: ""
           }
         ]
@@ -42,13 +46,19 @@ const maybeDefinition: data.TypeAlias = {
   ])
 };
 
+/* ========================================
+                  Result
+   ========================================
+*/
+
+const resultName = identifer.fromString("Result");
+export const resultVar = (okType: data.Type, errorType: data.Type): data.Type =>
+  data.typeWithParameter(data.typeScopeInFile(resultName), [okType, errorType]);
+
 const resultDefinition: data.TypeAlias = {
-  name: generator.identifer.fromString("Result"),
+  name: resultName,
   document: "Result",
-  parameterList: [
-    generator.identifer.fromString("ok"),
-    generator.identifer.fromString("error")
-  ],
+  parameterList: [identifer.fromString("ok"), identifer.fromString("error")],
   type_: data.typeUnion([
     data.typeObject(
       new Map([
@@ -56,7 +66,7 @@ const resultDefinition: data.TypeAlias = {
         [
           "ok",
           {
-            type_: data.typeScopeInFile(generator.identifer.fromString("ok")),
+            type_: data.typeScopeInFile(identifer.fromString("ok")),
             document: ""
           }
         ]
@@ -68,9 +78,7 @@ const resultDefinition: data.TypeAlias = {
         [
           "error",
           {
-            type_: data.typeScopeInFile(
-              generator.identifer.fromString("error")
-            ),
+            type_: data.typeScopeInFile(identifer.fromString("error")),
             document: ""
           }
         ]
@@ -78,6 +86,16 @@ const resultDefinition: data.TypeAlias = {
     )
   ])
 };
+
+/* ========================================
+               Custom Type
+   ========================================
+*/
+const customTypeNameIdentifer = (customTypeName: string): identifer.Identifer =>
+  identifer.fromString(customTypeName);
+
+export const customTypeVar = (customTypeName: string): data.Type =>
+  data.typeScopeInFile(customTypeNameIdentifer(customTypeName));
 
 export const customTypeToDefinition = (
   customType: type.CustomType
@@ -90,7 +108,7 @@ export const customTypeToDefinition = (
         )
       ) {
         return {
-          name: generator.identifer.fromString(customType.name),
+          name: identifer.fromString(customType.name),
           document: customType.description,
           parameterList: [],
           type_: data.typeUnion(
@@ -101,7 +119,7 @@ export const customTypeToDefinition = (
         };
       }
       return {
-        name: generator.identifer.fromString(customType.name),
+        name: identifer.fromString(customType.name),
         document: customType.description,
         parameterList: [],
         type_: data.typeUnion(
@@ -112,7 +130,7 @@ export const customTypeToDefinition = (
       };
     case "Product":
       return {
-        name: generator.identifer.fromString(customType.name),
+        name: customTypeNameIdentifer(customType.name),
         document: customType.description,
         parameterList: [],
         type_: data.typeObject(
@@ -163,109 +181,5 @@ const tagNameAndParameterToObjectType = (
       );
     case "Nothing":
       return data.typeObject(new Map([tagField]));
-  }
-};
-
-const customTypeListToTagList = (
-  customTypeList: ReadonlyArray<type.CustomType>
-): ReadonlyArray<data.Definition> => {
-  const result: Array<data.Definition> = [];
-  for (const customType of customTypeList) {
-    switch (customType.body._) {
-      case "Sum": {
-        if (
-          typeScript.isProductTypeAllNoParameter(
-            customType.body.tagNameAndParameterArray
-          )
-        ) {
-          break;
-        }
-        const definitionList = productTypeToTagList(
-          customType.name,
-          customType.body.tagNameAndParameterArray
-        );
-        for (const definition of definitionList) {
-          result.push(definition);
-        }
-      }
-    }
-  }
-  return result;
-};
-
-const productTypeToTagList = (
-  customTypeName: string,
-  tagNameAndParameterList: ReadonlyArray<type.TagNameAndParameter>
-): ReadonlyArray<data.Definition> => {
-  return tagNameAndParameterList.map(tagNameAndParameter =>
-    tagNameAndParameterToTag(customTypeName, tagNameAndParameter)
-  );
-};
-
-const tagNameAndParameterToTag = (
-  customTypeName: string,
-  tagNameAndParameter: type.TagNameAndParameter
-): data.Definition => {
-  const tagField: [string, data.Expr] = [
-    "_",
-    data.stringLiteral(tagNameAndParameter.name)
-  ];
-
-  switch (tagNameAndParameter.parameter._) {
-    case "Just":
-      return data.definitionFunction({
-        name: generator.identifer.fromString(
-          c.firstLowerCase(customTypeName) +
-            c.firstUpperCase(tagNameAndParameter.name)
-        ),
-        document: tagNameAndParameter.description,
-        parameterList: [
-          {
-            name: typeScript.typeToMemberOrParameterName(
-              tagNameAndParameter.parameter.value
-            ),
-            document: "",
-            type_: typeScript.typeToGeneratorType(
-              tagNameAndParameter.parameter.value
-            )
-          }
-        ],
-        typeParameterList: [],
-        returnType: data.typeScopeInFile(
-          generator.identifer.fromString(customTypeName)
-        ),
-        statementList: [
-          data.statementReturn(
-            data.objectLiteral(
-              new Map([
-                tagField,
-                [
-                  typeScript.typeToMemberOrParameterName(
-                    tagNameAndParameter.parameter.value
-                  ),
-                  data.variable(
-                    typeScript.typeToMemberOrParameterName(
-                      tagNameAndParameter.parameter.value
-                    )
-                  )
-                ]
-              ])
-            )
-          )
-        ]
-      });
-
-    case "Nothing":
-      return data.definitionVariable({
-        name: generator.identifer.fromString(
-          c.firstLowerCase(customTypeName) +
-            c.firstUpperCase(tagNameAndParameter.name)
-        ),
-        document: tagNameAndParameter.description,
-        type_: data.typeScopeInFile(
-          generator.identifer.fromString(customTypeName)
-        ),
-        expr: data.objectLiteral(new Map([tagField]))
-      });
   }
 };

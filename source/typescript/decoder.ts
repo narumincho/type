@@ -1,5 +1,4 @@
-import * as generator from "js-ts-code-generator";
-import { data } from "js-ts-code-generator";
+import { data, identifer } from "js-ts-code-generator";
 import * as type from "../type";
 import * as typeScript from "../typeScript";
 
@@ -17,10 +16,8 @@ export const generateCode = (
     data.definitionFunction(hexStringCode(32, hashOrAccessTokenName))
   ];
 };
-const idName = generator.identifer.fromString("decodeId");
-const hashOrAccessTokenName = generator.identifer.fromString(
-  "decodeHashOrAccessToken"
-);
+const idName = identifer.fromString("decodeId");
+const hashOrAccessTokenName = identifer.fromString("decodeHashOrAccessToken");
 
 export const decodeVarEval = (
   type_: type.Type,
@@ -56,8 +53,8 @@ const returnStatement = (
     )
   );
 
-const indexIdentifer = generator.identifer.fromString("index");
-const binaryIdentifer = generator.identifer.fromString("binary");
+const indexIdentifer = identifer.fromString("index");
+const binaryIdentifer = identifer.fromString("binary");
 
 /**
  * ( index: number, binary: Uint8Array )
@@ -103,7 +100,7 @@ const getNextIndex = (resultAndNextIndexExpr: data.Expr): data.Expr =>
    ========================================
 */
 
-const uInt32Name = generator.identifer.fromString("decodeUInt32");
+const uInt32Name = identifer.fromString("decodeUInt32");
 /**
  * UnsignedLeb128で表現されたバイナリをnumberの32bit符号なし整数の範囲の数値にに変換するコード
  */
@@ -116,74 +113,70 @@ const uInt32Code: data.Function = {
   returnType: returnType(data.typeNumber),
   statementList: [
     data.statementLetVariableDefinition(
-      generator.identifer.fromString("result"),
+      identifer.fromString("result"),
       data.typeNumber,
       data.numberLiteral(0)
     ),
-    data.statementFor(
-      generator.identifer.fromString("i"),
-      data.numberLiteral(5),
-      [
-        data.statementVariableDefinition(
-          generator.identifer.fromString("b"),
-          data.typeNumber,
-          data.getByExpr(
-            parameterBinary,
-            data.addition(
-              parameterIndex,
-              data.variable(generator.identifer.fromString("i"))
-            )
+    data.statementFor(identifer.fromString("i"), data.numberLiteral(5), [
+      data.statementVariableDefinition(
+        identifer.fromString("b"),
+        data.typeNumber,
+        data.getByExpr(
+          parameterBinary,
+          data.addition(
+            parameterIndex,
+            data.variable(identifer.fromString("i"))
           )
-        ),
-        data.statementSet(
-          data.variable(generator.identifer.fromString("result")),
-          "|",
-          data.leftShift(
-            data.bitwiseAnd(
-              data.variable(generator.identifer.fromString("b")),
-              data.numberLiteral(0x7f)
-            ),
-            data.multiplication(
-              data.numberLiteral(7),
-              data.variable(generator.identifer.fromString("i"))
-            )
+        )
+      ),
+      data.statementSet(
+        data.variable(identifer.fromString("result")),
+        "|",
+        data.leftShift(
+          data.bitwiseAnd(
+            data.variable(identifer.fromString("b")),
+            data.numberLiteral(0x7f)
+          ),
+          data.multiplication(
+            data.numberLiteral(7),
+            data.variable(identifer.fromString("i"))
           )
-        ),
-        data.statementIf(
+        )
+      ),
+      data.statementIf(
+        data.logicalAnd(
           data.logicalAnd(
-            data.logicalAnd(
-              data.equal(
-                data.bitwiseAnd(
-                  data.variable(generator.identifer.fromString("b")),
-                  data.numberLiteral(0x08)
-                ),
-                data.numberLiteral(0)
+            data.equal(
+              data.bitwiseAnd(
+                data.variable(identifer.fromString("b")),
+                data.numberLiteral(0x08)
               ),
-              data.lessThanOrEqual(
-                data.numberLiteral(0),
-                data.variable(generator.identifer.fromString("result"))
-              )
+              data.numberLiteral(0)
             ),
-            data.lessThan(
-              data.variable(generator.identifer.fromString("result")),
-              data.numberLiteral(2 ** 32 - 1)
+            data.lessThanOrEqual(
+              data.numberLiteral(0),
+              data.variable(identifer.fromString("result"))
             )
           ),
-          [
-            returnStatement(
-              data.variable(generator.identifer.fromString("result")),
+          data.lessThan(
+            data.variable(identifer.fromString("result")),
+            data.numberLiteral(2 ** 32 - 1)
+          )
+        ),
+        [
+          returnStatement(
+            data.variable(identifer.fromString("result")),
+            data.addition(
               data.addition(
-                data.addition(
-                  parameterIndex,
-                  data.variable(generator.identifer.fromString("i"))
-                ),
-                data.numberLiteral(1)
-              )
+                parameterIndex,
+                data.variable(identifer.fromString("i"))
+              ),
+              data.numberLiteral(1)
             )
-          ]
-        )
-      ]
-    ),
+          )
+        ]
+      )
+    ]),
     data.statementThrowError(data.stringLiteral("larger than 32-bits"))
   ]
 };
@@ -191,7 +184,7 @@ const uInt32Code: data.Function = {
                   String
    ========================================
 */
-const stringName = generator.identifer.fromString("decodeString");
+const stringName = identifer.fromString("decodeString");
 
 /**
  * バイナリからstringに変換するコード
@@ -209,7 +202,7 @@ export const stringCode = (isBrowser: boolean): data.Function => ({
   returnType: returnType(data.typeString),
   statementList: [
     data.statementVariableDefinition(
-      generator.identifer.fromString("length"),
+      identifer.fromString("length"),
       returnType(data.typeNumber),
       decodeVarEval(type.typeUInt32, parameterIndex, parameterBinary)
     ),
@@ -217,10 +210,10 @@ export const stringCode = (isBrowser: boolean): data.Function => ({
       data.callMethod(
         data.newExpr(
           isBrowser
-            ? data.globalObjects(generator.identifer.fromString("TextDecoder"))
+            ? data.globalObjects(identifer.fromString("TextDecoder"))
             : data.importedVariable(
                 "util",
-                generator.identifer.fromString("TextDecoder")
+                identifer.fromString("TextDecoder")
               ),
           []
         ),
@@ -229,18 +222,14 @@ export const stringCode = (isBrowser: boolean): data.Function => ({
           data.callMethod(parameterBinary, "slice", [
             data.addition(
               parameterIndex,
-              getNextIndex(
-                data.variable(generator.identifer.fromString("length"))
-              )
+              getNextIndex(data.variable(identifer.fromString("length")))
             ),
             data.addition(
               data.addition(
                 parameterIndex,
-                getNextIndex(
-                  data.variable(generator.identifer.fromString("length"))
-                )
+                getNextIndex(data.variable(identifer.fromString("length")))
               ),
-              getResult(data.variable(generator.identifer.fromString("length")))
+              getResult(data.variable(identifer.fromString("length")))
             )
           ])
         ]
@@ -248,9 +237,9 @@ export const stringCode = (isBrowser: boolean): data.Function => ({
       data.addition(
         data.addition(
           parameterIndex,
-          getNextIndex(data.variable(generator.identifer.fromString("length")))
+          getNextIndex(data.variable(identifer.fromString("length")))
         ),
-        getResult(data.variable(generator.identifer.fromString("length")))
+        getResult(data.variable(identifer.fromString("length")))
       )
     )
   ]
@@ -259,7 +248,7 @@ export const stringCode = (isBrowser: boolean): data.Function => ({
                   Bool
    ========================================
 */
-const boolName = generator.identifer.fromString("decodeBool");
+const boolName = identifer.fromString("decodeBool");
 
 const boolCode: data.Function = {
   name: boolName,
@@ -281,7 +270,7 @@ const boolCode: data.Function = {
                 DateTime
    ========================================
 */
-const dateTimeName = generator.identifer.fromString("decodeDateTime");
+const dateTimeName = identifer.fromString("decodeDateTime");
 
 const dateTimeCode: data.Function = {
   name: dateTimeName,
@@ -291,18 +280,18 @@ const dateTimeCode: data.Function = {
   typeParameterList: [],
   statementList: [
     data.statementVariableDefinition(
-      generator.identifer.fromString("result"),
+      identifer.fromString("result"),
       returnType(data.typeNumber),
       decodeVarEval(type.typeUInt32, parameterIndex, parameterBinary)
     ),
     returnStatement(
-      data.newExpr(data.globalObjects(generator.identifer.fromString("Date")), [
+      data.newExpr(data.globalObjects(identifer.fromString("Date")), [
         data.multiplication(
-          getResult(data.variable(generator.identifer.fromString("result"))),
+          getResult(data.variable(identifer.fromString("result"))),
           data.numberLiteral(1000)
         )
       ]),
-      getNextIndex(data.variable(generator.identifer.fromString("result")))
+      getNextIndex(data.variable(identifer.fromString("result")))
     )
   ]
 };
@@ -313,7 +302,7 @@ const dateTimeCode: data.Function = {
 */
 const hexStringCode = (
   byteSize: number,
-  functionName: generator.identifer.Identifer
+  functionName: identifer.Identifer
 ): data.Function => ({
   name: functionName,
   document: "",
@@ -325,7 +314,7 @@ const hexStringCode = (
       data.callMethod(
         data.callMethod(
           data.callMethod(
-            data.globalObjects(generator.identifer.fromString("Array")),
+            data.globalObjects(identifer.fromString("Array")),
             "from",
             [
               data.callMethod(parameterBinary, "slice", [
@@ -339,7 +328,7 @@ const hexStringCode = (
             data.lambda(
               [
                 {
-                  name: generator.identifer.fromString("n"),
+                  name: identifer.fromString("n"),
                   type_: data.typeNumber
                 }
               ],
@@ -348,7 +337,7 @@ const hexStringCode = (
                 data.statementReturn(
                   data.callMethod(
                     data.callMethod(
-                      data.variable(generator.identifer.fromString("n")),
+                      data.variable(identifer.fromString("n")),
                       "toString",
                       [data.numberLiteral(16)]
                     ),
@@ -373,18 +362,16 @@ const hexStringCode = (
                   List
    ========================================
 */
-const listName = generator.identifer.fromString("decodeList");
+const listName = identifer.fromString("decodeList");
 
 const listCode = (): data.Function => {
-  const elementTypeName = generator.identifer.fromString("T");
+  const elementTypeName = identifer.fromString("T");
   const elementTypeVar = data.typeScopeInFile(elementTypeName);
-  const decodeFunctionName = generator.identifer.fromString("decodeFunction");
+  const decodeFunctionName = identifer.fromString("decodeFunction");
   const decodeFunctionVar = data.variable(decodeFunctionName);
-  const resultName = generator.identifer.fromString("result");
+  const resultName = identifer.fromString("result");
   const resultVar = data.variable(resultName);
-  const resultAndNextIndexName = generator.identifer.fromString(
-    "resultAndNextIndex"
-  );
+  const resultAndNextIndexName = identifer.fromString("resultAndNextIndex");
   const resultAndNextIndexVar = data.variable(resultAndNextIndexName);
 
   return {
@@ -412,7 +399,7 @@ const listCode = (): data.Function => {
           returnType(data.readonlyArrayType(elementTypeVar)),
           [
             data.statementVariableDefinition(
-              generator.identifer.fromString("length"),
+              identifer.fromString("length"),
               data.typeNumber,
               data.getByExpr(parameterBinary, parameterIndex)
             ),
@@ -422,8 +409,8 @@ const listCode = (): data.Function => {
               data.arrayLiteral([])
             ),
             data.statementFor(
-              generator.identifer.fromString("i"),
-              data.variable(generator.identifer.fromString("length")),
+              identifer.fromString("i"),
+              data.variable(identifer.fromString("length")),
               [
                 data.statementVariableDefinition(
                   resultAndNextIndexName,
@@ -454,12 +441,22 @@ const listCode = (): data.Function => {
 };
 
 /* ========================================
+                  Maybe
+   ========================================
+*/
+
+/* ========================================
+                  Result
+   ========================================
+*/
+
+/* ========================================
                   Custom
    ========================================
 */
 
-const customName = (customTypeName: string): generator.identifer.Identifer =>
-  generator.identifer.fromString("decodeCustom" + customTypeName);
+const customName = (customTypeName: string): identifer.Identifer =>
+  identifer.fromString("decodeCustom" + customTypeName);
 
 const customCode = (
   customTypeName: string,

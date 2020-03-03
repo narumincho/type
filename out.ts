@@ -33,6 +33,39 @@ export type Type =
 export type ResultType = { ok: Type; error: Type };
 
 /**
+ *
+ *
+ */
+export const maybeJust = <T>(value: T): Maybe<T> => ({
+  _: "Just",
+  value: value
+});
+
+/**
+ *
+ *
+ */
+export const maybeNothing = <T>(): Maybe<T> => ({ _: "Nothing" });
+
+/**
+ *
+ *
+ */
+export const resultOk = <ok, error>(ok: ok): Result<ok, error> => ({
+  _: "Ok",
+  ok: ok
+});
+
+/**
+ *
+ *
+ */
+export const resultError = <ok, error>(error: error): Result<ok, error> => ({
+  _: "Error",
+  error: error
+});
+
+/**
  * 0～4294967295 32bit符号なし整数
  */
 export const typeUInt32: Type = { _: "UInt32" };
