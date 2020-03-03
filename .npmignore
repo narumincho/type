@@ -1,4 +1,7 @@
-source
-test
 node_modules
 .github
+.vscode
+testOutput
+source
+test
+testOutput

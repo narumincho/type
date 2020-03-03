@@ -90,8 +90,8 @@ describe("test", () => {
     "TypeScript"
   );
   const elmCodeAsString: string = t.elm.generateCode("Data", schema);
-  fs.promises.writeFile("out.ts", typeDefinitionTypeScriptCode);
-  fs.promises.writeFile("out.elm", elmCodeAsString);
+  fs.promises.writeFile("testOutput/out.ts", typeDefinitionTypeScriptCode);
+  fs.promises.writeFile("testOutput/out.elm", elmCodeAsString);
   it("type definition typeScript", () => {
     console.log(typeDefinitionTypeScriptCode);
     expect(typeof typeDefinitionTypeScriptCode === "string").toBe(true);
