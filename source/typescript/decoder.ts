@@ -1,6 +1,8 @@
 import { data, identifer } from "js-ts-code-generator";
 import * as type from "../type";
 import * as typeScript from "../typeScript";
+import * as typeDef from "./typeDefinition";
+import * as tag from "./tag";
 
 export const generateCode = (
   customTypeList: ReadonlyArray<type.CustomType>,
@@ -12,6 +14,7 @@ export const generateCode = (
     data.definitionFunction(boolCode),
     data.definitionFunction(dateTimeCode),
     data.definitionFunction(listCode()),
+    data.definitionFunction(maybeCode()),
     data.definitionFunction(hexStringCode(16, idName)),
     data.definitionFunction(hexStringCode(32, hashOrAccessTokenName))
   ];
@@ -444,6 +447,95 @@ const listCode = (): data.Function => {
                   Maybe
    ========================================
 */
+
+const maybeName = identifer.fromString("decodeMaybe");
+
+const maybeCode = (): data.Function => {
+  const decodeFunctionName = identifer.fromString("decodeFunction");
+  const elementTypeName = identifer.fromString("T");
+  const elementTypeVar = data.typeScopeInFile(elementTypeName);
+  const patternIndexAndNextIndexName = identifer.fromString(
+    "patternIndexAndNextIndex"
+  );
+  const patternIndexAndNextIndexVar = data.variable(
+    patternIndexAndNextIndexName
+  );
+  const statementList = [
+    data.statementReturn(
+      data.lambda(parameterList, returnType(typeDef.maybeVar(elementTypeVar)), [
+        data.statementVariableDefinition(
+          patternIndexAndNextIndexName,
+          returnType(data.typeNumber),
+          decodeVarEval(type.typeUInt32, parameterIndex, parameterBinary)
+        ),
+        data.statementIf(
+          data.equal(
+            getResult(patternIndexAndNextIndexVar),
+            data.numberLiteral(0)
+          ),
+          [
+            data.statementVariableDefinition(
+              identifer.fromString("valueAndNextIndex"),
+              returnType(elementTypeVar),
+              data.call(data.variable(decodeFunctionName), [
+                getNextIndex(patternIndexAndNextIndexVar),
+                parameterBinary
+              ])
+            ),
+            returnStatement(
+              tag.maybeJustVarEval(
+                getResult(
+                  data.variable(identifer.fromString("valueAndNextIndex"))
+                )
+              ),
+              getNextIndex(
+                data.variable(identifer.fromString("valueAndNextIndex"))
+              )
+            )
+          ]
+        ),
+        data.statementIf(
+          data.equal(
+            getResult(patternIndexAndNextIndexVar),
+            data.numberLiteral(1)
+          ),
+          [
+            returnStatement(
+              tag.maybeNothingVarEval,
+              getNextIndex(patternIndexAndNextIndexVar)
+            )
+          ]
+        ),
+        data.statementThrowError(
+          data.stringLiteral(
+            "存在しないMaybeのパターンを受け取った. 型情報を更新してください"
+          )
+        )
+      ])
+    )
+  ];
+
+  return {
+    name: maybeName,
+    document: "",
+    parameterList: [
+      {
+        name: decodeFunctionName,
+        document: "",
+        type_: data.typeFunction(
+          [data.typeNumber, data.uint8ArrayType],
+          returnType(elementTypeVar)
+        )
+      }
+    ],
+    returnType: data.typeFunction(
+      [data.typeNumber, data.uint8ArrayType],
+      returnType(typeDef.maybeVar(elementTypeVar))
+    ),
+    typeParameterList: [elementTypeName],
+    statementList
+  };
+};
 
 /* ========================================
                   Result

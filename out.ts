@@ -416,6 +416,41 @@ export const decodeList = <T>(
 
 /**
  *
+ *
+ */
+export const decodeMaybe = <T>(
+  decodeFunction: (a: number, b: Uint8Array) => { result: T; nextIndex: number }
+): ((a: number, b: Uint8Array) => { result: Maybe<T>; nextIndex: number }) => (
+  index: number,
+  binary: Uint8Array
+): { result: Maybe<T>; nextIndex: number } => {
+  const patternIndexAndNextIndex: {
+    result: number;
+    nextIndex: number;
+  } = decodeUInt32(index, binary);
+  if (patternIndexAndNextIndex.result === 0) {
+    const valueAndNextIndex: { result: T; nextIndex: number } = decodeFunction(
+      patternIndexAndNextIndex.nextIndex,
+      binary
+    );
+    return {
+      result: maybeJust(valueAndNextIndex.result),
+      nextIndex: valueAndNextIndex.nextIndex
+    };
+  }
+  if (patternIndexAndNextIndex.result === 1) {
+    return {
+      result: maybeNothing(),
+      nextIndex: patternIndexAndNextIndex.nextIndex
+    };
+  }
+  throw new Error(
+    "存在しないMaybeのパターンを受け取った. 型情報を更新してください"
+  );
+};
+
+/**
+ *
  * @param index バイナリを読み込み開始位置
  * @param binary バイナリ
  *
