@@ -1,5 +1,4 @@
-import * as generator from "js-ts-code-generator";
-import { data as ts } from "js-ts-code-generator";
+import { data as ts, identifer } from "js-ts-code-generator";
 import * as type from "../type";
 import * as c from "../case";
 
@@ -22,12 +21,12 @@ export const typeToGeneratorType = (type_: type.Type): ts.Type => {
 
     case "Maybe":
       return ts.typeWithParameter(
-        ts.typeScopeInGlobal(generator.identifer.fromString("Maybe")),
+        ts.typeScopeInGlobal(identifer.fromString("Maybe")),
         [typeToGeneratorType(type_.type_)]
       );
     case "Result":
       return ts.typeWithParameter(
-        ts.typeScopeInGlobal(generator.identifer.fromString("Result")),
+        ts.typeScopeInGlobal(identifer.fromString("Result")),
         [
           typeToGeneratorType(type_.resultType.error),
           typeToGeneratorType(type_.resultType.ok)
@@ -36,19 +35,17 @@ export const typeToGeneratorType = (type_: type.Type): ts.Type => {
 
     case "Id":
     case "Token":
-      return ts.typeScopeInFile(generator.identifer.fromString(type_.string_));
+      return ts.typeScopeInFile(identifer.fromString(type_.string_));
 
     case "Custom":
-      return ts.typeScopeInFile(generator.identifer.fromString(type_.string_));
+      return ts.typeScopeInFile(identifer.fromString(type_.string_));
   }
 };
 
 export const typeToMemberOrParameterName = (
   type_: type.Type
-): generator.identifer.Identifer => {
-  return generator.identifer.fromString(
-    c.firstLowerCase(type.toTypeName(type_))
-  );
+): identifer.Identifer => {
+  return identifer.fromString(c.firstLowerCase(type.toTypeName(type_)));
 };
 
 export const isProductTypeAllNoParameter = (

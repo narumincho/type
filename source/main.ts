@@ -1,7 +1,7 @@
 import * as elm from "./elm";
-import * as typeDefinition from "./typescript/typeDefinition";
-import * as encoder from "./typescript/encoder";
-import * as decoder from "./typescript/decoder";
+import * as typeDefinition from "./typeScript/typeDefinition";
+import * as encoder from "./typeScript/encoder";
+import * as decoder from "./typeScript/decoder";
 import * as tag from "./typeScript/tag";
 import * as type from "./type";
 import { data } from "js-ts-code-generator";
