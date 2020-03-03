@@ -13,8 +13,7 @@ type Type
   | Maybe Type
   | Result ResultType
   | Id String
-  | Hash String
-  | AccessToken
+  | Token String
   | Custom String
 
 

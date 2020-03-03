@@ -23,14 +23,50 @@ export type Type =
   | { _: "Maybe"; type_: Type }
   | { _: "Result"; resultType: ResultType }
   | { _: "Id"; string_: string }
-  | { _: "Hash"; string_: string }
-  | { _: "AccessToken" }
+  | { _: "Token"; string_: string }
   | { _: "Custom"; string_: string };
 
 /**
  * 正常値と異常値
  */
 export type ResultType = { ok: Type; error: Type };
+
+export type UserId = string & { _userId: never };
+
+export type FileToken = string & { _fileToken: never };
+
+/**
+ *
+ *
+ */
+export const maybeJust = <T>(value: T): Maybe<T> => ({
+  _: "Just",
+  value: value
+});
+
+/**
+ *
+ *
+ */
+export const maybeNothing = <T>(): Maybe<T> => ({ _: "Nothing" });
+
+/**
+ *
+ *
+ */
+export const resultOk = <ok, error>(ok: ok): Result<ok, error> => ({
+  _: "Ok",
+  ok: ok
+});
+
+/**
+ *
+ *
+ */
+export const resultError = <ok, error>(error: error): Result<ok, error> => ({
+  _: "Error",
+  error: error
+});
 
 /**
  * 0～4294967295 32bit符号なし整数
@@ -74,7 +110,7 @@ export const typeResult = (resultType: ResultType): Type => ({
 });
 
 /**
- * Id. データを識別するためのもの. カスタムの型名を指定する
+ * データを識別するためのもの. カスタムの型名を指定する. 16byte. 16進数文字列で32文字
  *
  */
 export const typeId = (string_: string): Type => ({
@@ -83,18 +119,13 @@ export const typeId = (string_: string): Type => ({
 });
 
 /**
- * Hash. データを識別するためのHash
+ * データを識別するため. カスタムの型名を指定する. 32byte. 16進数文字列で64文字
  *
  */
-export const typeHash = (string_: string): Type => ({
-  _: "Hash",
+export const typeToken = (string_: string): Type => ({
+  _: "Token",
   string_: string_
 });
-
-/**
- * トークン. データへのアクセスをするために必要になるもの. トークンの種類の名前を指定する
- */
-export const typeAccessToken: Type = { _: "AccessToken" };
 
 /**
  * 用意されていないアプリ特有の型
@@ -254,14 +285,11 @@ export const encodeCustomType = (type_: Type): ReadonlyArray<number> => {
     case "Id": {
       return [7].concat(encodeString(type_.string_));
     }
-    case "Hash": {
+    case "Token": {
       return [8].concat(encodeString(type_.string_));
     }
-    case "AccessToken": {
-      return [9];
-    }
     case "Custom": {
-      return [10].concat(encodeString(type_.string_));
+      return [9].concat(encodeString(type_.string_));
     }
   }
 };
@@ -274,3 +302,320 @@ export const encodeCustomResultType = (
   resultType: ResultType
 ): ReadonlyArray<number> =>
   encodeCustomType(resultType.ok).concat(encodeCustomType(resultType.error));
+
+/**
+ * UnsignedLeb128で表現されたバイナリをnumberの32bit符号なし整数の範囲の数値にに変換するコード
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeUInt32 = (
+  index: number,
+  binary: Uint8Array
+): { result: number; nextIndex: number } => {
+  let result: number = 0;
+  for (let i = 0; i < 5; i += 1) {
+    const b: number = binary[index + i];
+    result |= (b & 127) << (7 * i);
+    if ((b & 8) === 0 && 0 <= result && result < 4294967295) {
+      return { result: result, nextIndex: index + i + 1 };
+    }
+  }
+  throw new Error("larger than 32-bits");
+};
+
+/**
+ * バイナリからstringに変換する.このコードはNode.js用でutilのTextDecoderを使う
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeString = (
+  index: number,
+  binary: Uint8Array
+): { result: string; nextIndex: number } => {
+  const length: { result: number; nextIndex: number } = decodeUInt32(
+    index,
+    binary
+  );
+  return {
+    result: new a.TextDecoder().decode(
+      binary.slice(
+        index + length.nextIndex,
+        index + length.nextIndex + length.result
+      )
+    ),
+    nextIndex: index + length.nextIndex + length.result
+  };
+};
+
+/**
+ *
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeBool = (
+  index: number,
+  binary: Uint8Array
+): { result: boolean; nextIndex: number } => ({
+  result: binary[index] !== 0,
+  nextIndex: index + 1
+});
+
+/**
+ *
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeDateTime = (
+  index: number,
+  binary: Uint8Array
+): { result: Date; nextIndex: number } => {
+  const result: { result: number; nextIndex: number } = decodeUInt32(
+    index,
+    binary
+  );
+  return {
+    result: new Date(result.result * 1000),
+    nextIndex: result.nextIndex
+  };
+};
+
+/**
+ *
+ *
+ */
+export const decodeList = <T>(
+  decodeFunction: (a: number, b: Uint8Array) => { result: T; nextIndex: number }
+): ((
+  a: number,
+  b: Uint8Array
+) => { result: ReadonlyArray<T>; nextIndex: number }) => (
+  index: number,
+  binary: Uint8Array
+): { result: ReadonlyArray<T>; nextIndex: number } => {
+  const length: number = binary[index];
+  const result: Array<T> = [];
+  for (let i = 0; i < length; i += 1) {
+    const resultAndNextIndex: { result: T; nextIndex: number } = decodeFunction(
+      index,
+      binary
+    );
+    result.push(resultAndNextIndex.result);
+    index = resultAndNextIndex.nextIndex;
+  }
+  return { result: result, nextIndex: index };
+};
+
+/**
+ *
+ *
+ */
+export const decodeMaybe = <T>(
+  decodeFunction: (a: number, b: Uint8Array) => { result: T; nextIndex: number }
+): ((a: number, b: Uint8Array) => { result: Maybe<T>; nextIndex: number }) => (
+  index: number,
+  binary: Uint8Array
+): { result: Maybe<T>; nextIndex: number } => {
+  const patternIndexAndNextIndex: {
+    result: number;
+    nextIndex: number;
+  } = decodeUInt32(index, binary);
+  if (patternIndexAndNextIndex.result === 0) {
+    const valueAndNextIndex: { result: T; nextIndex: number } = decodeFunction(
+      patternIndexAndNextIndex.nextIndex,
+      binary
+    );
+    return {
+      result: maybeJust(valueAndNextIndex.result),
+      nextIndex: valueAndNextIndex.nextIndex
+    };
+  }
+  if (patternIndexAndNextIndex.result === 1) {
+    return {
+      result: maybeNothing(),
+      nextIndex: patternIndexAndNextIndex.nextIndex
+    };
+  }
+  throw new Error(
+    "存在しないMaybeのパターンを受け取った. 型情報を更新してください"
+  );
+};
+
+/**
+ *
+ *
+ */
+export const decodeResult = <ok, error>(
+  okDecodeFunction: (
+    a: number,
+    b: Uint8Array
+  ) => { result: ok; nextIndex: number },
+  errorDecodeFunction: (
+    a: number,
+    b: Uint8Array
+  ) => { result: error; nextIndex: number }
+): ((
+  a: number,
+  b: Uint8Array
+) => { result: Result<ok, error>; nextIndex: number }) => (
+  index: number,
+  binary: Uint8Array
+): { result: Result<ok, error>; nextIndex: number } => {
+  const patternIndexAndNextIndex: {
+    result: number;
+    nextIndex: number;
+  } = decodeUInt32(index, binary);
+  if (patternIndexAndNextIndex.result === 0) {
+    const okAndNextIndex: { result: ok; nextIndex: number } = okDecodeFunction(
+      patternIndexAndNextIndex.nextIndex,
+      binary
+    );
+    return {
+      result: resultOk(okAndNextIndex.result),
+      nextIndex: okAndNextIndex.nextIndex
+    };
+  }
+  if (patternIndexAndNextIndex.result === 1) {
+    const errorAndNextIndex: {
+      result: error;
+      nextIndex: number;
+    } = errorDecodeFunction(patternIndexAndNextIndex.nextIndex, binary);
+    return {
+      result: resultError(errorAndNextIndex.result),
+      nextIndex: errorAndNextIndex.nextIndex
+    };
+  }
+  throw new Error(
+    "存在しないResultのパターンを受け取った. 型情報を更新してください"
+  );
+};
+
+/**
+ *
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeId = (
+  index: number,
+  binary: Uint8Array
+): { result: string; nextIndex: number } => ({
+  result: Array["from"](binary.slice(index, index + 16))
+    .map((n: number): string => n.toString(16).padStart(2, "0"))
+    .join(""),
+  nextIndex: index + 16
+});
+
+/**
+ *
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeHashOrAccessToken = (
+  index: number,
+  binary: Uint8Array
+): { result: string; nextIndex: number } => ({
+  result: Array["from"](binary.slice(index, index + 32))
+    .map((n: number): string => n.toString(16).padStart(2, "0"))
+    .join(""),
+  nextIndex: index + 32
+});
+
+/**
+ *
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeCustomType = (
+  index: number,
+  binary: Uint8Array
+): { result: Type; nextIndex: number } => {
+  const patternIndex: { result: number; nextIndex: number } = decodeUInt32(
+    index,
+    binary
+  );
+  if (patternIndex.result === 0) {
+    return { result: typeUInt32, nextIndex: patternIndex.nextIndex };
+  }
+  if (patternIndex.result === 1) {
+    return { result: typeString, nextIndex: patternIndex.nextIndex };
+  }
+  if (patternIndex.result === 2) {
+    return { result: typeBool, nextIndex: patternIndex.nextIndex };
+  }
+  if (patternIndex.result === 3) {
+    return { result: typeDateTime, nextIndex: patternIndex.nextIndex };
+  }
+  if (patternIndex.result === 4) {
+    const result: { result: Type; nextIndex: number } = decodeCustomType(
+      patternIndex.nextIndex,
+      binary
+    );
+    return { result: typeList(result.result), nextIndex: result.nextIndex };
+  }
+  if (patternIndex.result === 5) {
+    const result: { result: Type; nextIndex: number } = decodeCustomType(
+      patternIndex.nextIndex,
+      binary
+    );
+    return { result: typeMaybe(result.result), nextIndex: result.nextIndex };
+  }
+  if (patternIndex.result === 6) {
+    const result: {
+      result: ResultType;
+      nextIndex: number;
+    } = decodeCustomResultType(patternIndex.nextIndex, binary);
+    return { result: typeResult(result.result), nextIndex: result.nextIndex };
+  }
+  if (patternIndex.result === 7) {
+    const result: { result: string; nextIndex: number } = decodeString(
+      patternIndex.nextIndex,
+      binary
+    );
+    return { result: typeId(result.result), nextIndex: result.nextIndex };
+  }
+  if (patternIndex.result === 8) {
+    const result: { result: string; nextIndex: number } = decodeString(
+      patternIndex.nextIndex,
+      binary
+    );
+    return { result: typeToken(result.result), nextIndex: result.nextIndex };
+  }
+  if (patternIndex.result === 9) {
+    const result: { result: string; nextIndex: number } = decodeString(
+      patternIndex.nextIndex,
+      binary
+    );
+    return { result: typeCustom(result.result), nextIndex: result.nextIndex };
+  }
+  throw new Error("存在しないパターンを指定された 型を更新してください");
+};
+
+/**
+ *
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ *
+ */
+export const decodeCustomResultType = (
+  index: number,
+  binary: Uint8Array
+): { result: ResultType; nextIndex: number } => {
+  const okAndNextIndex: { result: Type; nextIndex: number } = decodeCustomType(
+    index,
+    binary
+  );
+  const errorAndNextIndex: {
+    result: Type;
+    nextIndex: number;
+  } = decodeCustomType(okAndNextIndex.nextIndex, binary);
+  return {
+    result: { ok: okAndNextIndex.result, error: errorAndNextIndex.result },
+    nextIndex: errorAndNextIndex.nextIndex
+  };
+};

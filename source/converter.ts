@@ -133,6 +133,31 @@ export const encodeListCurry = <T>(
   return result;
 };
 
+export const decodeList = <T>(
+  decodeFunction: (
+    index: number,
+    binary: Uint8Array
+  ) => { result: T; nextIndex: number }
+): ((
+  index: number,
+  binary: Uint8Array
+) => { result: ReadonlyArray<T>; nextIndex: number }) => (
+  index: number,
+  binary: Uint8Array
+): { result: ReadonlyArray<T>; nextIndex: number } => {
+  const length = binary[index];
+  const result: Array<T> = [];
+  for (let i = 0; i < length; i++) {
+    const resultAndNextIndex = decodeFunction(index, binary);
+    result.push(resultAndNextIndex.result);
+    index = resultAndNextIndex.nextIndex;
+  }
+  return {
+    result: result,
+    nextIndex: index
+  };
+};
+
 export const encodeMaybe = <T>(
   encodeFunction: (input: T) => ReadonlyArray<number>
 ): ((maybe: type.Maybe<T>) => ReadonlyArray<number>) => (
@@ -144,6 +169,80 @@ export const encodeMaybe = <T>(
     case "Nothing":
       return [1];
   }
+};
+
+export const decodeMaybe = <T>(
+  decodeFunction: (
+    index: number,
+    binary: Uint8Array
+  ) => { result: T; nextIndex: number }
+) => (
+  index: number,
+  binary: Uint8Array
+): { result: type.Maybe<T>; nextIndex: number } => {
+  const patternIndexAndNextIndex = decodeUInt32(index, binary);
+  switch (patternIndexAndNextIndex.result) {
+    case 0: {
+      const valueAndNextIndex = decodeFunction(
+        patternIndexAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: type.maybeJust(valueAndNextIndex.result),
+        nextIndex: valueAndNextIndex.nextIndex
+      };
+    }
+    case 1: {
+      return {
+        result: type.maybeNothing(),
+        nextIndex: patternIndexAndNextIndex.nextIndex
+      };
+    }
+  }
+  throw new Error(
+    "存在しないMaybeのパターンを受け取った. 型情報を更新してください"
+  );
+};
+
+export const decodeResult = <ok, error>(
+  okDecodeFunction: (
+    index: number,
+    binary: Uint8Array
+  ) => { result: ok; nextIndex: number },
+  errorDecodeFunction: (
+    index: number,
+    binary: Uint8Array
+  ) => { result: error; nextIndex: number }
+) => (
+  index: number,
+  binary: Uint8Array
+): { result: type.Result<ok, error>; nextIndex: number } => {
+  const patternIndexAndNextIndex = decodeUInt32(index, binary);
+  switch (patternIndexAndNextIndex.result) {
+    case 0: {
+      const okAndNextIndex = okDecodeFunction(
+        patternIndexAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: type.resultOk(okAndNextIndex.result),
+        nextIndex: okAndNextIndex.nextIndex
+      };
+    }
+    case 1: {
+      const errorAndNextIndex = errorDecodeFunction(
+        patternIndexAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: type.resultError(errorAndNextIndex.result),
+        nextIndex: errorAndNextIndex.nextIndex
+      };
+    }
+  }
+  throw new Error(
+    "存在しないResultのパターンを受け取った. 型情報を更新してください"
+  );
 };
 
 export const encodeResult = <ok, error>(
