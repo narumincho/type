@@ -451,6 +451,55 @@ export const decodeMaybe = <T>(
 
 /**
  *
+ *
+ */
+export const decodeResult = <ok, error>(
+  okDecodeFunction: (
+    a: number,
+    b: Uint8Array
+  ) => { result: ok; nextIndex: number },
+  errorDecodeFunction: (
+    a: number,
+    b: Uint8Array
+  ) => { result: error; nextIndex: number }
+): ((
+  a: number,
+  b: Uint8Array
+) => { result: Result<ok, error>; nextIndex: number }) => (
+  index: number,
+  binary: Uint8Array
+): { result: Result<ok, error>; nextIndex: number } => {
+  const patternIndexAndNextIndex: {
+    result: number;
+    nextIndex: number;
+  } = decodeUInt32(index, binary);
+  if (patternIndexAndNextIndex.result === 0) {
+    const okAndNextIndex: { result: ok; nextIndex: number } = okDecodeFunction(
+      patternIndexAndNextIndex.nextIndex,
+      binary
+    );
+    return {
+      result: resultOk(okAndNextIndex.result),
+      nextIndex: okAndNextIndex.nextIndex
+    };
+  }
+  if (patternIndexAndNextIndex.result === 1) {
+    const errorAndNextIndex: {
+      result: error;
+      nextIndex: number;
+    } = errorDecodeFunction(patternIndexAndNextIndex.nextIndex, binary);
+    return {
+      result: resultError(errorAndNextIndex.result),
+      nextIndex: errorAndNextIndex.nextIndex
+    };
+  }
+  throw new Error(
+    "存在しないResultのパターンを受け取った. 型情報を更新してください"
+  );
+};
+
+/**
+ *
  * @param index バイナリを読み込み開始位置
  * @param binary バイナリ
  *

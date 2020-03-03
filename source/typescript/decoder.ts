@@ -15,6 +15,7 @@ export const generateCode = (
     data.definitionFunction(dateTimeCode),
     data.definitionFunction(listCode()),
     data.definitionFunction(maybeCode()),
+    data.definitionFunction(resultCode()),
     data.definitionFunction(hexStringCode(16, idName)),
     data.definitionFunction(hexStringCode(32, hashOrAccessTokenName))
   ];
@@ -460,58 +461,45 @@ const maybeCode = (): data.Function => {
   const patternIndexAndNextIndexVar = data.variable(
     patternIndexAndNextIndexName
   );
-  const statementList = [
-    data.statementReturn(
-      data.lambda(parameterList, returnType(typeDef.maybeVar(elementTypeVar)), [
+
+  const body: ReadonlyArray<data.Statement> = [
+    data.statementVariableDefinition(
+      patternIndexAndNextIndexName,
+      returnType(data.typeNumber),
+      decodeVarEval(type.typeUInt32, parameterIndex, parameterBinary)
+    ),
+    data.statementIf(
+      data.equal(getResult(patternIndexAndNextIndexVar), data.numberLiteral(0)),
+      [
         data.statementVariableDefinition(
-          patternIndexAndNextIndexName,
-          returnType(data.typeNumber),
-          decodeVarEval(type.typeUInt32, parameterIndex, parameterBinary)
+          identifer.fromString("valueAndNextIndex"),
+          returnType(elementTypeVar),
+          data.call(data.variable(decodeFunctionName), [
+            getNextIndex(patternIndexAndNextIndexVar),
+            parameterBinary
+          ])
         ),
-        data.statementIf(
-          data.equal(
-            getResult(patternIndexAndNextIndexVar),
-            data.numberLiteral(0)
+        returnStatement(
+          tag.maybeJustVarEval(
+            getResult(data.variable(identifer.fromString("valueAndNextIndex")))
           ),
-          [
-            data.statementVariableDefinition(
-              identifer.fromString("valueAndNextIndex"),
-              returnType(elementTypeVar),
-              data.call(data.variable(decodeFunctionName), [
-                getNextIndex(patternIndexAndNextIndexVar),
-                parameterBinary
-              ])
-            ),
-            returnStatement(
-              tag.maybeJustVarEval(
-                getResult(
-                  data.variable(identifer.fromString("valueAndNextIndex"))
-                )
-              ),
-              getNextIndex(
-                data.variable(identifer.fromString("valueAndNextIndex"))
-              )
-            )
-          ]
-        ),
-        data.statementIf(
-          data.equal(
-            getResult(patternIndexAndNextIndexVar),
-            data.numberLiteral(1)
-          ),
-          [
-            returnStatement(
-              tag.maybeNothingVarEval,
-              getNextIndex(patternIndexAndNextIndexVar)
-            )
-          ]
-        ),
-        data.statementThrowError(
-          data.stringLiteral(
-            "存在しないMaybeのパターンを受け取った. 型情報を更新してください"
-          )
+          getNextIndex(data.variable(identifer.fromString("valueAndNextIndex")))
         )
-      ])
+      ]
+    ),
+    data.statementIf(
+      data.equal(getResult(patternIndexAndNextIndexVar), data.numberLiteral(1)),
+      [
+        returnStatement(
+          tag.maybeNothingVarEval,
+          getNextIndex(patternIndexAndNextIndexVar)
+        )
+      ]
+    ),
+    data.statementThrowError(
+      data.stringLiteral(
+        "存在しないMaybeのパターンを受け取った. 型情報を更新してください"
+      )
     )
   ];
 
@@ -533,7 +521,15 @@ const maybeCode = (): data.Function => {
       returnType(typeDef.maybeVar(elementTypeVar))
     ),
     typeParameterList: [elementTypeName],
-    statementList
+    statementList: [
+      data.statementReturn(
+        data.lambda(
+          parameterList,
+          returnType(typeDef.maybeVar(elementTypeVar)),
+          body
+        )
+      )
+    ]
   };
 };
 
@@ -541,6 +537,111 @@ const maybeCode = (): data.Function => {
                   Result
    ========================================
 */
+
+const resultName = identifer.fromString("decodeResult");
+
+const resultCode = (): data.Function => {
+  const okTypeName = identifer.fromString("ok");
+  const okTypeVar = data.typeScopeInFile(okTypeName);
+  const errorTypeName = identifer.fromString("error");
+  const errorTypeVar = data.typeScopeInFile(errorTypeName);
+  const okDecodeFunctionName = identifer.fromString("okDecodeFunction");
+  const errorDecodeFunctionName = identifer.fromString("errorDecodeFunction");
+  const patternIndexAndNextIndexName = identifer.fromString(
+    "patternIndexAndNextIndex"
+  );
+  const patternIndexAndNextIndexVar = data.variable(
+    patternIndexAndNextIndexName
+  );
+
+  const body: ReadonlyArray<data.Statement> = [
+    data.statementVariableDefinition(
+      patternIndexAndNextIndexName,
+      returnType(data.typeNumber),
+      decodeVarEval(type.typeUInt32, parameterIndex, parameterBinary)
+    ),
+    data.statementIf(
+      data.equal(getResult(patternIndexAndNextIndexVar), data.numberLiteral(0)),
+      [
+        data.statementVariableDefinition(
+          identifer.fromString("okAndNextIndex"),
+          returnType(okTypeVar),
+          data.call(data.variable(okDecodeFunctionName), [
+            getNextIndex(patternIndexAndNextIndexVar),
+            parameterBinary
+          ])
+        ),
+        returnStatement(
+          tag.resultOkVarEval(
+            getResult(data.variable(identifer.fromString("okAndNextIndex")))
+          ),
+          getNextIndex(data.variable(identifer.fromString("okAndNextIndex")))
+        )
+      ]
+    ),
+    data.statementIf(
+      data.equal(getResult(patternIndexAndNextIndexVar), data.numberLiteral(1)),
+      [
+        data.statementVariableDefinition(
+          identifer.fromString("errorAndNextIndex"),
+          returnType(errorTypeVar),
+          data.call(data.variable(errorDecodeFunctionName), [
+            getNextIndex(patternIndexAndNextIndexVar),
+            parameterBinary
+          ])
+        ),
+        returnStatement(
+          tag.resultErrorVarEval(
+            getResult(data.variable(identifer.fromString("errorAndNextIndex")))
+          ),
+          getNextIndex(data.variable(identifer.fromString("errorAndNextIndex")))
+        )
+      ]
+    ),
+    data.statementThrowError(
+      data.stringLiteral(
+        "存在しないResultのパターンを受け取った. 型情報を更新してください"
+      )
+    )
+  ];
+
+  return {
+    name: resultName,
+    document: "",
+    parameterList: [
+      {
+        name: okDecodeFunctionName,
+        document: "",
+        type_: data.typeFunction(
+          [data.typeNumber, data.uint8ArrayType],
+          returnType(okTypeVar)
+        )
+      },
+      {
+        name: errorDecodeFunctionName,
+        document: "",
+        type_: data.typeFunction(
+          [data.typeNumber, data.uint8ArrayType],
+          returnType(errorTypeVar)
+        )
+      }
+    ],
+    returnType: data.typeFunction(
+      [data.typeNumber, data.uint8ArrayType],
+      returnType(typeDef.resultVar(okTypeVar, errorTypeVar))
+    ),
+    typeParameterList: [okTypeName, errorTypeName],
+    statementList: [
+      data.statementReturn(
+        data.lambda(
+          parameterList,
+          returnType(typeDef.resultVar(okTypeVar, errorTypeVar)),
+          body
+        )
+      )
+    ]
+  };
+};
 
 /* ========================================
                   Custom
