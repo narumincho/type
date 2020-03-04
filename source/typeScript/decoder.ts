@@ -822,7 +822,10 @@ const decodeFunctionExpr = (type_: type.Type): ts.Expr => {
     case "Id":
       return ts.typeAssertion(
         ts.variable(idName),
-        ts.typeScopeInFile(identifer.fromString(type_.string_))
+        ts.typeFunction(
+          [ts.typeNumber, ts.uint8ArrayType],
+          returnType(ts.typeScopeInFile(identifer.fromString(type_.string_)))
+        )
       );
     case "Token":
       return ts.typeAssertion(
