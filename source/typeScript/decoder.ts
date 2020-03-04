@@ -663,6 +663,9 @@ const customSumCode = (
   const patternIndexAndNextIndexName = identifer.fromString("patternIndex");
   const patternIndexAndNextIndexVar = ts.variable(patternIndexAndNextIndexName);
 
+  const isProductTypeAllNoParameter = util.isProductTypeAllNoParameter(
+    tagNameAndParameterList
+  );
   return [
     ts.statementVariableDefinition(
       patternIndexAndNextIndexName,
@@ -674,7 +677,8 @@ const customSumCode = (
         customTypeName,
         tagNameAndParameter,
         index,
-        patternIndexAndNextIndexVar
+        patternIndexAndNextIndexVar,
+        isProductTypeAllNoParameter
       )
     ),
     ts.statementThrowError(
@@ -687,7 +691,8 @@ const tagNameAndParameterCode = (
   customTypeName: string,
   tagNameAndParameter: type.TagNameAndParameter,
   index: number,
-  patternIndexAndNextIndexVar: ts.Expr
+  patternIndexAndNextIndexVar: ts.Expr,
+  isProductTypeAllNoParameter: boolean
 ): ts.Statement => {
   switch (tagNameAndParameter.parameter._) {
     case "Just":
@@ -725,7 +730,9 @@ const tagNameAndParameterCode = (
         ),
         [
           returnStatement(
-            tag.customTypeVar(customTypeName, tagNameAndParameter.name),
+            isProductTypeAllNoParameter
+              ? ts.stringLiteral(tagNameAndParameter.name)
+              : tag.customTypeVar(customTypeName, tagNameAndParameter.name),
             getNextIndex(patternIndexAndNextIndexVar)
           )
         ]
