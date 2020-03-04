@@ -80,8 +80,30 @@ describe("test", () => {
     ])
   };
 
+  const language: type.CustomType = {
+    name: "Language",
+    description: "プログラミング言語",
+    body: type.customTypeBodySum([
+      {
+        name: "TypeScript",
+        description: "TypeScript",
+        parameter: type.maybeNothing()
+      },
+      {
+        name: "JavaScript",
+        description: "JavaScript",
+        parameter: type.maybeNothing()
+      },
+      {
+        name: "Elm",
+        description: "Elm",
+        parameter: type.maybeNothing()
+      }
+    ])
+  };
+
   const schema: type.Schema = {
-    customTypeList: [typeType, resultTypeType],
+    customTypeList: [typeType, resultTypeType, language],
     idOrHashTypeNameList: ["UserId", "FileToken"]
   };
 
