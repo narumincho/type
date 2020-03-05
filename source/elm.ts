@@ -89,7 +89,7 @@ const createTypeAlias = (
   return (
     "type alias " +
     name +
-    "= { " +
+    " = { " +
     memberNameAndTypeArray
       .map(
         memberNameAndType =>
