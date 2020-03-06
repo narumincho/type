@@ -166,3 +166,13 @@ resultJsonDecoder okDecoder errorDecoder =
                     _ ->
                         Jd.fail "resultのtagの指定が間違っていた"
             )
+
+
+userIdJsonDecoder : Jd.Decoder UserId
+userIdJsonDecoder =
+    Jd.map UserId Jd.string
+
+
+fileTokenJsonDecoder : Jd.Decoder FileToken
+fileTokenJsonDecoder =
+    Jd.map FileToken Jd.string

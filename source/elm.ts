@@ -5,33 +5,19 @@ export const generateCode = (
   moduleName: string,
   schema: type.Schema
 ): string => {
-  return (
-    moduleExportList(moduleName, schema.customTypeList) +
-    "\n" +
-    importList +
-    "\n" +
-    schema.customTypeList.map(customTypeToTypeDefinitionCode).join("\n\n") +
-    "\n\n" +
-    schema.idTypeNameList.map(idOrTokenTypeToTypeDefinitionCode).join("\n\n") +
-    "\n\n" +
-    schema.tokenTypeNameList
-      .map(idOrTokenTypeToTypeDefinitionCode)
-      .join("\n\n") +
-    "\n\n" +
-    maybeToJsonValueCode +
-    "\n\n" +
-    resultToJsonValueCode +
-    "\n\n" +
-    schema.idTypeNameList.map(idOrTokenTypeToToJsonValueCode).join("\n\n") +
-    "\n\n" +
-    schema.tokenTypeNameList.map(idOrTokenTypeToToJsonValueCode).join("\n\n") +
-    "\n\n" +
-    schema.customTypeList.map(customTypeToToJsonValueCode).join("\n\n") +
-    "\n\n" +
-    maybeJsonDecoder +
-    "\n\n" +
-    resultJsonDecoder
-  );
+  return [
+    moduleExportList(moduleName, schema.customTypeList),
+    importList,
+    ...schema.customTypeList.map(customTypeToTypeDefinitionCode),
+    ...schema.idOrTokenTypeNameList.map(idOrTokenTypeToTypeDefinitionCode),
+    maybeToJsonValueCode,
+    resultToJsonValueCode,
+    ...schema.idOrTokenTypeNameList.map(idOrTokenTypeToToJsonValueCode),
+    ...schema.customTypeList.map(customTypeToToJsonValueCode),
+    maybeJsonDecoder,
+    resultJsonDecoder,
+    ...schema.idOrTokenTypeNameList.map(idOrTokenToJsonDecoderCode)
+  ].join("\n\n");
 };
 
 const moduleExportList = (
@@ -351,6 +337,21 @@ resultJsonDecoder okDecoder errorDecoder =
                         Jd.fail "resultのtagの指定が間違っていた"
             )
 `;
+
+const idOrTokenToJsonDecoderCode = (idOrTokenTypeName: string): string => {
+  return (
+    customOrIdOrTokenTypeNameToJsonDecoderFunctionName(idOrTokenTypeName) +
+    " : Jd.Decoder " +
+    idOrTokenTypeName +
+    "\n" +
+    customOrIdOrTokenTypeNameToJsonDecoderFunctionName(idOrTokenTypeName) +
+    " =\n" +
+    indentString +
+    "Jd.map " +
+    idOrTokenTypeName +
+    " Jd.string"
+  );
+};
 
 const typeToDecoder = (type_: type.Type): string => {
   switch (type_._) {

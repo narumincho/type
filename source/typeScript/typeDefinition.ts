@@ -10,8 +10,7 @@ export const generateTypeDefinition = (
     maybeDefinition,
     resultDefinition,
     ...schema.customTypeList.map(customTypeToDefinition),
-    ...schema.idTypeNameList.map(idOrTokenDefinition),
-    ...schema.tokenTypeNameList.map(idOrTokenDefinition)
+    ...schema.idOrTokenTypeNameList.map(idOrTokenDefinition)
   ];
 };
 
