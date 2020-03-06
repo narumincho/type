@@ -352,6 +352,35 @@ resultJsonDecoder okDecoder errorDecoder =
             )
 `;
 
+const typeToDecoder = (type_: type.Type): string => {
+  switch (type_._) {
+    case "UInt32":
+      return "Jd.int";
+    case "String":
+      return "Jd.string";
+    case "Bool":
+      return "Jd.bool";
+    case "DateTime":
+      return '"DateTimeは未サポート"';
+    case "List":
+      return "(Jd.list " + typeToDecoder(type_.type_) + ")";
+    case "Maybe":
+      return "(maybeToJsonValue " + typeToDecoder(type_.type_) + ")";
+    case "Result":
+      return (
+        "(resultToJsonValue " +
+        typeToDecoder(type_.resultType.ok) +
+        " " +
+        typeToDecoder(type_.resultType.error) +
+        ")"
+      );
+    case "Id":
+    case "Token":
+    case "Custom":
+      return customOrIdOrTokenTypeNameToJsonDecoderFunctionName(type_.string_);
+  }
+};
+
 const commentToCode = (comment: string): string =>
   comment === "" ? "" : "{-| " + comment + " -}\n";
 
@@ -386,7 +415,11 @@ const typeToElmType = (type_: type.Type): string => {
 };
 
 const customOrIdOrTokenTypeNameToToJsonValueFunctionName = (
-  customTypeName: string
-): string => c.firstLowerCase(customTypeName) + "ToJsonValue";
+  name: string
+): string => c.firstLowerCase(name) + "ToJsonValue";
+
+const customOrIdOrTokenTypeNameToJsonDecoderFunctionName = (
+  name: string
+): string => c.firstLowerCase(name) + "JsonDecoder";
 
 const indentString = "    ";
