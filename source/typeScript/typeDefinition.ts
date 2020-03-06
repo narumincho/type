@@ -1,6 +1,6 @@
 import { data as ts, identifer } from "js-ts-code-generator";
 import * as type from "../type";
-import * as typeScript from "./util";
+import * as util from "./util";
 import * as c from "../case";
 
 export const generateTypeDefinition = (
@@ -10,7 +10,8 @@ export const generateTypeDefinition = (
     maybeDefinition,
     resultDefinition,
     ...schema.customTypeList.map(customTypeToDefinition),
-    ...schema.idOrHashTypeNameList.map(idOrTokenDefinition)
+    ...schema.idTypeNameList.map(idOrTokenDefinition),
+    ...schema.tokenTypeNameList.map(idOrTokenDefinition)
   ];
 };
 
@@ -121,7 +122,7 @@ export const customTypeToDefinition = (
   switch (customType.body._) {
     case "Sum":
       if (
-        typeScript.isProductTypeAllNoParameter(
+        type.isProductTypeAllNoParameter(
           customType.body.tagNameAndParameterArray
         )
       ) {
@@ -156,9 +157,7 @@ export const customTypeToDefinition = (
             customType.body.memberNameAndTypeArray.map(memberNameAndType => [
               memberNameAndType.name,
               {
-                type_: typeScript.typeToGeneratorType(
-                  memberNameAndType.memberType
-                ),
+                type_: util.typeToGeneratorType(memberNameAndType.memberType),
                 document: memberNameAndType.description
               }
             ])
@@ -185,12 +184,12 @@ const tagNameAndParameterToObjectType = (
         new Map([
           tagField,
           [
-            typeScript.typeToMemberOrParameterName(
+            util.typeToMemberOrParameterName(
               tagNameAndParameter.parameter.value
             ),
             {
               document: "",
-              type_: typeScript.typeToGeneratorType(
+              type_: util.typeToGeneratorType(
                 tagNameAndParameter.parameter.value
               )
             }

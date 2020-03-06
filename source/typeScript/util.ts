@@ -47,10 +47,3 @@ export const typeToMemberOrParameterName = (
 ): identifer.Identifer => {
   return identifer.fromString(c.firstLowerCase(type.toTypeName(type_)));
 };
-
-export const isProductTypeAllNoParameter = (
-  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
-): boolean =>
-  tagNameAndParameterArray.every(
-    tagNameAndParameter => tagNameAndParameter.parameter._ === "Nothing"
-  );

@@ -598,7 +598,7 @@ export const customSumCode = (
   tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
   parameter: ts.Expr
 ): ReadonlyArray<ts.Statement> => {
-  if (util.isProductTypeAllNoParameter(tagNameAndParameterArray)) {
+  if (type.isProductTypeAllNoParameter(tagNameAndParameterArray)) {
     return [
       ts.statementSwitch({
         expr: parameter,

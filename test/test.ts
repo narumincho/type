@@ -104,7 +104,8 @@ describe("test", () => {
 
   const schema: type.Schema = {
     customTypeList: [typeType, resultTypeType, language],
-    idOrHashTypeNameList: ["UserId", "FileToken"]
+    idTypeNameList: ["UserId"],
+    tokenTypeNameList: ["FileToken"]
   };
 
   const typeDefinitionTypeScriptCode = generator.generateCodeAsString(
@@ -112,7 +113,7 @@ describe("test", () => {
     "TypeScript"
   );
   const elmCodeAsString: string = t.elm.generateCode("Data", schema);
-  fs.promises.writeFile("testOutput/out.ts", typeDefinitionTypeScriptCode);
+  // fs.promises.writeFile("testOutput/out.ts", typeDefinitionTypeScriptCode);
   fs.promises.writeFile("testOutput/out.elm", elmCodeAsString);
   it("type definition typeScript", () => {
     console.log(typeDefinitionTypeScriptCode);
