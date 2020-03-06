@@ -26,7 +26,11 @@ export const generateCode = (
     "\n\n" +
     schema.tokenTypeNameList.map(idOrTokenTypeToToJsonValueCode).join("\n\n") +
     "\n\n" +
-    schema.customTypeList.map(customTypeToToJsonValueCode).join("\n\n")
+    schema.customTypeList.map(customTypeToToJsonValueCode).join("\n\n") +
+    "\n\n" +
+    maybeJsonDecoder +
+    "\n\n" +
+    resultJsonDecoder
   );
 };
 
@@ -311,6 +315,42 @@ const toJsonValueFunction = (type_: type.Type): string => {
       return customOrIdOrTokenTypeNameToToJsonValueFunctionName(type_.string_);
   }
 };
+
+const maybeJsonDecoder = `
+maybeJsonDecoder : Jd.Decoder a -> Jd.Decoder (Maybe a)
+maybeJsonDecoder decoder =
+    Jd.field "_" Jd.string
+        |> Jd.andThen
+            (\\ tag ->
+                case tag of
+                    "Just" ->
+                        Jd.field "value" decoder |> Jd.map Just
+
+                    "Nothing" ->
+                        Jd.succeed Nothing
+
+                    _ ->
+                        Jd.fail "maybeのtagの指定が間違っていた"
+            )
+`;
+
+const resultJsonDecoder = `
+resultJsonDecoder : Jd.Decoder ok -> Jd.Decoder error -> Jd.Decoder (Result error ok)
+resultJsonDecoder okDecoder errorDecoder =
+    Jd.field "_" Jd.string
+        |> Jd.andThen
+            (\\ tag ->
+                case tag of
+                    "Ok" ->
+                        Jd.field "ok" okDecoder |> Jd.map Ok
+
+                    "Error" ->
+                        Jd.field "error" errorDecoder |> Jd.map Err
+
+                    _ ->
+                        Jd.fail "resultのtagの指定が間違っていた"
+            )
+`;
 
 const commentToCode = (comment: string): string =>
   comment === "" ? "" : "{-| " + comment + " -}\n";

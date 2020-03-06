@@ -132,3 +132,37 @@ languageToJsonValue language =
 
         Elm ->
             Je.string "Elm"
+
+
+maybeJsonDecoder : Jd.Decoder a -> Jd.Decoder (Maybe a)
+maybeJsonDecoder decoder =
+    Jd.field "_" Jd.string
+        |> Jd.andThen
+            (\tag ->
+                case tag of
+                    "Just" ->
+                        Jd.field "value" decoder |> Jd.map Just
+
+                    "Nothing" ->
+                        Jd.succeed Nothing
+
+                    _ ->
+                        Jd.fail "maybeのtagの指定が間違っていた"
+            )
+
+
+resultJsonDecoder : Jd.Decoder ok -> Jd.Decoder error -> Jd.Decoder (Result error ok)
+resultJsonDecoder okDecoder errorDecoder =
+    Jd.field "_" Jd.string
+        |> Jd.andThen
+            (\tag ->
+                case tag of
+                    "Ok" ->
+                        Jd.field "ok" okDecoder |> Jd.map Ok
+
+                    "Error" ->
+                        Jd.field "error" errorDecoder |> Jd.map Err
+
+                    _ ->
+                        Jd.fail "resultのtagの指定が間違っていた"
+            )
