@@ -133,10 +133,10 @@ resultToJsonValue : (ok -> Je.Value) -> (error -> Je.Value) -> Result error ok -
 resultToJsonValue okToJsonValueFunction errorToJsonValueFunction result =
     case result of
         Ok value ->
-            Je.object [ ( "_", Je.string "Ok" ), ( "ok", okToJsonValueFunction result ) ]
+            Je.object [ ( "_", Je.string "Ok" ), ( "ok", okToJsonValueFunction value ) ]
 
         Err value ->
-            Je.object [ ( "_", Je.string "Error" ), ( "error", errorToJsonValueFunction result ) ]
+            Je.object [ ( "_", Je.string "Error" ), ( "error", errorToJsonValueFunction value ) ]
 `;
 
 const idOrTokenTypeToToJsonValueCode = (idOrTokenTypeName: string): string => {
