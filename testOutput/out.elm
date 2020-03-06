@@ -1,4 +1,4 @@
-module Data exposing (Data(..))
+module Data exposing (Language(..), ResultType, Type(..))
 
 import Json.Decode as Jd
 import Json.Encode as Je
