@@ -117,7 +117,10 @@ const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
           parameterName
         );
       case "Product":
-        return ""; // TODO
+        return customTypeProductToToJsonValueCodeBody(
+          customType.body.memberNameAndTypeArray,
+          parameterName
+        );
     }
   })();
 
@@ -188,6 +191,34 @@ const customTypeSumToToJsonValueCodeBody = (
           "]"
       )
       .join("\n")
+  );
+};
+
+const customTypeProductToToJsonValueCodeBody = (
+  memberNameAndTypeArray: ReadonlyArray<type.MemberNameAndType>,
+  parameterName: string
+): string => {
+  return (
+    indentString +
+    "Je.object\n" +
+    indentString.repeat(2) +
+    "[ " +
+    memberNameAndTypeArray
+      .map(
+        memberNameAndType =>
+          '( "' +
+          memberNameAndType.name +
+          '", ' +
+          toJsonValueVarEval(
+            memberNameAndType.memberType,
+            parameterName + "." + memberNameAndType.name
+          ) +
+          " )"
+      )
+      .join("\n" + indentString.repeat(2) + ", ") +
+    "\n" +
+    indentString.repeat(2) +
+    "]"
   );
 };
 
