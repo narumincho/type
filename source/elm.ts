@@ -16,7 +16,8 @@ export const generateCode = (
     ...schema.customTypeList.map(customTypeToToJsonValueCode),
     maybeJsonDecoder,
     resultJsonDecoder,
-    ...schema.idOrTokenTypeNameList.map(idOrTokenToJsonDecoderCode)
+    ...schema.idOrTokenTypeNameList.map(idOrTokenToJsonDecoderCode),
+    ...schema.customTypeList.map(customTypeToJsonDecoder)
   ].join("\n\n");
 };
 
@@ -47,6 +48,7 @@ import Set
 import Map
 import Json.Encode as Je
 import Json.Decode as Jd
+import Json.Decode.Pipeline as Jdp
 `;
 
 const customTypeToTypeDefinitionCode = (
@@ -156,22 +158,8 @@ const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
   const parameterName = type.elmIdentiferFromString(
     c.firstLowerCase(customType.name)
   );
-  const body = ((): string => {
-    switch (customType.body._) {
-      case "Sum":
-        return customTypeSumToToJsonValueCodeBody(
-          customType.body.tagNameAndParameterArray,
-          parameterName
-        );
-      case "Product":
-        return customTypeProductToToJsonValueCodeBody(
-          customType.body.memberNameAndTypeArray,
-          parameterName
-        );
-    }
-  })();
 
-  return (
+  const header =
     commentToCode(customType.name + "のJSONへのエンコーダ") +
     customOrIdOrTokenTypeNameToToJsonValueFunctionName(customType.name) +
     " : " +
@@ -180,9 +168,26 @@ const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
     customOrIdOrTokenTypeNameToToJsonValueFunctionName(customType.name) +
     " " +
     parameterName +
-    " =\n" +
-    body
-  );
+    " =\n";
+
+  switch (customType.body._) {
+    case "Sum":
+      return (
+        header +
+        customTypeSumToToJsonValueCodeBody(
+          customType.body.tagNameAndParameterArray,
+          parameterName
+        )
+      );
+    case "Product":
+      return (
+        header +
+        customTypeProductToToJsonValueCodeBody(
+          customType.body.memberNameAndTypeArray,
+          parameterName
+        )
+      );
+  }
 };
 
 const customTypeSumToToJsonValueCodeBody = (
@@ -350,6 +355,76 @@ const idOrTokenToJsonDecoderCode = (idOrTokenTypeName: string): string => {
     "Jd.map " +
     idOrTokenTypeName +
     " Jd.string"
+  );
+};
+
+const customTypeToJsonDecoder = (customType: type.CustomType): string => {
+  const header =
+    customOrIdOrTokenTypeNameToJsonDecoderFunctionName(customType.name) +
+    " : Jd.Decoder " +
+    customType.name +
+    "\n" +
+    customOrIdOrTokenTypeNameToJsonDecoderFunctionName(customType.name) +
+    " =\n";
+
+  switch (customType.body._) {
+    case "Sum":
+      return (
+        header +
+        customTypeSumToJsonDecoderCodeBody(
+          customType.body.tagNameAndParameterArray
+        )
+      );
+    case "Product":
+      return (
+        header +
+        customTypeProductToJsonDecoderCodeBody(
+          customType.body.memberNameAndTypeArray
+        )
+      );
+  }
+};
+
+const customTypeSumToJsonDecoderCodeBody = (
+  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
+): string => {
+  return "32";
+};
+
+const customTypeProductToJsonDecoderCodeBody = (
+  memberNameAndTypeArray: ReadonlyArray<type.MemberNameAndType>
+): string => {
+  return (
+    indentString +
+    "Jd.succeed\n" +
+    indentString.repeat(2) +
+    "(\\" +
+    memberNameAndTypeArray
+      .map(memberNameAndType => memberNameAndType.name)
+      .join(" ") +
+    " ->\n" +
+    indentString.repeat(3) +
+    "{ " +
+    memberNameAndTypeArray
+      .map(
+        memberNameAndType =>
+          memberNameAndType.name + " = " + memberNameAndType.name
+      )
+      .join("\n" + indentString.repeat(3) + ", ") +
+    indentString.repeat(3) +
+    "}\n" +
+    indentString.repeat(2) +
+    ")\n" +
+    memberNameAndTypeArray
+      .map(
+        memberNameAndType =>
+          indentString.repeat(2) +
+          '|> Jdp.required "' +
+          memberNameAndType.name +
+          '" ' +
+          typeToDecoder(memberNameAndType.memberType)
+      )
+      .join("\n")
   );
 };
 

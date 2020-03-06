@@ -1,6 +1,7 @@
 module Data exposing (Language(..), ResultType, Type(..))
 
 import Json.Decode as Jd
+import Json.Decode.Pipeline as Jdp
 import Json.Encode as Je
 import Map
 import Set
@@ -176,3 +177,25 @@ userIdJsonDecoder =
 fileTokenJsonDecoder : Jd.Decoder FileToken
 fileTokenJsonDecoder =
     Jd.map FileToken Jd.string
+
+
+typeJsonDecoder : Jd.Decoder Type
+typeJsonDecoder =
+    32
+
+
+resultTypeJsonDecoder : Jd.Decoder ResultType
+resultTypeJsonDecoder =
+    Jd.succeed
+        (\ok error ->
+            { ok = ok
+            , error = error
+            }
+        )
+        |> Jdp.required "ok" typeJsonDecoder
+        |> Jdp.required "error" typeJsonDecoder
+
+
+languageJsonDecoder : Jd.Decoder Language
+languageJsonDecoder =
+    32
