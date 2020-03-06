@@ -5,12 +5,11 @@ import * as typeDef from "./typeDefinition";
 import * as tag from "./tag";
 
 export const generateCode = (
-  customTypeList: ReadonlyArray<type.CustomType>,
-  isBrowser: boolean
+  customTypeList: ReadonlyArray<type.CustomType>
 ): ReadonlyArray<ts.Function> => {
   return [
     uInt32Code,
-    stringCode(isBrowser),
+    stringCode,
     boolCode,
     dateTimeCode,
     listCode(),
@@ -184,13 +183,9 @@ const stringName = identifer.fromString("decodeString");
  * バイナリからstringに変換するコード
  * ブラウザではグローバルのTextDecoderを使い、node.jsではutilのTextDecoderを使う
  */
-export const stringCode = (isBrowser: boolean): ts.Function => ({
+export const stringCode: ts.Function = {
   name: stringName,
-  document:
-    "バイナリからstringに変換する." +
-    (isBrowser
-      ? "このコードはブラウザ用でグローバルのTextDecoderを使う."
-      : "このコードはNode.js用でutilのTextDecoderを使う"),
+  document: "バイナリからstringに変換する.",
   parameterList: parameterList,
   typeParameterList: [],
   returnType: returnType(ts.typeString),
@@ -203,9 +198,14 @@ export const stringCode = (isBrowser: boolean): ts.Function => ({
     returnStatement(
       ts.callMethod(
         ts.newExpr(
-          isBrowser
-            ? ts.globalObjects(identifer.fromString("TextDecoder"))
-            : ts.importedVariable("util", identifer.fromString("TextDecoder")),
+          ts.conditionalOperator(
+            ts.equal(
+              ts.globalObjects(identifer.fromString("process")),
+              ts.undefinedLiteral
+            ),
+            ts.globalObjects(identifer.fromString("TextDecoder")),
+            ts.importedVariable("util", identifer.fromString("TextDecoder"))
+          ),
           []
         ),
         "decode",
@@ -234,7 +234,7 @@ export const stringCode = (isBrowser: boolean): ts.Function => ({
       )
     )
   ]
-});
+};
 /* ========================================
                   Bool
    ========================================

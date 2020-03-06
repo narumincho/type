@@ -3,12 +3,11 @@ import * as type from "../type";
 import * as util from "./util";
 
 export const generateCode = (
-  customTypeList: ReadonlyArray<type.CustomType>,
-  isBrowser: boolean
+  customTypeList: ReadonlyArray<type.CustomType>
 ): ReadonlyArray<ts.Function> => {
   return [
     uInt32Code,
-    stringCode(isBrowser),
+    stringCode,
     boolCode,
     dateTimeCode,
     listCode(),
@@ -127,13 +126,9 @@ const stringName = identifer.fromString("encodeString");
  * stringからバイナリに変換するコード
  * ブラウザではグローバルのTextDecoderを使い、node.jsではutilのTextDecoderを使う
  */
-const stringCode = (isBrowser: boolean): ts.Function => ({
+const stringCode: ts.Function = {
   name: stringName,
-  document:
-    "stringからバイナリに変換する. このコードは" +
-    (isBrowser
-      ? "ブラウザ用なのでグローバルのTextDecoderを使う"
-      : "Node.js用なのでutilのTextDecoderを使う"),
+  document: "stringからバイナリに変換する.",
   parameterList: [
     {
       name: identifer.fromString("text"),
@@ -148,12 +143,14 @@ const stringCode = (isBrowser: boolean): ts.Function => ({
       ts.callMethod(ts.globalObjects(identifer.fromString("Array")), "from", [
         ts.callMethod(
           ts.newExpr(
-            isBrowser
-              ? ts.globalObjects(identifer.fromString("TextEncoder"))
-              : ts.importedVariable(
-                  "util",
-                  identifer.fromString("TextEncoder")
-                ),
+            ts.conditionalOperator(
+              ts.equal(
+                ts.globalObjects(identifer.fromString("process")),
+                ts.undefinedLiteral
+              ),
+              ts.globalObjects(identifer.fromString("TextEncoder")),
+              ts.importedVariable("util", identifer.fromString("TextEncoder"))
+            ),
             []
           ),
           "encode",
@@ -162,7 +159,7 @@ const stringCode = (isBrowser: boolean): ts.Function => ({
       ])
     )
   ]
-});
+};
 
 /* ========================================
                   Bool
