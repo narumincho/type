@@ -18,6 +18,10 @@ export const generateCode = (
       .map(idOrTokenTypeToTypeDefinitionCode)
       .join("\n\n") +
     "\n\n" +
+    schema.idTypeNameList.map(idOrTokenTypeToToJsonValueCode).join("\n\n") +
+    "\n\n" +
+    schema.tokenTypeNameList.map(idOrTokenTypeToToJsonValueCode).join("\n\n") +
+    "\n\n" +
     schema.customTypeList.map(customTypeToToJsonValueCode).join("\n\n")
   );
 };
@@ -117,6 +121,21 @@ const idOrTokenTypeToTypeDefinitionCode = (
   return "type " + idOrTokenTypeName + " = " + idOrTokenTypeName + " String";
 };
 
+const idOrTokenTypeToToJsonValueCode = (idOrTokenTypeName: string): string => {
+  return (
+    customOrIdOrTokenTypeNameToToJsonValueFunctionName(idOrTokenTypeName) +
+    " : " +
+    idOrTokenTypeName +
+    " -> Je.Value\n" +
+    customOrIdOrTokenTypeNameToToJsonValueFunctionName(idOrTokenTypeName) +
+    " (" +
+    idOrTokenTypeName +
+    " string) = \n" +
+    indentString +
+    "Je.string string"
+  );
+};
+
 const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
   const parameterName = type.elmIdentiferFromString(
     c.firstLowerCase(customType.name)
@@ -138,11 +157,11 @@ const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
 
   return (
     commentToCode(customType.name + "のJSONへのエンコーダ") +
-    toJsonCustomTypeFunctionName(customType.name) +
+    customOrIdOrTokenTypeNameToToJsonValueFunctionName(customType.name) +
     " : " +
     customType.name +
     " -> Je.Value\n" +
-    toJsonCustomTypeFunctionName(customType.name) +
+    customOrIdOrTokenTypeNameToToJsonValueFunctionName(customType.name) +
     " " +
     parameterName +
     " =\n" +
@@ -248,18 +267,16 @@ const toJsonValueFunction = (type_: type.Type): string => {
       return "Je.bool";
     case "DateTime":
       return '"DateTimeは未サポート"';
-    case "Id":
-      return "encode" + type_.string_;
-    case "Token":
-      return "encode" + type_.string_;
     case "List":
       return "Jd.list " + toJsonValueFunction(type_.type_);
     case "Maybe":
       return "encodeMaybe";
     case "Result":
       return "encodeResult";
+    case "Id":
+    case "Token":
     case "Custom":
-      return toJsonCustomTypeFunctionName(type_.string_);
+      return customOrIdOrTokenTypeNameToToJsonValueFunctionName(type_.string_);
   }
 };
 
@@ -296,7 +313,8 @@ const typeToElmType = (type_: type.Type): string => {
   }
 };
 
-const toJsonCustomTypeFunctionName = (customTypeName: string): string =>
-  c.firstLowerCase(customTypeName) + "ToJsonValue";
+const customOrIdOrTokenTypeNameToToJsonValueFunctionName = (
+  customTypeName: string
+): string => c.firstLowerCase(customTypeName) + "ToJsonValue";
 
 const indentString = "    ";

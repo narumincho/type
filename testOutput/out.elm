@@ -43,6 +43,16 @@ type FileToken
     = FileToken String
 
 
+userIdToJsonValue : UserId -> Je.Value
+userIdToJsonValue (UserId string) =
+    Je.string string
+
+
+fileTokenToJsonValue : FileToken -> Je.Value
+fileTokenToJsonValue (FileToken string) =
+    Je.string string
+
+
 {-| TypeのJSONへのエンコーダ
 -}
 typeToJsonValue : Type -> Je.Value
