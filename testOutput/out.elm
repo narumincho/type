@@ -43,6 +43,26 @@ type FileToken
     = FileToken String
 
 
+maybeToJsonValue : (a -> Je.Value) -> Maybe a -> Je.Value
+maybeToJsonValue toJsonValueFunction maybe =
+    case maybe of
+        Just value ->
+            Je.object [ ( "_", Je.string "Just" ), ( "value", toJsonValueFunction value ) ]
+
+        Nothing ->
+            Je.object [ ( "_", Je.string "Nothing" ) ]
+
+
+resultToJsonValue : (ok -> Je.Value) -> (error -> Je.Value) -> Result error ok -> Je.Value
+resultToJsonValue okToJsonValueFunction errorToJsonValueFunction result =
+    case result of
+        Ok value ->
+            Je.object [ ( "_", Je.string "Ok" ), ( "ok", okToJsonValueFunction result ) ]
+
+        Err value ->
+            Je.object [ ( "_", Je.string "Error" ), ( "error", errorToJsonValueFunction result ) ]
+
+
 userIdToJsonValue : UserId -> Je.Value
 userIdToJsonValue (UserId string) =
     Je.string string

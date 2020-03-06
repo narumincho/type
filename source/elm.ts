@@ -18,6 +18,10 @@ export const generateCode = (
       .map(idOrTokenTypeToTypeDefinitionCode)
       .join("\n\n") +
     "\n\n" +
+    maybeToJsonValueCode +
+    "\n\n" +
+    resultToJsonValueCode +
+    "\n\n" +
     schema.idTypeNameList.map(idOrTokenTypeToToJsonValueCode).join("\n\n") +
     "\n\n" +
     schema.tokenTypeNameList.map(idOrTokenTypeToToJsonValueCode).join("\n\n") +
@@ -120,6 +124,28 @@ const idOrTokenTypeToTypeDefinitionCode = (
 ): string => {
   return "type " + idOrTokenTypeName + " = " + idOrTokenTypeName + " String";
 };
+
+const maybeToJsonValueCode = `
+maybeToJsonValue : (a -> Je.Value) -> Maybe a -> Je.Value
+maybeToJsonValue toJsonValueFunction maybe =
+    case maybe of
+        Just value ->
+            Je.object [ ( "_", Je.string "Just" ), ( "value", toJsonValueFunction value ) ]
+
+        Nothing ->
+            Je.object [ ( "_", Je.string "Nothing" ) ]
+`;
+
+const resultToJsonValueCode = `
+resultToJsonValue : (ok -> Je.Value) -> (error -> Je.Value) -> Result error ok -> Je.Value
+resultToJsonValue okToJsonValueFunction errorToJsonValueFunction result =
+    case result of
+        Ok value ->
+            Je.object [ ( "_", Je.string "Ok" ), ( "ok", okToJsonValueFunction result ) ]
+
+        Err value ->
+            Je.object [ ( "_", Je.string "Error" ), ( "error", errorToJsonValueFunction result ) ]
+`;
 
 const idOrTokenTypeToToJsonValueCode = (idOrTokenTypeName: string): string => {
   return (
@@ -268,11 +294,17 @@ const toJsonValueFunction = (type_: type.Type): string => {
     case "DateTime":
       return '"DateTimeは未サポート"';
     case "List":
-      return "Jd.list " + toJsonValueFunction(type_.type_);
+      return "Jd.list (" + toJsonValueFunction(type_.type_) + ")";
     case "Maybe":
-      return "encodeMaybe";
+      return "maybeToJsonValue (" + toJsonValueFunction(type_.type_) + ")";
     case "Result":
-      return "encodeResult";
+      return (
+        "resultToJsonValue (" +
+        toJsonValueFunction(type_.resultType.ok) +
+        ") (" +
+        toJsonValueFunction(type_.resultType.error) +
+        ")"
+      );
     case "Id":
     case "Token":
     case "Custom":
