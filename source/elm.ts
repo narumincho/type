@@ -213,33 +213,41 @@ const customTypeSumToToJsonValueCodeBody = (
   return (
     caseHeader +
     tagNameAndParameterArray
-      .map(
-        tagNameAndParameter =>
-          indentString.repeat(2) +
-          tagNameAndParameter.name +
-          " ->\n" +
-          indentString.repeat(3) +
-          'Je.object [ ( "_", Je.string "' +
-          tagNameAndParameter.name +
-          '")' +
-          (tagNameAndParameter.parameter._ === "Nothing"
-            ? ""
-            : ', ( "' +
+      .map(tagNameAndParameter => {
+        switch (tagNameAndParameter.parameter._) {
+          case "Just": {
+            return (
+              indentString.repeat(2) +
+              tagNameAndParameter.name +
+              " parameter ->\n" +
+              indentString.repeat(3) +
+              'Je.object [ ( "_", Je.string "' +
+              tagNameAndParameter.name +
+              '"), ( "' +
               (type.typeToMemberOrParameterName(
                 tagNameAndParameter.parameter.value
               ) as string) +
               '", ' +
               toJsonValueVarEval(
                 tagNameAndParameter.parameter.value,
-                parameterName +
-                  "." +
-                  (type.typeToMemberOrParameterName(
-                    tagNameAndParameter.parameter.value
-                  ) as string)
+                "parameter"
               ) +
-              ")") +
-          "]"
-      )
+              ")" +
+              "]"
+            );
+          }
+          case "Nothing":
+            return (
+              indentString.repeat(2) +
+              tagNameAndParameter.name +
+              " ->\n" +
+              indentString.repeat(3) +
+              'Je.object [ ( "_", Je.string "' +
+              tagNameAndParameter.name +
+              '") ]'
+            );
+        }
+      })
       .join("\n")
   );
 };
@@ -358,6 +366,7 @@ const idOrTokenToJsonDecoderCode = (idOrTokenTypeName: string): string => {
 
 const customTypeToJsonDecoder = (customType: type.CustomType): string => {
   const header =
+    commentToCode(customType.name + "のJSON Decoder") +
     customOrIdOrTokenTypeNameToJsonDecoderFunctionName(customType.name) +
     " : Jd.Decoder " +
     customType.name +

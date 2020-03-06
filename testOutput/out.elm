@@ -89,23 +89,23 @@ typeToJsonValue type_ =
         DateTime ->
             Je.object [ ( "_", Je.string "DateTime" ) ]
 
-        List ->
-            Je.object [ ( "_", Je.string "List" ), ( "type_", typeToJsonValue type_.type_ ) ]
+        List parameter ->
+            Je.object [ ( "_", Je.string "List" ), ( "type_", typeToJsonValue parameter ) ]
 
-        Maybe ->
-            Je.object [ ( "_", Je.string "Maybe" ), ( "type_", typeToJsonValue type_.type_ ) ]
+        Maybe parameter ->
+            Je.object [ ( "_", Je.string "Maybe" ), ( "type_", typeToJsonValue parameter ) ]
 
-        Result ->
-            Je.object [ ( "_", Je.string "Result" ), ( "resultType", resultTypeToJsonValue type_.resultType ) ]
+        Result parameter ->
+            Je.object [ ( "_", Je.string "Result" ), ( "resultType", resultTypeToJsonValue parameter ) ]
 
-        Id ->
-            Je.object [ ( "_", Je.string "Id" ), ( "string_", Je.string type_.string_ ) ]
+        Id parameter ->
+            Je.object [ ( "_", Je.string "Id" ), ( "string_", Je.string parameter ) ]
 
-        Token ->
-            Je.object [ ( "_", Je.string "Token" ), ( "string_", Je.string type_.string_ ) ]
+        Token parameter ->
+            Je.object [ ( "_", Je.string "Token" ), ( "string_", Je.string parameter ) ]
 
-        Custom ->
-            Je.object [ ( "_", Je.string "Custom" ), ( "string_", Je.string type_.string_ ) ]
+        Custom parameter ->
+            Je.object [ ( "_", Je.string "Custom" ), ( "string_", Je.string parameter ) ]
 
 
 {-| ResultTypeのJSONへのエンコーダ
@@ -177,6 +177,8 @@ fileTokenJsonDecoder =
     Jd.map FileToken Jd.string
 
 
+{-| TypeのJSON Decoder
+-}
 typeJsonDecoder : Jd.Decoder Type
 typeJsonDecoder =
     Jd.field "_" Jd.string
@@ -215,6 +217,8 @@ typeJsonDecoder =
             )
 
 
+{-| ResultTypeのJSON Decoder
+-}
 resultTypeJsonDecoder : Jd.Decoder ResultType
 resultTypeJsonDecoder =
     Jd.succeed
@@ -227,6 +231,8 @@ resultTypeJsonDecoder =
         |> Jdp.required "error" typeJsonDecoder
 
 
+{-| LanguageのJSON Decoder
+-}
 languageJsonDecoder : Jd.Decoder Language
 languageJsonDecoder =
     Jd.field "_" Jd.string
