@@ -5,29 +5,20 @@ export const generateCode = (
   moduleName: string,
   schema: type.Schema
 ): string => {
-  return (
-    moduleExportList(moduleName, schema.customTypeList) +
-    "\n" +
-    importList +
-    "\n" +
-    schema.customTypeList.map(customTypeToTypeDefinitionCode).join("\n\n") +
-    "\n\n" +
-    schema.idTypeNameList.map(idOrTokenTypeToTypeDefinitionCode).join("\n\n") +
-    "\n\n" +
-    schema.tokenTypeNameList
-      .map(idOrTokenTypeToTypeDefinitionCode)
-      .join("\n\n") +
-    "\n\n" +
-    maybeToJsonValueCode +
-    "\n\n" +
-    resultToJsonValueCode +
-    "\n\n" +
-    schema.idTypeNameList.map(idOrTokenTypeToToJsonValueCode).join("\n\n") +
-    "\n\n" +
-    schema.tokenTypeNameList.map(idOrTokenTypeToToJsonValueCode).join("\n\n") +
-    "\n\n" +
-    schema.customTypeList.map(customTypeToToJsonValueCode).join("\n\n")
-  );
+  return [
+    moduleExportList(moduleName, schema.customTypeList),
+    importList,
+    ...schema.customTypeList.map(customTypeToTypeDefinitionCode),
+    ...schema.idOrTokenTypeNameList.map(idOrTokenTypeToTypeDefinitionCode),
+    maybeToJsonValueCode,
+    resultToJsonValueCode,
+    ...schema.idOrTokenTypeNameList.map(idOrTokenTypeToToJsonValueCode),
+    ...schema.customTypeList.map(customTypeToToJsonValueCode),
+    maybeJsonDecoder,
+    resultJsonDecoder,
+    ...schema.idOrTokenTypeNameList.map(idOrTokenToJsonDecoderCode),
+    ...schema.customTypeList.map(customTypeToJsonDecoder)
+  ].join("\n\n");
 };
 
 const moduleExportList = (
@@ -53,10 +44,9 @@ const moduleExportList = (
 };
 
 const importList = `
-import Set
-import Map
 import Json.Encode as Je
 import Json.Decode as Jd
+import Json.Decode.Pipeline as Jdp
 `;
 
 const customTypeToTypeDefinitionCode = (
@@ -141,10 +131,10 @@ resultToJsonValue : (ok -> Je.Value) -> (error -> Je.Value) -> Result error ok -
 resultToJsonValue okToJsonValueFunction errorToJsonValueFunction result =
     case result of
         Ok value ->
-            Je.object [ ( "_", Je.string "Ok" ), ( "ok", okToJsonValueFunction result ) ]
+            Je.object [ ( "_", Je.string "Ok" ), ( "ok", okToJsonValueFunction value ) ]
 
         Err value ->
-            Je.object [ ( "_", Je.string "Error" ), ( "error", errorToJsonValueFunction result ) ]
+            Je.object [ ( "_", Je.string "Error" ), ( "error", errorToJsonValueFunction value ) ]
 `;
 
 const idOrTokenTypeToToJsonValueCode = (idOrTokenTypeName: string): string => {
@@ -166,22 +156,8 @@ const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
   const parameterName = type.elmIdentiferFromString(
     c.firstLowerCase(customType.name)
   );
-  const body = ((): string => {
-    switch (customType.body._) {
-      case "Sum":
-        return customTypeSumToToJsonValueCodeBody(
-          customType.body.tagNameAndParameterArray,
-          parameterName
-        );
-      case "Product":
-        return customTypeProductToToJsonValueCodeBody(
-          customType.body.memberNameAndTypeArray,
-          parameterName
-        );
-    }
-  })();
 
-  return (
+  const header =
     commentToCode(customType.name + "のJSONへのエンコーダ") +
     customOrIdOrTokenTypeNameToToJsonValueFunctionName(customType.name) +
     " : " +
@@ -190,9 +166,26 @@ const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
     customOrIdOrTokenTypeNameToToJsonValueFunctionName(customType.name) +
     " " +
     parameterName +
-    " =\n" +
-    body
-  );
+    " =\n";
+
+  switch (customType.body._) {
+    case "Sum":
+      return (
+        header +
+        customTypeSumToToJsonValueCodeBody(
+          customType.body.tagNameAndParameterArray,
+          parameterName
+        )
+      );
+    case "Product":
+      return (
+        header +
+        customTypeProductToToJsonValueCodeBody(
+          customType.body.memberNameAndTypeArray,
+          parameterName
+        )
+      );
+  }
 };
 
 const customTypeSumToToJsonValueCodeBody = (
@@ -220,33 +213,41 @@ const customTypeSumToToJsonValueCodeBody = (
   return (
     caseHeader +
     tagNameAndParameterArray
-      .map(
-        tagNameAndParameter =>
-          indentString.repeat(2) +
-          tagNameAndParameter.name +
-          " ->\n" +
-          indentString.repeat(3) +
-          'Je.object [ ( "_", Je.string "' +
-          tagNameAndParameter.name +
-          '")' +
-          (tagNameAndParameter.parameter._ === "Nothing"
-            ? ""
-            : ', ( "' +
+      .map(tagNameAndParameter => {
+        switch (tagNameAndParameter.parameter._) {
+          case "Just": {
+            return (
+              indentString.repeat(2) +
+              tagNameAndParameter.name +
+              " parameter ->\n" +
+              indentString.repeat(3) +
+              'Je.object [ ( "_", Je.string "' +
+              tagNameAndParameter.name +
+              '"), ( "' +
               (type.typeToMemberOrParameterName(
                 tagNameAndParameter.parameter.value
               ) as string) +
               '", ' +
               toJsonValueVarEval(
                 tagNameAndParameter.parameter.value,
-                parameterName +
-                  "." +
-                  (type.typeToMemberOrParameterName(
-                    tagNameAndParameter.parameter.value
-                  ) as string)
+                "parameter"
               ) +
-              ")") +
-          "]"
-      )
+              ")" +
+              "]"
+            );
+          }
+          case "Nothing":
+            return (
+              indentString.repeat(2) +
+              tagNameAndParameter.name +
+              " ->\n" +
+              indentString.repeat(3) +
+              'Je.object [ ( "_", Je.string "' +
+              tagNameAndParameter.name +
+              '") ]'
+            );
+        }
+      })
       .join("\n")
   );
 };
@@ -286,7 +287,7 @@ const toJsonValueVarEval = (type_: type.Type, expr: string): string => {
 const toJsonValueFunction = (type_: type.Type): string => {
   switch (type_._) {
     case "UInt32":
-      return "Je.number";
+      return "Je.int";
     case "String":
       return "Je.string";
     case "Bool":
@@ -294,7 +295,7 @@ const toJsonValueFunction = (type_: type.Type): string => {
     case "DateTime":
       return '"DateTimeは未サポート"';
     case "List":
-      return "Jd.list (" + toJsonValueFunction(type_.type_) + ")";
+      return "Je.list (" + toJsonValueFunction(type_.type_) + ")";
     case "Maybe":
       return "maybeToJsonValue (" + toJsonValueFunction(type_.type_) + ")";
     case "Result":
@@ -309,6 +310,189 @@ const toJsonValueFunction = (type_: type.Type): string => {
     case "Token":
     case "Custom":
       return customOrIdOrTokenTypeNameToToJsonValueFunctionName(type_.string_);
+  }
+};
+
+const maybeJsonDecoder = `
+maybeJsonDecoder : Jd.Decoder a -> Jd.Decoder (Maybe a)
+maybeJsonDecoder decoder =
+    Jd.field "_" Jd.string
+        |> Jd.andThen
+            (\\ tag ->
+                case tag of
+                    "Just" ->
+                        Jd.field "value" decoder |> Jd.map Just
+
+                    "Nothing" ->
+                        Jd.succeed Nothing
+
+                    _ ->
+                        Jd.fail "maybeのtagの指定が間違っていた"
+            )
+`;
+
+const resultJsonDecoder = `
+resultJsonDecoder : Jd.Decoder ok -> Jd.Decoder error -> Jd.Decoder (Result error ok)
+resultJsonDecoder okDecoder errorDecoder =
+    Jd.field "_" Jd.string
+        |> Jd.andThen
+            (\\ tag ->
+                case tag of
+                    "Ok" ->
+                        Jd.field "ok" okDecoder |> Jd.map Ok
+
+                    "Error" ->
+                        Jd.field "error" errorDecoder |> Jd.map Err
+
+                    _ ->
+                        Jd.fail "resultのtagの指定が間違っていた"
+            )
+`;
+
+const idOrTokenToJsonDecoderCode = (idOrTokenTypeName: string): string => {
+  return (
+    customOrIdOrTokenTypeNameToJsonDecoderFunctionName(idOrTokenTypeName) +
+    " : Jd.Decoder " +
+    idOrTokenTypeName +
+    "\n" +
+    customOrIdOrTokenTypeNameToJsonDecoderFunctionName(idOrTokenTypeName) +
+    " =\n" +
+    indentString +
+    "Jd.map " +
+    idOrTokenTypeName +
+    " Jd.string"
+  );
+};
+
+const customTypeToJsonDecoder = (customType: type.CustomType): string => {
+  const header =
+    commentToCode(customType.name + "のJSON Decoder") +
+    customOrIdOrTokenTypeNameToJsonDecoderFunctionName(customType.name) +
+    " : Jd.Decoder " +
+    customType.name +
+    "\n" +
+    customOrIdOrTokenTypeNameToJsonDecoderFunctionName(customType.name) +
+    " =\n";
+
+  switch (customType.body._) {
+    case "Sum":
+      return (
+        header +
+        customTypeSumToJsonDecoderCodeBody(
+          customType.body.tagNameAndParameterArray
+        )
+      );
+    case "Product":
+      return (
+        header +
+        customTypeProductToJsonDecoderCodeBody(
+          customType.body.memberNameAndTypeArray
+        )
+      );
+  }
+};
+
+const customTypeSumToJsonDecoderCodeBody = (
+  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
+): string => {
+  return (
+    indentString +
+    'Jd.field "_" Jd.string\n' +
+    indentString.repeat(2) +
+    "|> Jd.andThen\n" +
+    indentString.repeat(3) +
+    "(\\tag ->\n" +
+    indentString.repeat(4) +
+    "case tag of\n" +
+    tagNameAndParameterArray
+      .map(
+        tagNameAndParameter =>
+          indentString.repeat(5) +
+          '"' +
+          tagNameAndParameter.name +
+          '" ->\n' +
+          indentString.repeat(6) +
+          (tagNameAndParameter.parameter._ === "Just"
+            ? 'Jd.field "' +
+              (type.typeToMemberOrParameterName(
+                tagNameAndParameter.parameter.value
+              ) as string) +
+              '" ' +
+              typeToDecoder(tagNameAndParameter.parameter.value) +
+              " |> Jd.map " +
+              tagNameAndParameter.name
+            : "Jd.succeed " + tagNameAndParameter.name)
+      )
+      .join("\n") +
+    "\n" +
+    indentString.repeat(3) +
+    ")"
+  );
+};
+
+const customTypeProductToJsonDecoderCodeBody = (
+  memberNameAndTypeArray: ReadonlyArray<type.MemberNameAndType>
+): string => {
+  return (
+    indentString +
+    "Jd.succeed\n" +
+    indentString.repeat(2) +
+    "(\\" +
+    memberNameAndTypeArray
+      .map(memberNameAndType => memberNameAndType.name)
+      .join(" ") +
+    " ->\n" +
+    indentString.repeat(3) +
+    "{ " +
+    memberNameAndTypeArray
+      .map(
+        memberNameAndType =>
+          memberNameAndType.name + " = " + memberNameAndType.name
+      )
+      .join("\n" + indentString.repeat(3) + ", ") +
+    indentString.repeat(3) +
+    "}\n" +
+    indentString.repeat(2) +
+    ")\n" +
+    memberNameAndTypeArray
+      .map(
+        memberNameAndType =>
+          indentString.repeat(2) +
+          '|> Jdp.required "' +
+          memberNameAndType.name +
+          '" ' +
+          typeToDecoder(memberNameAndType.memberType)
+      )
+      .join("\n")
+  );
+};
+
+const typeToDecoder = (type_: type.Type): string => {
+  switch (type_._) {
+    case "UInt32":
+      return "Jd.int";
+    case "String":
+      return "Jd.string";
+    case "Bool":
+      return "Jd.bool";
+    case "DateTime":
+      return '"DateTimeは未サポート"';
+    case "List":
+      return "(Jd.list " + typeToDecoder(type_.type_) + ")";
+    case "Maybe":
+      return "(maybeToJsonValue " + typeToDecoder(type_.type_) + ")";
+    case "Result":
+      return (
+        "(resultToJsonValue " +
+        typeToDecoder(type_.resultType.ok) +
+        " " +
+        typeToDecoder(type_.resultType.error) +
+        ")"
+      );
+    case "Id":
+    case "Token":
+    case "Custom":
+      return customOrIdOrTokenTypeNameToJsonDecoderFunctionName(type_.string_);
   }
 };
 
@@ -346,7 +530,11 @@ const typeToElmType = (type_: type.Type): string => {
 };
 
 const customOrIdOrTokenTypeNameToToJsonValueFunctionName = (
-  customTypeName: string
-): string => c.firstLowerCase(customTypeName) + "ToJsonValue";
+  name: string
+): string => c.firstLowerCase(name) + "ToJsonValue";
+
+const customOrIdOrTokenTypeNameToJsonDecoderFunctionName = (
+  name: string
+): string => c.firstLowerCase(name) + "JsonDecoder";
 
 const indentString = "    ";

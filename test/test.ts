@@ -104,8 +104,7 @@ describe("test", () => {
 
   const schema: type.Schema = {
     customTypeList: [typeType, resultTypeType, language],
-    idTypeNameList: ["UserId"],
-    tokenTypeNameList: ["FileToken"]
+    idOrTokenTypeNameList: ["UserId", "FileToken"]
   };
 
   const typeDefinitionTypeScriptCode = generator.generateCodeAsString(

@@ -3,8 +3,7 @@ import { identifer } from "js-ts-code-generator";
 
 export type Schema = {
   customTypeList: ReadonlyArray<CustomType>;
-  idTypeNameList: ReadonlyArray<string>;
-  tokenTypeNameList: ReadonlyArray<string>;
+  idOrTokenTypeNameList: ReadonlyArray<string>;
 };
 
 /**
