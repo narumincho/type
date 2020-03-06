@@ -181,7 +181,40 @@ fileTokenJsonDecoder =
 
 typeJsonDecoder : Jd.Decoder Type
 typeJsonDecoder =
-    32
+    Jd.field "_" Jd.string
+        |> Jd.andThen
+            (\tag ->
+                case tag of
+                    "UInt32" ->
+                        Jd.succeed UInt32
+
+                    "String" ->
+                        Jd.succeed String
+
+                    "Bool" ->
+                        Jd.succeed Bool
+
+                    "DateTime" ->
+                        Jd.succeed DateTime
+
+                    "List" ->
+                        Jd.field "type_" typeJsonDecoder |> Jd.map List
+
+                    "Maybe" ->
+                        Jd.field "type_" typeJsonDecoder |> Jd.map Maybe
+
+                    "Result" ->
+                        Jd.field "resultType" resultTypeJsonDecoder |> Jd.map Result
+
+                    "Id" ->
+                        Jd.field "string_" Jd.string |> Jd.map Id
+
+                    "Token" ->
+                        Jd.field "string_" Jd.string |> Jd.map Token
+
+                    "Custom" ->
+                        Jd.field "string_" Jd.string |> Jd.map Custom
+            )
 
 
 resultTypeJsonDecoder : Jd.Decoder ResultType
@@ -198,4 +231,16 @@ resultTypeJsonDecoder =
 
 languageJsonDecoder : Jd.Decoder Language
 languageJsonDecoder =
-    32
+    Jd.field "_" Jd.string
+        |> Jd.andThen
+            (\tag ->
+                case tag of
+                    "TypeScript" ->
+                        Jd.succeed TypeScript
+
+                    "JavaScript" ->
+                        Jd.succeed JavaScript
+
+                    "Elm" ->
+                        Jd.succeed Elm
+            )

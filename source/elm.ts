@@ -388,7 +388,39 @@ const customTypeToJsonDecoder = (customType: type.CustomType): string => {
 const customTypeSumToJsonDecoderCodeBody = (
   tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
 ): string => {
-  return "32";
+  return (
+    indentString +
+    'Jd.field "_" Jd.string\n' +
+    indentString.repeat(2) +
+    "|> Jd.andThen\n" +
+    indentString.repeat(3) +
+    "(\\tag ->\n" +
+    indentString.repeat(4) +
+    "case tag of\n" +
+    tagNameAndParameterArray
+      .map(
+        tagNameAndParameter =>
+          indentString.repeat(5) +
+          '"' +
+          tagNameAndParameter.name +
+          '" ->\n' +
+          indentString.repeat(6) +
+          (tagNameAndParameter.parameter._ === "Just"
+            ? 'Jd.field "' +
+              (type.typeToMemberOrParameterName(
+                tagNameAndParameter.parameter.value
+              ) as string) +
+              '" ' +
+              typeToDecoder(tagNameAndParameter.parameter.value) +
+              " |> Jd.map " +
+              tagNameAndParameter.name
+            : "Jd.succeed " + tagNameAndParameter.name)
+      )
+      .join("\n") +
+    "\n" +
+    indentString.repeat(3) +
+    ")"
+  );
 };
 
 const customTypeProductToJsonDecoderCodeBody = (
