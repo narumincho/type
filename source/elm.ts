@@ -28,9 +28,9 @@ const moduleExportList = (
       .map(customType => {
         switch (customType.body._) {
           case "Sum":
-            return name;
+            return customType.name + "(..)";
           case "Product":
-            return name + "(..)";
+            return customType.name;
         }
       })
       .join(", ") +
