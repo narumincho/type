@@ -290,7 +290,7 @@ const toJsonValueVarEval = (type_: type.Type, expr: string): string => {
 const toJsonValueFunction = (type_: type.Type): string => {
   switch (type_._) {
     case "UInt32":
-      return "Je.number";
+      return "Je.int";
     case "String":
       return "Je.string";
     case "Bool":
@@ -298,7 +298,7 @@ const toJsonValueFunction = (type_: type.Type): string => {
     case "DateTime":
       return '"DateTimeは未サポート"';
     case "List":
-      return "Jd.list (" + toJsonValueFunction(type_.type_) + ")";
+      return "Je.list (" + toJsonValueFunction(type_.type_) + ")";
     case "Maybe":
       return "maybeToJsonValue (" + toJsonValueFunction(type_.type_) + ")";
     case "Result":
