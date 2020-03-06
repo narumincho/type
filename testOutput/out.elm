@@ -3,8 +3,6 @@ module Data exposing (Language(..), ResultType, Type(..))
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp
 import Json.Encode as Je
-import Map
-import Set
 
 
 {-| 型

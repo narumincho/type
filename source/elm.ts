@@ -44,8 +44,6 @@ const moduleExportList = (
 };
 
 const importList = `
-import Set
-import Map
 import Json.Encode as Je
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp
