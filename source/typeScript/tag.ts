@@ -168,7 +168,7 @@ const customTypeCode = (
     switch (customType.body._) {
       case "Sum": {
         if (
-          util.isProductTypeAllNoParameter(
+          type.isProductTypeAllNoParameter(
             customType.body.tagNameAndParameterArray
           )
         ) {

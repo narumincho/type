@@ -10,9 +10,9 @@ export const generateCode = (
     "\n" +
     importList +
     "\n" +
-    schema.customTypeList
-      .map(customType => customTypeToCode(customType))
-      .join("\n\n")
+    schema.customTypeList.map(customTypeToTypeDefinitionCode).join("\n\n") +
+    "\n\n" +
+    schema.customTypeList.map(customTypeToToJsonValueCode).join("\n\n")
   );
 };
 
@@ -41,19 +41,22 @@ const moduleExportList = (
 const importList = `
 import Set
 import Map
+import Json.Encode as Je
+import Json.Decode as Jd
 `;
 
-const customTypeToCode = (customType: type.CustomType): string => {
-  const comment = "{-| " + customType.description + " -}\n";
+const customTypeToTypeDefinitionCode = (
+  customType: type.CustomType
+): string => {
   switch (customType.body._) {
     case "Sum":
       return (
-        comment +
+        commentToCode(customType.description) +
         createType(customType.name, customType.body.tagNameAndParameterArray)
       );
     case "Product":
       return (
-        comment +
+        commentToCode(customType.description) +
         createTypeAlias(customType.name, customType.body.memberNameAndTypeArray)
       );
   }
@@ -93,9 +96,7 @@ const createTypeAlias = (
     memberNameAndTypeArray
       .map(
         memberNameAndType =>
-          (isIdentifer(memberNameAndType.name)
-            ? memberNameAndType.name + "_"
-            : memberNameAndType.name) +
+          type.elmIdentiferFromString(memberNameAndType.name) +
           ": " +
           typeToElmType(memberNameAndType.memberType)
       )
@@ -103,6 +104,124 @@ const createTypeAlias = (
     " }"
   );
 };
+
+const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
+  const parameterName = type.elmIdentiferFromString(
+    c.firstLowerCase(customType.name)
+  );
+  const body = ((): string => {
+    switch (customType.body._) {
+      case "Sum":
+        return customTypeSumToToJsonValueCodeBody(
+          customType.body.tagNameAndParameterArray,
+          parameterName
+        );
+      case "Product":
+        return ""; // TODO
+    }
+  })();
+
+  return (
+    commentToCode(customType.name + "のJSONへのエンコーダ") +
+    toJsonCustomTypeFunctionName(customType.name) +
+    " : " +
+    customType.name +
+    " -> Je.Value\n" +
+    toJsonCustomTypeFunctionName(customType.name) +
+    " " +
+    parameterName +
+    " =\n" +
+    body
+  );
+};
+
+const customTypeSumToToJsonValueCodeBody = (
+  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
+  parameterName: string
+): string => {
+  const caseHeader = indentString + "case " + parameterName + " of\n";
+  if (type.isProductTypeAllNoParameter(tagNameAndParameterArray)) {
+    return (
+      caseHeader +
+      tagNameAndParameterArray
+        .map(
+          tagNameAndParameter =>
+            indentString.repeat(2) +
+            tagNameAndParameter.name +
+            " ->\n" +
+            indentString.repeat(3) +
+            'Je.string "' +
+            tagNameAndParameter.name +
+            '"'
+        )
+        .join("\n")
+    );
+  }
+  return (
+    caseHeader +
+    tagNameAndParameterArray
+      .map(
+        tagNameAndParameter =>
+          indentString.repeat(2) +
+          tagNameAndParameter.name +
+          " ->\n" +
+          indentString.repeat(3) +
+          'Je.object [ ( "_", Je.string "' +
+          tagNameAndParameter.name +
+          '")' +
+          (tagNameAndParameter.parameter._ === "Nothing"
+            ? ""
+            : ', ( "' +
+              (type.typeToMemberOrParameterName(
+                tagNameAndParameter.parameter.value
+              ) as string) +
+              '", ' +
+              toJsonValueVarEval(
+                tagNameAndParameter.parameter.value,
+                parameterName +
+                  "." +
+                  (type.typeToMemberOrParameterName(
+                    tagNameAndParameter.parameter.value
+                  ) as string)
+              ) +
+              ")") +
+          "]"
+      )
+      .join("\n")
+  );
+};
+
+const toJsonValueVarEval = (type_: type.Type, expr: string): string => {
+  return "(" + toJsonValueFunction(type_) + " " + expr + ")";
+};
+
+const toJsonValueFunction = (type_: type.Type): string => {
+  switch (type_._) {
+    case "UInt32":
+      return "Je.number";
+    case "String":
+      return "Je.string";
+    case "Bool":
+      return "Je.bool";
+    case "DateTime":
+      return '"DateTimeは未サポート"';
+    case "Id":
+      return "encode" + type_.string_;
+    case "Token":
+      return "encode" + type_.string_;
+    case "List":
+      return "Jd.list " + toJsonValueFunction(type_.type_);
+    case "Maybe":
+      return "encodeMaybe";
+    case "Result":
+      return "encodeResult";
+    case "Custom":
+      return toJsonCustomTypeFunctionName(type_.string_);
+  }
+};
+
+const commentToCode = (comment: string): string =>
+  comment === "" ? "" : "{-| " + comment + " -}\n";
 
 const typeToElmType = (type_: type.Type): string => {
   switch (type_._) {
@@ -130,29 +249,11 @@ const typeToElmType = (type_: type.Type): string => {
         ")"
       );
     case "Custom":
-      return customTypeToTypeName(type_.string_);
+      return type_.string_;
   }
 };
 
-const customTypeToTypeName = (customTypeName: string): string =>
-  c.firstUpperCase(customTypeName);
+const toJsonCustomTypeFunctionName = (customTypeName: string): string =>
+  c.firstLowerCase(customTypeName) + "ToJsonValue";
 
-const isIdentifer = (name: string): boolean => identiferList.includes(name);
-
-const identiferList = [
-  "if",
-  "then",
-  "else",
-  "case",
-  "of",
-  "let",
-  "in",
-  "type",
-  "module",
-  "where",
-  "import",
-  "port",
-  "exposing",
-  "as",
-  "alias"
-];
+const indentString = "    ";

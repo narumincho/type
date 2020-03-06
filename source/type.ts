@@ -1,8 +1,10 @@
 import * as c from "./case";
+import { identifer } from "js-ts-code-generator";
 
 export type Schema = {
   customTypeList: ReadonlyArray<CustomType>;
-  idOrHashTypeNameList: ReadonlyArray<string>;
+  idTypeNameList: ReadonlyArray<string>;
+  tokenTypeNameList: ReadonlyArray<string>;
 };
 
 /**
@@ -199,3 +201,47 @@ export const toTypeName = (type_: Type): string => {
       return customTypeToTypeName(type_.string_);
   }
 };
+
+export const isProductTypeAllNoParameter = (
+  tagNameAndParameterArray: ReadonlyArray<TagNameAndParameter>
+): boolean =>
+  tagNameAndParameterArray.every(
+    tagNameAndParameter => tagNameAndParameter.parameter._ === "Nothing"
+  );
+
+export const typeToMemberOrParameterName = (
+  type_: Type
+): identifer.Identifer => {
+  const safeInTypeScript = identifer.fromString(
+    c.firstLowerCase(toTypeName(type_))
+  );
+  if (elmReservedList.includes(safeInTypeScript)) {
+    return ((safeInTypeScript as string) + "_") as identifer.Identifer;
+  }
+  return safeInTypeScript;
+};
+
+export const elmIdentiferFromString = (text: string): string => {
+  if (elmReservedList.includes(text)) {
+    return text + "_";
+  }
+  return text;
+};
+
+const elmReservedList = [
+  "if",
+  "then",
+  "else",
+  "case",
+  "of",
+  "let",
+  "in",
+  "type",
+  "module",
+  "where",
+  "import",
+  "port",
+  "exposing",
+  "as",
+  "alias"
+];

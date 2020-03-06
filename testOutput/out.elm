@@ -2,6 +2,8 @@ module Data exposing (Data, Data(..), Data)
 
 import Set
 import Map
+import Json.Encode as Je
+import Json.Decode as Jd
 
 {-| 型 -}
 type Type
@@ -18,10 +20,52 @@ type Type
 
 
 {-| 正常値と異常値 -}
-type alias ResultType= { ok: Type, error: Type }
+type alias ResultType = { ok: Type, error: Type }
 
 {-| プログラミング言語 -}
 type Language
   = TypeScript
   | JavaScript
   | Elm
+
+
+{-| TypeのJSONへのエンコーダ -}
+typeToJsonValue : Type -> Je.Value
+typeToJsonValue type_ =
+    case type_ of
+        UInt32 ->
+            Je.object [ ( "_", Je.string "UInt32")]
+        String ->
+            Je.object [ ( "_", Je.string "String")]
+        Bool ->
+            Je.object [ ( "_", Je.string "Bool")]
+        DateTime ->
+            Je.object [ ( "_", Je.string "DateTime")]
+        List ->
+            Je.object [ ( "_", Je.string "List"), ( "type_", (typeToJsonValue type_.type_))]
+        Maybe ->
+            Je.object [ ( "_", Je.string "Maybe"), ( "type_", (typeToJsonValue type_.type_))]
+        Result ->
+            Je.object [ ( "_", Je.string "Result"), ( "resultType", (resultTypeToJsonValue type_.resultType))]
+        Id ->
+            Je.object [ ( "_", Je.string "Id"), ( "string_", (Je.string type_.string_))]
+        Token ->
+            Je.object [ ( "_", Je.string "Token"), ( "string_", (Je.string type_.string_))]
+        Custom ->
+            Je.object [ ( "_", Je.string "Custom"), ( "string_", (Je.string type_.string_))]
+
+{-| ResultTypeのJSONへのエンコーダ -}
+resultTypeToJsonValue : ResultType -> Je.Value
+resultTypeToJsonValue resultType =
+
+
+{-| LanguageのJSONへのエンコーダ -}
+languageToJsonValue : Language -> Je.Value
+languageToJsonValue language =
+    case language of
+        TypeScript ->
+            Je.string "TypeScript"
+        JavaScript ->
+            Je.string "JavaScript"
+        Elm ->
+            Je.string "Elm"
