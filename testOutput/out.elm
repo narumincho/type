@@ -35,6 +35,14 @@ type Language
     | Elm
 
 
+type UserId
+    = UserId String
+
+
+type FileToken
+    = FileToken String
+
+
 {-| TypeのJSONへのエンコーダ
 -}
 typeToJsonValue : Type -> Je.Value

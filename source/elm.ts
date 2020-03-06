@@ -12,6 +12,12 @@ export const generateCode = (
     "\n" +
     schema.customTypeList.map(customTypeToTypeDefinitionCode).join("\n\n") +
     "\n\n" +
+    schema.idTypeNameList.map(idOrTokenTypeToTypeDefinitionCode).join("\n\n") +
+    "\n\n" +
+    schema.tokenTypeNameList
+      .map(idOrTokenTypeToTypeDefinitionCode)
+      .join("\n\n") +
+    "\n\n" +
     schema.customTypeList.map(customTypeToToJsonValueCode).join("\n\n")
   );
 };
@@ -103,6 +109,12 @@ const createTypeAlias = (
       .join(", ") +
     " }"
   );
+};
+
+const idOrTokenTypeToTypeDefinitionCode = (
+  idOrTokenTypeName: string
+): string => {
+  return "type " + idOrTokenTypeName + " = " + idOrTokenTypeName + " String";
 };
 
 const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
