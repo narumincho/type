@@ -13,10 +13,7 @@ export {
   type
 };
 
-export const generateTypeScriptCode = (
-  schema: type.Schema,
-  isBrowser: boolean
-): data.Code => {
+export const generateTypeScriptCode = (schema: type.Schema): data.Code => {
   return {
     exportDefinitionList: [
       ...typeDefinition
@@ -24,10 +21,10 @@ export const generateTypeScriptCode = (
         .map(data.definitionTypeAlias),
       ...tag.generate(schema.customTypeList),
       ...encoder
-        .generateCode(schema.customTypeList, isBrowser)
+        .generateCode(schema.customTypeList)
         .map(data.definitionFunction),
       ...decoder
-        .generateCode(schema.customTypeList, isBrowser)
+        .generateCode(schema.customTypeList)
         .map(data.definitionFunction)
     ],
     statementList: []

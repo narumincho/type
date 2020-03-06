@@ -160,11 +160,13 @@ export const encodeUInt32 = (num: number): ReadonlyArray<number> => {
 };
 
 /**
- * stringからバイナリに変換する. このコードはNode.js用なのでutilのTextDecoderを使う
+ * stringからバイナリに変換する.
  *
  */
 export const encodeString = (text: string): ReadonlyArray<number> =>
-  Array["from"](new a.TextEncoder().encode(text));
+  Array["from"](
+    new (process === undefined ? TextEncoder : a.TextEncoder)().encode(text)
+  );
 
 /**
  * boolからバイナリに変換する
@@ -350,7 +352,7 @@ export const decodeUInt32 = (
 };
 
 /**
- * バイナリからstringに変換する.このコードはNode.js用でutilのTextDecoderを使う
+ * バイナリからstringに変換する.
  * @param index バイナリを読み込み開始位置
  * @param binary バイナリ
  *
@@ -364,7 +366,7 @@ export const decodeString = (
     binary
   );
   return {
-    result: new a.TextDecoder().decode(
+    result: new (process === undefined ? TextDecoder : a.TextDecoder)().decode(
       binary.slice(
         index + length.nextIndex,
         index + length.nextIndex + length.result

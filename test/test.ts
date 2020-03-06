@@ -108,11 +108,11 @@ describe("test", () => {
   };
 
   const typeDefinitionTypeScriptCode = generator.generateCodeAsString(
-    t.generateTypeScriptCode(schema, false),
+    t.generateTypeScriptCode(schema),
     "TypeScript"
   );
   const elmCodeAsString: string = t.elm.generateCode("Data", schema);
-  // fs.promises.writeFile("testOutput/out.ts", typeDefinitionTypeScriptCode);
+  fs.promises.writeFile("testOutput/out.ts", typeDefinitionTypeScriptCode);
   fs.promises.writeFile("testOutput/out.elm", elmCodeAsString);
   it("type definition typeScript", () => {
     console.log(typeDefinitionTypeScriptCode);
