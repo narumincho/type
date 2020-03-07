@@ -13,9 +13,6 @@ export const typeToGeneratorType = (type_: type.Type): ts.Type => {
     case "Bool":
       return ts.typeBoolean;
 
-    case "DateTime":
-      return ts.dateType;
-
     case "List":
       return ts.readonlyArrayType(typeToGeneratorType(type_.type_));
 

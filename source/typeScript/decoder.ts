@@ -11,7 +11,6 @@ export const generateCode = (
     uInt32Code,
     stringCode,
     boolCode,
-    dateTimeCode,
     listCode(),
     maybeCode(),
     resultCode(),
@@ -254,35 +253,6 @@ const boolCode: ts.Function = {
         ts.numberLiteral(0)
       ),
       ts.addition(parameterIndex, ts.numberLiteral(1))
-    )
-  ]
-};
-/* ========================================
-                DateTime
-   ========================================
-*/
-const dateTimeName = identifer.fromString("decodeDateTime");
-
-const dateTimeCode: ts.Function = {
-  name: dateTimeName,
-  document: "",
-  parameterList,
-  returnType: returnType(ts.dateType),
-  typeParameterList: [],
-  statementList: [
-    ts.statementVariableDefinition(
-      identifer.fromString("result"),
-      returnType(ts.typeNumber),
-      uInt32VarEval(parameterIndex, parameterBinary)
-    ),
-    returnStatement(
-      ts.newExpr(ts.globalObjects(identifer.fromString("Date")), [
-        ts.multiplication(
-          getResult(ts.variable(identifer.fromString("result"))),
-          ts.numberLiteral(1000)
-        )
-      ]),
-      getNextIndex(ts.variable(identifer.fromString("result")))
     )
   ]
 };
@@ -808,8 +778,6 @@ const decodeFunctionExpr = (type_: type.Type): ts.Expr => {
       return ts.variable(stringName);
     case "Bool":
       return ts.variable(boolName);
-    case "DateTime":
-      return ts.variable(dateTimeName);
     case "List":
       return ts.call(ts.variable(listName), [decodeFunctionExpr(type_.type_)]);
     case "Maybe":

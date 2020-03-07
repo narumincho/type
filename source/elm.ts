@@ -292,8 +292,6 @@ const toJsonValueFunction = (type_: type.Type): string => {
       return "Je.string";
     case "Bool":
       return "Je.bool";
-    case "DateTime":
-      return '"DateTimeは未サポート"';
     case "List":
       return "Je.list (" + toJsonValueFunction(type_.type_) + ")";
     case "Maybe":
@@ -475,8 +473,6 @@ const typeToDecoder = (type_: type.Type): string => {
       return "Jd.string";
     case "Bool":
       return "Jd.bool";
-    case "DateTime":
-      return '"DateTimeは未サポート"';
     case "List":
       return "(Jd.list " + typeToDecoder(type_.type_) + ")";
     case "Maybe":
@@ -507,8 +503,6 @@ const typeToElmType = (type_: type.Type): string => {
       return "String";
     case "Bool":
       return "Bool";
-    case "DateTime":
-      return "Time.Posix";
     case "Id":
     case "Token":
       return type_.string_;

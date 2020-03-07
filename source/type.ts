@@ -25,7 +25,6 @@ export type Type =
   | { _: "UInt32" }
   | { _: "String" }
   | { _: "Bool" }
-  | { _: "DateTime" }
   | { _: "List"; type_: Type }
   | { _: "Maybe"; type_: Type }
   | { _: "Result"; resultType: ResultType }
@@ -52,11 +51,6 @@ export const typeString: Type = { _: "String" };
  * 真偽値
  */
 export const typeBool: Type = { _: "Bool" };
-
-/**
- * 日時
- */
-export const typeDateTime: Type = { _: "DateTime" };
 
 /**
  * リスト
@@ -181,8 +175,6 @@ export const toTypeName = (type_: Type): string => {
       return "String";
     case "Bool":
       return "Bool";
-    case "DateTime":
-      return "DateTime";
     case "List":
       return toTypeName(type_.type_) + "List";
     case "Maybe":

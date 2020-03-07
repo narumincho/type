@@ -18,7 +18,6 @@ export type Type =
   | { _: "UInt32" }
   | { _: "String" }
   | { _: "Bool" }
-  | { _: "DateTime" }
   | { _: "List"; type_: Type }
   | { _: "Maybe"; type_: Type }
   | { _: "Result"; resultType: ResultType }
@@ -87,11 +86,6 @@ export const typeString: Type = { _: "String" };
  * 真偽値
  */
 export const typeBool: Type = { _: "Bool" };
-
-/**
- * 日時
- */
-export const typeDateTime: Type = { _: "DateTime" };
 
 /**
  * リスト
@@ -175,13 +169,6 @@ export const encodeString = (text: string): ReadonlyArray<number> =>
 export const encodeBool = (value: boolean): ReadonlyArray<number> => [
   value ? 1 : 0
 ];
-
-/**
- *
- *
- */
-export const encodeDateTime = (dateTime: Date): ReadonlyArray<number> =>
-  encodeUInt32(Math.floor(dateTime.getTime() / 1000));
 
 /**
  *
@@ -277,26 +264,23 @@ export const encodeCustomType = (type_: Type): ReadonlyArray<number> => {
     case "Bool": {
       return [2];
     }
-    case "DateTime": {
-      return [3];
-    }
     case "List": {
-      return [4].concat(encodeCustomType(type_.type_));
+      return [3].concat(encodeCustomType(type_.type_));
     }
     case "Maybe": {
-      return [5].concat(encodeCustomType(type_.type_));
+      return [4].concat(encodeCustomType(type_.type_));
     }
     case "Result": {
-      return [6].concat(encodeCustomResultType(type_.resultType));
+      return [5].concat(encodeCustomResultType(type_.resultType));
     }
     case "Id": {
-      return [7].concat(encodeString(type_.string_));
+      return [6].concat(encodeString(type_.string_));
     }
     case "Token": {
-      return [8].concat(encodeString(type_.string_));
+      return [7].concat(encodeString(type_.string_));
     }
     case "Custom": {
-      return [9].concat(encodeString(type_.string_));
+      return [8].concat(encodeString(type_.string_));
     }
   }
 };
@@ -389,26 +373,6 @@ export const decodeBool = (
   result: binary[index] !== 0,
   nextIndex: index + 1
 });
-
-/**
- *
- * @param index バイナリを読み込み開始位置
- * @param binary バイナリ
- *
- */
-export const decodeDateTime = (
-  index: number,
-  binary: Uint8Array
-): { result: Date; nextIndex: number } => {
-  const result: { result: number; nextIndex: number } = decodeUInt32(
-    index,
-    binary
-  );
-  return {
-    result: new Date(result.result * 1000),
-    nextIndex: result.nextIndex
-  };
-};
 
 /**
  *
@@ -576,44 +540,41 @@ export const decodeCustomType = (
     return { result: typeBool, nextIndex: patternIndex.nextIndex };
   }
   if (patternIndex.result === 3) {
-    return { result: typeDateTime, nextIndex: patternIndex.nextIndex };
-  }
-  if (patternIndex.result === 4) {
     const result: { result: Type; nextIndex: number } = decodeCustomType(
       patternIndex.nextIndex,
       binary
     );
     return { result: typeList(result.result), nextIndex: result.nextIndex };
   }
-  if (patternIndex.result === 5) {
+  if (patternIndex.result === 4) {
     const result: { result: Type; nextIndex: number } = decodeCustomType(
       patternIndex.nextIndex,
       binary
     );
     return { result: typeMaybe(result.result), nextIndex: result.nextIndex };
   }
-  if (patternIndex.result === 6) {
+  if (patternIndex.result === 5) {
     const result: {
       result: ResultType;
       nextIndex: number;
     } = decodeCustomResultType(patternIndex.nextIndex, binary);
     return { result: typeResult(result.result), nextIndex: result.nextIndex };
   }
-  if (patternIndex.result === 7) {
+  if (patternIndex.result === 6) {
     const result: { result: string; nextIndex: number } = decodeString(
       patternIndex.nextIndex,
       binary
     );
     return { result: typeId(result.result), nextIndex: result.nextIndex };
   }
-  if (patternIndex.result === 8) {
+  if (patternIndex.result === 7) {
     const result: { result: string; nextIndex: number } = decodeString(
       patternIndex.nextIndex,
       binary
     );
     return { result: typeToken(result.result), nextIndex: result.nextIndex };
   }
-  if (patternIndex.result === 9) {
+  if (patternIndex.result === 8) {
     const result: { result: string; nextIndex: number } = decodeString(
       patternIndex.nextIndex,
       binary

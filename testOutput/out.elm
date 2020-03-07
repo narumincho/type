@@ -11,7 +11,6 @@ type Type
     = UInt32
     | String
     | Bool
-    | DateTime
     | List Type
     | Maybe Type
     | Result ResultType
@@ -85,9 +84,6 @@ typeToJsonValue type_ =
 
         Bool ->
             Je.object [ ( "_", Je.string "Bool" ) ]
-
-        DateTime ->
-            Je.object [ ( "_", Je.string "DateTime" ) ]
 
         List parameter ->
             Je.object [ ( "_", Je.string "List" ), ( "type_", typeToJsonValue parameter ) ]
@@ -193,9 +189,6 @@ typeJsonDecoder =
 
                     "Bool" ->
                         Jd.succeed Bool
-
-                    "DateTime" ->
-                        Jd.succeed DateTime
 
                     "List" ->
                         Jd.field "type_" typeJsonDecoder |> Jd.map List

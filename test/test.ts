@@ -24,11 +24,6 @@ describe("test", () => {
         parameter: type.maybeNothing()
       },
       {
-        name: "DateTime",
-        description: "日時",
-        parameter: type.maybeNothing()
-      },
-      {
         name: "List",
         description: "リスト",
         parameter: type.maybeJust(type.typeCustom("Type"))
