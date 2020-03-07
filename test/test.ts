@@ -9,8 +9,9 @@ describe("test", () => {
     description: "型",
     body: type.customTypeBodySum([
       {
-        name: "UInt32",
-        description: "0～4294967295 32bit符号なし整数",
+        name: "Int",
+        description:
+          "-9007199254740991～9007199254740991 JavaScriptのNumberで正確に表現できる整数の範囲",
         parameter: type.maybeNothing()
       },
       {
@@ -21,11 +22,6 @@ describe("test", () => {
       {
         name: "Bool",
         description: "真偽値",
-        parameter: type.maybeNothing()
-      },
-      {
-        name: "DateTime",
-        description: "日時",
         parameter: type.maybeNothing()
       },
       {

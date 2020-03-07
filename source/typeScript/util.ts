@@ -2,9 +2,9 @@ import { data as ts, identifer } from "js-ts-code-generator";
 import * as type from "../type";
 import * as c from "../case";
 
-export const typeToGeneratorType = (type_: type.Type): ts.Type => {
+export const typeToTypeScriptType = (type_: type.Type): ts.Type => {
   switch (type_._) {
-    case "UInt32":
+    case "Int32":
       return ts.typeNumber;
 
     case "String":
@@ -13,23 +13,20 @@ export const typeToGeneratorType = (type_: type.Type): ts.Type => {
     case "Bool":
       return ts.typeBoolean;
 
-    case "DateTime":
-      return ts.dateType;
-
     case "List":
-      return ts.readonlyArrayType(typeToGeneratorType(type_.type_));
+      return ts.readonlyArrayType(typeToTypeScriptType(type_.type_));
 
     case "Maybe":
       return ts.typeWithParameter(
         ts.typeScopeInGlobal(identifer.fromString("Maybe")),
-        [typeToGeneratorType(type_.type_)]
+        [typeToTypeScriptType(type_.type_)]
       );
     case "Result":
       return ts.typeWithParameter(
         ts.typeScopeInGlobal(identifer.fromString("Result")),
         [
-          typeToGeneratorType(type_.resultType.error),
-          typeToGeneratorType(type_.resultType.ok)
+          typeToTypeScriptType(type_.resultType.error),
+          typeToTypeScriptType(type_.resultType.ok)
         ]
       );
 

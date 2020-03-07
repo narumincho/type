@@ -6,10 +6,9 @@ export const generateCode = (
   customTypeList: ReadonlyArray<type.CustomType>
 ): ReadonlyArray<ts.Function> => {
   return [
-    uInt32Code,
+    int32Code(),
     stringCode,
     boolCode,
-    dateTimeCode,
     listCode(),
     maybeCode(),
     resultCode(),
@@ -29,91 +28,81 @@ const encodeTokenName = identifer.fromString("encodeHashOrAccessToken");
 const readonlyArrayNumber: ts.Type = ts.readonlyArrayType(ts.typeNumber);
 
 /* ========================================
-                  UInt32
+                  Int32
    ========================================
 */
 
-const uInt32Name = identifer.fromString("encodeUInt32");
+const int32Name = identifer.fromString("encodeInt32");
 
 /**
- * numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード
+ * numberの32bit符号あり整数をSigned Leb128のバイナリに変換するコード
  */
-const uInt32Code: ts.Function = {
-  name: uInt32Name,
-  document:
-    "numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード",
-  parameterList: [
-    {
-      name: identifer.fromString("num"),
-      type_: ts.typeNumber,
-      document: ""
-    }
-  ],
-  typeParameterList: [],
-  returnType: readonlyArrayNumber,
-  statementList: [
-    ts.statementSet(
-      ts.variable(identifer.fromString("num")),
-      null,
-      ts.callMathMethod("floor", [
-        ts.callMathMethod("max", [
-          ts.numberLiteral(0),
-          ts.callMathMethod("min", [
-            ts.variable(identifer.fromString("num")),
-            ts.numberLiteral(2 ** 32 - 1)
-          ])
-        ])
-      ])
-    ),
-    ts.statementVariableDefinition(
-      identifer.fromString("numberArray"),
-      ts.arrayType(ts.typeNumber),
-      ts.arrayLiteral([])
-    ),
-    ts.statementWhileTrue([
+const int32Code = (): ts.Function => {
+  const valueName = identifer.fromString("value");
+  const valueVar = ts.variable(valueName);
+  const resultName = identifer.fromString("result");
+  const resultVar = ts.variable(resultName);
+  const byteName = identifer.fromString("byte");
+  const byteVar = ts.variable(byteName);
+
+  return {
+    name: int32Name,
+    document: "numberの32bit符号あり整数をSigned Leb128のバイナリに変換する",
+    parameterList: [
+      {
+        name: valueName,
+        type_: ts.typeNumber,
+        document: ""
+      }
+    ],
+    typeParameterList: [],
+    returnType: readonlyArrayNumber,
+    statementList: [
+      ts.statementSet(valueVar, "|", ts.numberLiteral(0)),
       ts.statementVariableDefinition(
-        identifer.fromString("b"),
-        ts.typeNumber,
-        ts.bitwiseAnd(
-          ts.variable(identifer.fromString("num")),
-          ts.numberLiteral(0b1111111)
-        )
+        resultName,
+        ts.arrayType(ts.typeNumber),
+        ts.arrayLiteral([])
       ),
-      ts.statementSet(
-        ts.variable(identifer.fromString("num")),
-        null,
-        ts.unsignedRightShift(
-          ts.variable(identifer.fromString("num")),
-          ts.numberLiteral(7)
-        )
-      ),
-      ts.statementIf(
-        ts.equal(ts.variable(identifer.fromString("num")), ts.numberLiteral(0)),
-        [
-          ts.statementEvaluateExpr(
-            ts.callMethod(
-              ts.variable(identifer.fromString("numberArray")),
-              "push",
-              [ts.variable(identifer.fromString("b"))]
+      ts.statementWhileTrue([
+        ts.statementVariableDefinition(
+          byteName,
+          ts.typeNumber,
+          ts.bitwiseAnd(valueVar, ts.numberLiteral(0x7f))
+        ),
+        ts.statementSet(valueVar, ">>", ts.numberLiteral(7)),
+        ts.statementIf(
+          ts.logicalOr(
+            ts.logicalAnd(
+              ts.equal(valueVar, ts.numberLiteral(0)),
+              ts.equal(
+                ts.bitwiseAnd(byteVar, ts.numberLiteral(0x40)),
+                ts.numberLiteral(0)
+              )
+            ),
+            ts.logicalAnd(
+              ts.equal(valueVar, ts.numberLiteral(-1)),
+              ts.notEqual(
+                ts.bitwiseAnd(byteVar, ts.numberLiteral(0x04)),
+                ts.numberLiteral(0)
+              )
             )
           ),
-          ts.statementReturn(ts.variable(identifer.fromString("numberArray")))
-        ]
-      ),
-      ts.statementEvaluateExpr(
-        ts.callMethod(
-          ts.variable(identifer.fromString("numberArray")),
-          "push",
           [
-            ts.bitwiseOr(
-              ts.variable(identifer.fromString("b")),
-              ts.numberLiteral(0b10000000)
-            )
+            ts.statementEvaluateExpr(
+              ts.callMethod(resultVar, "push", [byteVar])
+            ),
+            ts.statementReturn(resultVar)
           ]
+        ),
+        ts.statementEvaluateExpr(
+          ts.callMethod(resultVar, "push", [
+            ts.bitwiseOr(byteVar, ts.numberLiteral(0x80))
+          ])
         )
-      )
-    ])
-  ]
+      ])
+    ]
+  };
 };
 
 /* ========================================
@@ -187,43 +176,6 @@ const boolCode: ts.Function = {
           ts.numberLiteral(1),
           ts.numberLiteral(0)
         )
-      ])
-    )
-  ]
-};
-
-/* ========================================
-                DateTime
-   ========================================
-*/
-
-const dateTimeName = identifer.fromString("encodeDateTime");
-
-const dateTimeCode: ts.Function = {
-  name: dateTimeName,
-  document: "",
-  parameterList: [
-    {
-      name: identifer.fromString("dateTime"),
-      document: "",
-      type_: ts.dateType
-    }
-  ],
-  returnType: readonlyArrayNumber,
-  typeParameterList: [],
-  statementList: [
-    ts.statementReturn(
-      ts.call(ts.variable(uInt32Name), [
-        ts.callMathMethod("floor", [
-          ts.division(
-            ts.callMethod(
-              ts.variable(identifer.fromString("dateTime")),
-              "getTime",
-              []
-            ),
-            ts.numberLiteral(1000)
-          )
-        ])
       ])
     )
   ]
@@ -563,7 +515,7 @@ export const customCode = (customType: type.CustomType): ts.Function => {
       {
         name: identifer.fromString(parameterName),
         document: "",
-        type_: util.typeToGeneratorType(type.typeCustom(customType.name))
+        type_: util.typeToTypeScriptType(type.typeCustom(customType.name))
       }
     ],
     typeParameterList: [],
@@ -664,14 +616,12 @@ export const encodeVarEval = (type_: type.Type, expr: ts.Expr): ts.Expr => {
 
 const encodeFunctionExpr = (type_: type.Type): ts.Expr => {
   switch (type_._) {
-    case "UInt32":
-      return ts.variable(uInt32Name);
+    case "Int32":
+      return ts.variable(int32Name);
     case "String":
       return ts.variable(stringName);
     case "Bool":
       return ts.variable(boolName);
-    case "DateTime":
-      return ts.variable(dateTimeName);
     case "List":
       return ts.call(ts.variable(listName), [encodeFunctionExpr(type_.type_)]);
     case "Maybe":

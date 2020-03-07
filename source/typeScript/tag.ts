@@ -216,7 +216,9 @@ const tagNameAndParameterToTag = (
               tagNameAndParameter.parameter.value
             ),
             document: "",
-            type_: util.typeToGeneratorType(tagNameAndParameter.parameter.value)
+            type_: util.typeToTypeScriptType(
+              tagNameAndParameter.parameter.value
+            )
           }
         ],
         typeParameterList: [],

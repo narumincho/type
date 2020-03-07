@@ -6,19 +6,47 @@ import * as type from "./type";
  */
 
 /**
- * UnsignedLeb128で表現されたバイナリに変換する
+ * Signed Leb128で表現されたバイナリに変換する
  */
-export const encodeUInt32 = (num: number): ReadonlyArray<number> => {
-  num = Math.floor(Math.max(0, Math.min(num, 2 ** 32 - 1)));
-  const numberArray = [];
+export const encodeInt32 = (value: number): ReadonlyArray<number> => {
+  value |= 0;
+  const result: Array<number> = [];
   while (true) {
-    const b = num & 0x7f;
-    num = num >>> 7;
-    if (num === 0) {
-      numberArray.push(b);
-      return numberArray;
+    const byte = value & 0x7f;
+    value >>= 7;
+    if (
+      (value === 0 && (byte & 0x40) === 0) ||
+      (value === -1 && (byte & 0x40) !== 0)
+    ) {
+      result.push(byte);
+      return result;
     }
-    numberArray.push(b | 0x80);
+    result.push(byte | 0x80);
+  }
+};
+
+export const decodeInt32 = (
+  index: number,
+  binary: Uint8Array
+): { result: number; nextIndex: number } => {
+  let result = 0;
+  let offset = 0;
+  while (true) {
+    const byte = binary[index + offset];
+    result |= (byte & 0x7f) << (offset * 7);
+    offset += 1;
+    if ((0x80 & byte) === 0) {
+      if (offset * 7 < 32 && (byte & 0x40) !== 0) {
+        return {
+          result: result | (~0 << (offset * 7)),
+          nextIndex: index + offset
+        };
+      }
+      return {
+        result: result,
+        nextIndex: index + offset
+      };
+    }
   }
 };
 
@@ -114,7 +142,7 @@ export const encodeStringList = (
   list: ReadonlyArray<string>
 ): ReadonlyArray<number> => {
   let result: Array<number> = [];
-  result = result.concat(encodeUInt32(list.length));
+  result = result.concat(encodeInt32(list.length));
   for (const element of list) {
     result = result.concat(encodeString(element));
   }
@@ -270,7 +298,7 @@ type User = {
 export const encodeUser = (user: User): ReadonlyArray<number> => {
   return encodeId(user.id)
     .concat(encodeString(user.name))
-    .concat(encodeUInt32(user.age));
+    .concat(encodeInt32(user.age));
 };
 
 export const decodeUser = (

@@ -286,14 +286,12 @@ const toJsonValueVarEval = (type_: type.Type, expr: string): string => {
 
 const toJsonValueFunction = (type_: type.Type): string => {
   switch (type_._) {
-    case "UInt32":
+    case "Int32":
       return "Je.int";
     case "String":
       return "Je.string";
     case "Bool":
       return "Je.bool";
-    case "DateTime":
-      return '"DateTimeは未サポート"';
     case "List":
       return "Je.list (" + toJsonValueFunction(type_.type_) + ")";
     case "Maybe":
@@ -469,14 +467,12 @@ const customTypeProductToJsonDecoderCodeBody = (
 
 const typeToDecoder = (type_: type.Type): string => {
   switch (type_._) {
-    case "UInt32":
+    case "Int32":
       return "Jd.int";
     case "String":
       return "Jd.string";
     case "Bool":
       return "Jd.bool";
-    case "DateTime":
-      return '"DateTimeは未サポート"';
     case "List":
       return "(Jd.list " + typeToDecoder(type_.type_) + ")";
     case "Maybe":
@@ -501,14 +497,12 @@ const commentToCode = (comment: string): string =>
 
 const typeToElmType = (type_: type.Type): string => {
   switch (type_._) {
-    case "UInt32":
+    case "Int32":
       return "Int";
     case "String":
       return "String";
     case "Bool":
       return "Bool";
-    case "DateTime":
-      return "Time.Posix";
     case "Id":
     case "Token":
       return type_.string_;

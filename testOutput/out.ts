@@ -15,10 +15,9 @@ export type Result<ok, error> =
  * 型
  */
 export type Type =
-  | { _: "UInt32" }
+  | { _: "Int" }
   | { _: "String" }
   | { _: "Bool" }
-  | { _: "DateTime" }
   | { _: "List"; type_: Type }
   | { _: "Maybe"; type_: Type }
   | { _: "Result"; resultType: ResultType }
@@ -74,9 +73,9 @@ export const resultError = <ok, error>(error: error): Result<ok, error> => ({
 });
 
 /**
- * 0～4294967295 32bit符号なし整数
+ * -9007199254740991～9007199254740991 JavaScriptのNumberで正確に表現できる整数の範囲
  */
-export const typeUInt32: Type = { _: "UInt32" };
+export const typeInt: Type = { _: "Int" };
 
 /**
  * 文字列
@@ -87,11 +86,6 @@ export const typeString: Type = { _: "String" };
  * 真偽値
  */
 export const typeBool: Type = { _: "Bool" };
-
-/**
- * 日時
- */
-export const typeDateTime: Type = { _: "DateTime" };
 
 /**
  * リスト
@@ -142,20 +136,23 @@ export const typeCustom = (string_: string): Type => ({
 });
 
 /**
- * numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード
+ * numberの32bit符号あり整数をSigned Leb128のバイナリに変換する
  *
  */
-export const encodeUInt32 = (num: number): ReadonlyArray<number> => {
-  num = Math.floor(Math.max(0, Math.min(num, 4294967295)));
-  const numberArray: Array<number> = [];
+export const encodeInt32 = (value: number): ReadonlyArray<number> => {
+  value |= 0;
+  const result: Array<number> = [];
   while (true) {
-    const b: number = num & 127;
-    num = num >>> 7;
-    if (num === 0) {
-      numberArray.push(b);
-      return numberArray;
+    const byte: number = value & 127;
+    value >>= 7;
+    if (
+      (value === 0 && (byte & 64) === 0) ||
+      (value === -1 && (byte & 4) !== 0)
+    ) {
+      result.push(byte);
+      return result;
     }
-    numberArray.push(b | 128);
+    result.push(byte | 128);
   }
 };
 
@@ -175,13 +172,6 @@ export const encodeString = (text: string): ReadonlyArray<number> =>
 export const encodeBool = (value: boolean): ReadonlyArray<number> => [
   value ? 1 : 0
 ];
-
-/**
- *
- *
- */
-export const encodeDateTime = (dateTime: Date): ReadonlyArray<number> =>
-  encodeUInt32(Math.floor(dateTime.getTime() / 1000));
 
 /**
  *
@@ -268,7 +258,7 @@ export const encodeHashOrAccessToken = (id: string): ReadonlyArray<number> => {
  */
 export const encodeCustomType = (type_: Type): ReadonlyArray<number> => {
   switch (type_._) {
-    case "UInt32": {
+    case "Int": {
       return [0];
     }
     case "String": {
@@ -277,26 +267,23 @@ export const encodeCustomType = (type_: Type): ReadonlyArray<number> => {
     case "Bool": {
       return [2];
     }
-    case "DateTime": {
-      return [3];
-    }
     case "List": {
-      return [4].concat(encodeCustomType(type_.type_));
+      return [3].concat(encodeCustomType(type_.type_));
     }
     case "Maybe": {
-      return [5].concat(encodeCustomType(type_.type_));
+      return [4].concat(encodeCustomType(type_.type_));
     }
     case "Result": {
-      return [6].concat(encodeCustomResultType(type_.resultType));
+      return [5].concat(encodeCustomResultType(type_.resultType));
     }
     case "Id": {
-      return [7].concat(encodeString(type_.string_));
+      return [6].concat(encodeString(type_.string_));
     }
     case "Token": {
-      return [8].concat(encodeString(type_.string_));
+      return [7].concat(encodeString(type_.string_));
     }
     case "Custom": {
-      return [9].concat(encodeString(type_.string_));
+      return [8].concat(encodeString(type_.string_));
     }
   }
 };
@@ -331,24 +318,31 @@ export const encodeCustomLanguage = (
 };
 
 /**
- * UnsignedLeb128で表現されたバイナリをnumberの32bit符号なし整数の範囲の数値にに変換するコード
+ * SignedLeb128で表現されたバイナリをnumberのビット演算ができる32bit符号付き整数の範囲の数値に変換するコード
  * @param index バイナリを読み込み開始位置
  * @param binary バイナリ
  *
  */
-export const decodeUInt32 = (
+export const decodeInt = (
   index: number,
   binary: Uint8Array
 ): { result: number; nextIndex: number } => {
   let result: number = 0;
-  for (let i = 0; i < 5; i += 1) {
-    const b: number = binary[index + i];
-    result |= (b & 127) << (7 * i);
-    if ((b & 8) === 0 && 0 <= result && result < 4294967295) {
-      return { result: result, nextIndex: index + i + 1 };
+  let offset: number = 0;
+  while (true) {
+    const byte: number = binary[index + offset];
+    result |= (byte & 127) << (offset * 7);
+    offset += 1;
+    if ((128 & byte) === 0) {
+      if (offset * 7 < 32 && (byte & 64) !== 0) {
+        return {
+          result: result | (~0 << (offset * 7)),
+          nextIndex: index + offset
+        };
+      }
+      return { result: result, nextIndex: index + offset };
     }
   }
-  throw new Error("larger than 32-bits");
 };
 
 /**
@@ -361,7 +355,7 @@ export const decodeString = (
   index: number,
   binary: Uint8Array
 ): { result: string; nextIndex: number } => {
-  const length: { result: number; nextIndex: number } = decodeUInt32(
+  const length: { result: number; nextIndex: number } = decodeInt(
     index,
     binary
   );
@@ -389,26 +383,6 @@ export const decodeBool = (
   result: binary[index] !== 0,
   nextIndex: index + 1
 });
-
-/**
- *
- * @param index バイナリを読み込み開始位置
- * @param binary バイナリ
- *
- */
-export const decodeDateTime = (
-  index: number,
-  binary: Uint8Array
-): { result: Date; nextIndex: number } => {
-  const result: { result: number; nextIndex: number } = decodeUInt32(
-    index,
-    binary
-  );
-  return {
-    result: new Date(result.result * 1000),
-    nextIndex: result.nextIndex
-  };
-};
 
 /**
  *
@@ -449,7 +423,7 @@ export const decodeMaybe = <T>(
   const patternIndexAndNextIndex: {
     result: number;
     nextIndex: number;
-  } = decodeUInt32(index, binary);
+  } = decodeInt(index, binary);
   if (patternIndexAndNextIndex.result === 0) {
     const valueAndNextIndex: { result: T; nextIndex: number } = decodeFunction(
       patternIndexAndNextIndex.nextIndex,
@@ -494,7 +468,7 @@ export const decodeResult = <ok, error>(
   const patternIndexAndNextIndex: {
     result: number;
     nextIndex: number;
-  } = decodeUInt32(index, binary);
+  } = decodeInt(index, binary);
   if (patternIndexAndNextIndex.result === 0) {
     const okAndNextIndex: { result: ok; nextIndex: number } = okDecodeFunction(
       patternIndexAndNextIndex.nextIndex,
@@ -562,12 +536,12 @@ export const decodeCustomType = (
   index: number,
   binary: Uint8Array
 ): { result: Type; nextIndex: number } => {
-  const patternIndex: { result: number; nextIndex: number } = decodeUInt32(
+  const patternIndex: { result: number; nextIndex: number } = decodeInt(
     index,
     binary
   );
   if (patternIndex.result === 0) {
-    return { result: typeUInt32, nextIndex: patternIndex.nextIndex };
+    return { result: typeInt, nextIndex: patternIndex.nextIndex };
   }
   if (patternIndex.result === 1) {
     return { result: typeString, nextIndex: patternIndex.nextIndex };
@@ -576,44 +550,41 @@ export const decodeCustomType = (
     return { result: typeBool, nextIndex: patternIndex.nextIndex };
   }
   if (patternIndex.result === 3) {
-    return { result: typeDateTime, nextIndex: patternIndex.nextIndex };
-  }
-  if (patternIndex.result === 4) {
     const result: { result: Type; nextIndex: number } = decodeCustomType(
       patternIndex.nextIndex,
       binary
     );
     return { result: typeList(result.result), nextIndex: result.nextIndex };
   }
-  if (patternIndex.result === 5) {
+  if (patternIndex.result === 4) {
     const result: { result: Type; nextIndex: number } = decodeCustomType(
       patternIndex.nextIndex,
       binary
     );
     return { result: typeMaybe(result.result), nextIndex: result.nextIndex };
   }
-  if (patternIndex.result === 6) {
+  if (patternIndex.result === 5) {
     const result: {
       result: ResultType;
       nextIndex: number;
     } = decodeCustomResultType(patternIndex.nextIndex, binary);
     return { result: typeResult(result.result), nextIndex: result.nextIndex };
   }
-  if (patternIndex.result === 7) {
+  if (patternIndex.result === 6) {
     const result: { result: string; nextIndex: number } = decodeString(
       patternIndex.nextIndex,
       binary
     );
     return { result: typeId(result.result), nextIndex: result.nextIndex };
   }
-  if (patternIndex.result === 8) {
+  if (patternIndex.result === 7) {
     const result: { result: string; nextIndex: number } = decodeString(
       patternIndex.nextIndex,
       binary
     );
     return { result: typeToken(result.result), nextIndex: result.nextIndex };
   }
-  if (patternIndex.result === 9) {
+  if (patternIndex.result === 8) {
     const result: { result: string; nextIndex: number } = decodeString(
       patternIndex.nextIndex,
       binary
@@ -657,7 +628,7 @@ export const decodeCustomLanguage = (
   index: number,
   binary: Uint8Array
 ): { result: Language; nextIndex: number } => {
-  const patternIndex: { result: number; nextIndex: number } = decodeUInt32(
+  const patternIndex: { result: number; nextIndex: number } = decodeInt(
     index,
     binary
   );
