@@ -26,22 +26,19 @@ export const encodeInt32 = (value: number): ReadonlyArray<number> => {
 };
 
 export const decodeInt32 = (input: Array<number>): number => {
-  let shift = 0;
   let result = 0;
-
-  const size = 32;
-  let byte = 0;
-
-  do {
-    byte = input.shift() as number;
+  let shift = 0;
+  while (true) {
+    const byte = input.shift() as number;
     result |= (byte & 0x7f) << shift;
     shift += 7;
-  } while ((0x80 & byte) !== 0);
-
-  if (shift < size && (byte & 0x40) !== 0) {
-    result |= ~0 << shift;
+    if ((0x80 & byte) === 0) {
+      if (shift < 32 && (byte & 0x40) !== 0) {
+        return result | (~0 << shift);
+      }
+      return result;
+    }
   }
-  return result;
 };
 
 /**
