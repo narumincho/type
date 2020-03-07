@@ -25,6 +25,25 @@ export const encodeInt32 = (value: number): ReadonlyArray<number> => {
   }
 };
 
+export const decodeInt32 = (input: Array<number>): number => {
+  let shift = 0;
+  let result = 0;
+
+  const size = 32;
+  let byte = 0;
+
+  do {
+    byte = input.shift() as number;
+    result |= (byte & 0x7f) << shift;
+    shift += 7;
+  } while ((0x80 & byte) !== 0);
+
+  if (shift < size && (byte & 0x40) !== 0) {
+    result |= ~0 << shift;
+  }
+  return result;
+};
+
 /**
  * UnsignedLeb128で表現されたバイナリをnumberの32bit符号なし整数の範囲の数値にに変換する
  */
