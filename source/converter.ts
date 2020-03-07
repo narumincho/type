@@ -25,18 +25,27 @@ export const encodeInt32 = (value: number): ReadonlyArray<number> => {
   }
 };
 
-export const decodeInt32 = (input: Array<number>): number => {
+export const decodeInt32 = (
+  index: number,
+  binary: Uint8Array
+): { result: number; nextIndex: number } => {
   let result = 0;
-  let shift = 0;
+  let offset = 0;
   while (true) {
-    const byte = input.shift() as number;
-    result |= (byte & 0x7f) << shift;
-    shift += 7;
+    const byte = binary[index + offset];
+    result |= (byte & 0x7f) << (offset * 7);
+    offset += 1;
     if ((0x80 & byte) === 0) {
-      if (shift < 32 && (byte & 0x40) !== 0) {
-        return result | (~0 << shift);
+      if (offset * 7 < 32 && (byte & 0x40) !== 0) {
+        return {
+          result: result | (~0 << (offset * 7)),
+          nextIndex: index + offset
+        };
       }
-      return result;
+      return {
+        result: result,
+        nextIndex: index + offset
+      };
     }
   }
 };
