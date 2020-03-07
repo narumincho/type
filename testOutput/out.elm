@@ -8,7 +8,7 @@ import Json.Encode as Je
 {-| 型
 -}
 type Type
-    = UInt32
+    = Int
     | String
     | Bool
     | List Type
@@ -76,8 +76,8 @@ fileTokenToJsonValue (FileToken string) =
 typeToJsonValue : Type -> Je.Value
 typeToJsonValue type_ =
     case type_ of
-        UInt32 ->
-            Je.object [ ( "_", Je.string "UInt32" ) ]
+        Int ->
+            Je.object [ ( "_", Je.string "Int" ) ]
 
         String ->
             Je.object [ ( "_", Je.string "String" ) ]
@@ -181,8 +181,8 @@ typeJsonDecoder =
         |> Jd.andThen
             (\tag ->
                 case tag of
-                    "UInt32" ->
-                        Jd.succeed UInt32
+                    "Int" ->
+                        Jd.succeed Int
 
                     "String" ->
                         Jd.succeed String

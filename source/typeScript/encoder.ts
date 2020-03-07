@@ -6,7 +6,7 @@ export const generateCode = (
   customTypeList: ReadonlyArray<type.CustomType>
 ): ReadonlyArray<ts.Function> => {
   return [
-    uInt32Code,
+    int32Code,
     stringCode,
     boolCode,
     listCode(),
@@ -28,17 +28,17 @@ const encodeTokenName = identifer.fromString("encodeHashOrAccessToken");
 const readonlyArrayNumber: ts.Type = ts.readonlyArrayType(ts.typeNumber);
 
 /* ========================================
-                  UInt32
+                  Int32
    ========================================
 */
 
-const uInt32Name = identifer.fromString("encodeUInt32");
+const int32Name = identifer.fromString("encodeInt32");
 
 /**
  * numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード
  */
-const uInt32Code: ts.Function = {
-  name: uInt32Name,
+const int32Code: ts.Function = {
+  name: int32Name,
   document:
     "numberの32bit符号なし整数をUnsignedLeb128で表現されたバイナリに変換するコード",
   parameterList: [
@@ -525,7 +525,7 @@ export const customCode = (customType: type.CustomType): ts.Function => {
       {
         name: identifer.fromString(parameterName),
         document: "",
-        type_: util.typeToGeneratorType(type.typeCustom(customType.name))
+        type_: util.typeToTypeScriptType(type.typeCustom(customType.name))
       }
     ],
     typeParameterList: [],
@@ -626,8 +626,10 @@ export const encodeVarEval = (type_: type.Type, expr: ts.Expr): ts.Expr => {
 
 const encodeFunctionExpr = (type_: type.Type): ts.Expr => {
   switch (type_._) {
-    case "UInt32":
-      return ts.variable(uInt32Name);
+    case "Int32":
+      return ts.variable(int32Name);
+    case "Int64":
+      return ts.variable();
     case "String":
       return ts.variable(stringName);
     case "Bool":

@@ -8,7 +8,7 @@ export const generateCode = (
   customTypeList: ReadonlyArray<type.CustomType>
 ): ReadonlyArray<ts.Function> => {
   return [
-    uInt32Code,
+    int32Code,
     stringCode,
     boolCode,
     listCode(),
@@ -87,20 +87,20 @@ const getNextIndex = (resultAndNextIndexExpr: ts.Expr): ts.Expr =>
   ts.get(resultAndNextIndexExpr, nextIndexProperty);
 
 /* ========================================
-                  UInt32
+                  Int32
    ========================================
 */
 
-const uInt32Name = identifer.fromString("decodeUInt32");
+const int32Name = identifer.fromString("decodeInt");
 
-const uInt32VarEval = (indexExpr: ts.Expr, binaryExpr: ts.Expr): ts.Expr =>
-  ts.call(ts.variable(uInt32Name), [indexExpr, binaryExpr]);
+const intVarEval = (indexExpr: ts.Expr, binaryExpr: ts.Expr): ts.Expr =>
+  ts.call(ts.variable(int32Name), [indexExpr, binaryExpr]);
 
 /**
  * UnsignedLeb128で表現されたバイナリをnumberの32bit符号なし整数の範囲の数値にに変換するコード
  */
-const uInt32Code: ts.Function = {
-  name: uInt32Name,
+const int32Code: ts.Function = {
+  name: int32Name,
   document:
     "UnsignedLeb128で表現されたバイナリをnumberの32bit符号なし整数の範囲の数値にに変換するコード",
   parameterList,
@@ -192,7 +192,7 @@ export const stringCode: ts.Function = {
     ts.statementVariableDefinition(
       identifer.fromString("length"),
       returnType(ts.typeNumber),
-      uInt32VarEval(parameterIndex, parameterBinary)
+      intVarEval(parameterIndex, parameterBinary)
     ),
     returnStatement(
       ts.callMethod(
@@ -418,7 +418,7 @@ const maybeCode = (): ts.Function => {
     ts.statementVariableDefinition(
       patternIndexAndNextIndexName,
       returnType(ts.typeNumber),
-      uInt32VarEval(parameterIndex, parameterBinary)
+      intVarEval(parameterIndex, parameterBinary)
     ),
     ts.statementIf(
       ts.equal(getResult(patternIndexAndNextIndexVar), ts.numberLiteral(0)),
@@ -508,7 +508,7 @@ const resultCode = (): ts.Function => {
     ts.statementVariableDefinition(
       patternIndexAndNextIndexName,
       returnType(ts.typeNumber),
-      uInt32VarEval(parameterIndex, parameterBinary)
+      intVarEval(parameterIndex, parameterBinary)
     ),
     ts.statementIf(
       ts.equal(getResult(patternIndexAndNextIndexVar), ts.numberLiteral(0)),
@@ -620,7 +620,7 @@ const customCode = (customType: type.CustomType): ts.Function => {
     parameterList: parameterList,
     typeParameterList: [],
     returnType: returnType(
-      util.typeToGeneratorType(type.typeCustom(customType.name))
+      util.typeToTypeScriptType(type.typeCustom(customType.name))
     ),
     statementList: statementList
   };
@@ -640,7 +640,7 @@ const customSumCode = (
     ts.statementVariableDefinition(
       patternIndexAndNextIndexName,
       returnType(ts.typeNumber),
-      uInt32VarEval(parameterIndex, parameterBinary)
+      intVarEval(parameterIndex, parameterBinary)
     ),
     ...tagNameAndParameterList.map((tagNameAndParameter, index) =>
       tagNameAndParameterCode(
@@ -675,7 +675,7 @@ const tagNameAndParameterCode = (
           ts.statementVariableDefinition(
             identifer.fromString("result"),
             returnType(
-              util.typeToGeneratorType(tagNameAndParameter.parameter.value)
+              util.typeToTypeScriptType(tagNameAndParameter.parameter.value)
             ),
             decodeVarEval(
               tagNameAndParameter.parameter.value,
@@ -733,7 +733,7 @@ const customProductCode = (
         statementList: data.statementList.concat(
           ts.statementVariableDefinition(
             resultAndNextIndexName,
-            returnType(util.typeToGeneratorType(memberNameAndType.memberType)),
+            returnType(util.typeToTypeScriptType(memberNameAndType.memberType)),
             decodeVarEval(
               memberNameAndType.memberType,
               data.nextIndexExpr,
@@ -772,8 +772,10 @@ const decodeVarEval = (
 
 const decodeFunctionExpr = (type_: type.Type): ts.Expr => {
   switch (type_._) {
-    case "UInt32":
-      return ts.variable(uInt32Name);
+    case "Int32":
+      return ts.variable(int32Name);
+    case "Int64":
+      return ts.variable();
     case "String":
       return ts.variable(stringName);
     case "Bool":

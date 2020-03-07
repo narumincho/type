@@ -156,7 +156,7 @@ export const customTypeToDefinition = (
             customType.body.memberNameAndTypeArray.map(memberNameAndType => [
               memberNameAndType.name,
               {
-                type_: util.typeToGeneratorType(memberNameAndType.memberType),
+                type_: util.typeToTypeScriptType(memberNameAndType.memberType),
                 document: memberNameAndType.description
               }
             ])
@@ -188,7 +188,7 @@ const tagNameAndParameterToObjectType = (
             ),
             {
               document: "",
-              type_: util.typeToGeneratorType(
+              type_: util.typeToTypeScriptType(
                 tagNameAndParameter.parameter.value
               )
             }

@@ -15,7 +15,7 @@ export type Result<ok, error> =
  * 型
  */
 export type Type =
-  | { _: "UInt32" }
+  | { _: "Int" }
   | { _: "String" }
   | { _: "Bool" }
   | { _: "List"; type_: Type }
@@ -73,9 +73,9 @@ export const resultError = <ok, error>(error: error): Result<ok, error> => ({
 });
 
 /**
- * 0～4294967295 32bit符号なし整数
+ * -9007199254740991～9007199254740991 JavaScriptのNumberで正確に表現できる整数の範囲
  */
-export const typeUInt32: Type = { _: "UInt32" };
+export const typeInt: Type = { _: "Int" };
 
 /**
  * 文字列
@@ -255,7 +255,7 @@ export const encodeHashOrAccessToken = (id: string): ReadonlyArray<number> => {
  */
 export const encodeCustomType = (type_: Type): ReadonlyArray<number> => {
   switch (type_._) {
-    case "UInt32": {
+    case "Int": {
       return [0];
     }
     case "String": {
@@ -531,7 +531,7 @@ export const decodeCustomType = (
     binary
   );
   if (patternIndex.result === 0) {
-    return { result: typeUInt32, nextIndex: patternIndex.nextIndex };
+    return { result: typeInt, nextIndex: patternIndex.nextIndex };
   }
   if (patternIndex.result === 1) {
     return { result: typeString, nextIndex: patternIndex.nextIndex };

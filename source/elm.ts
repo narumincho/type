@@ -286,8 +286,10 @@ const toJsonValueVarEval = (type_: type.Type, expr: string): string => {
 
 const toJsonValueFunction = (type_: type.Type): string => {
   switch (type_._) {
-    case "UInt32":
+    case "Int32":
       return "Je.int";
+    case "Int64":
+      return 123;
     case "String":
       return "Je.string";
     case "Bool":
@@ -467,8 +469,10 @@ const customTypeProductToJsonDecoderCodeBody = (
 
 const typeToDecoder = (type_: type.Type): string => {
   switch (type_._) {
-    case "UInt32":
+    case "Int32":
       return "Jd.int";
+    case "Int64":
+      return 123;
     case "String":
       return "Jd.string";
     case "Bool":
@@ -497,8 +501,10 @@ const commentToCode = (comment: string): string =>
 
 const typeToElmType = (type_: type.Type): string => {
   switch (type_._) {
-    case "UInt32":
+    case "Int32":
       return "Int";
+    case "Int64":
+      return "Int64";
     case "String":
       return "String";
     case "Bool":

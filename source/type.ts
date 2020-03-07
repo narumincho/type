@@ -22,7 +22,8 @@ export type Result<ok, error> =
  * 型
  */
 export type Type =
-  | { _: "UInt32" }
+  | { _: "Int32" }
+  | { _: "Int64" }
   | { _: "String" }
   | { _: "Bool" }
   | { _: "List"; type_: Type }
@@ -38,9 +39,14 @@ export type Type =
 export type ResultType = { ok: Type; error: Type };
 
 /**
- * 0～4294967295 32bit符号なし整数
+ * -2 147 483 648 ～ 2147483647 32bit 符号付き整数
  */
-export const typeUInt32: Type = { _: "UInt32" };
+export const typeInt32: Type = { _: "Int32" };
+
+/**
+ * -‭9 223 372 036 854 775 808‬ ～ ‭9 223 372 036 854 775 807‬ 64bit 符号付き整数
+ */
+export const typeInt64: Type = { _: "Int64" };
 
 /**
  * 文字列
@@ -164,13 +170,12 @@ export const resultError = <ok, error>(error: error): Result<ok, error> => ({
 export const customTypeToTypeName = (customTypeName: string): string =>
   c.firstUpperCase(customTypeName);
 
-/**
- * UInt32, String, UInt32List
- */
 export const toTypeName = (type_: Type): string => {
   switch (type_._) {
-    case "UInt32":
-      return "UInt32";
+    case "Int32":
+      return "Int32";
+    case "Int64":
+      return "Int64";
     case "String":
       return "String";
     case "Bool":
