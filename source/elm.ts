@@ -424,6 +424,7 @@ const customTypeSumToJsonDecoderCodeBody = (
             : "Jd.succeed " + tagNameAndParameter.name)
       )
       .join("\n") +
+    "\n" +
     indentString.repeat(5) +
     "_ ->\n" +
     indentString.repeat(6) +

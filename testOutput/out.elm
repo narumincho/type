@@ -207,6 +207,9 @@ typeJsonDecoder =
 
                     "Custom" ->
                         Jd.field "string_" Jd.string |> Jd.map Custom
+
+                    _ ->
+                        Jd.fail ("Typeで不明なタグを受けたとった tag=" ++ tag)
             )
 
 
@@ -240,4 +243,7 @@ languageJsonDecoder =
 
                     "Elm" ->
                         Jd.succeed Elm
+
+                    _ ->
+                        Jd.fail ("Languageで不明なタグを受けたとった tag=" ++ tag)
             )
