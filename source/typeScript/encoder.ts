@@ -628,8 +628,6 @@ const encodeFunctionExpr = (type_: type.Type): ts.Expr => {
   switch (type_._) {
     case "Int32":
       return ts.variable(int32Name);
-    case "Int64":
-      return ts.variable();
     case "String":
       return ts.variable(stringName);
     case "Bool":

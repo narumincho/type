@@ -6,8 +6,6 @@ export const typeToTypeScriptType = (type_: type.Type): ts.Type => {
   switch (type_._) {
     case "Int32":
       return ts.typeNumber;
-    case "Int64":
-      return;
 
     case "String":
       return ts.typeString;

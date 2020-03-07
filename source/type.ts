@@ -23,7 +23,6 @@ export type Result<ok, error> =
  */
 export type Type =
   | { _: "Int32" }
-  | { _: "Int64" }
   | { _: "String" }
   | { _: "Bool" }
   | { _: "List"; type_: Type }
@@ -39,14 +38,9 @@ export type Type =
 export type ResultType = { ok: Type; error: Type };
 
 /**
- * -2 147 483 648 ～ 2147483647 32bit 符号付き整数
+ * -2 147 483 648 ～ 2147483647. 32bit 符号付き整数
  */
 export const typeInt32: Type = { _: "Int32" };
-
-/**
- * -‭9 223 372 036 854 775 808‬ ～ ‭9 223 372 036 854 775 807‬ 64bit 符号付き整数
- */
-export const typeInt64: Type = { _: "Int64" };
 
 /**
  * 文字列
@@ -174,8 +168,6 @@ export const toTypeName = (type_: Type): string => {
   switch (type_._) {
     case "Int32":
       return "Int32";
-    case "Int64":
-      return "Int64";
     case "String":
       return "String";
     case "Bool":
