@@ -377,7 +377,8 @@ const customTypeToJsonDecoder = (customType: type.CustomType): string => {
       return (
         header +
         customTypeSumToJsonDecoderCodeBody(
-          customType.body.tagNameAndParameterArray
+          customType.body.tagNameAndParameterArray,
+          customType.name
         )
       );
     case "Product":
@@ -391,7 +392,8 @@ const customTypeToJsonDecoder = (customType: type.CustomType): string => {
 };
 
 const customTypeSumToJsonDecoderCodeBody = (
-  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
+  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
+  customTypeName: string
 ): string => {
   return (
     indentString +
@@ -422,6 +424,12 @@ const customTypeSumToJsonDecoderCodeBody = (
             : "Jd.succeed " + tagNameAndParameter.name)
       )
       .join("\n") +
+    indentString.repeat(5) +
+    "_ ->\n" +
+    indentString.repeat(6) +
+    'Jd.fail ("' +
+    customTypeName +
+    'で不明なタグを受けたとった tag=" ++ tag)' +
     "\n" +
     indentString.repeat(3) +
     ")"
