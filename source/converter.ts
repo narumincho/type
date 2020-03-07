@@ -6,20 +6,36 @@ import * as type from "./type";
  */
 
 /**
- * UnsignedLeb128で表現されたバイナリに変換する
+ * Signed Leb128で表現されたバイナリに変換する
  */
-export const encodeUInt32 = (num: number): ReadonlyArray<number> => {
-  num = Math.floor(Math.max(0, Math.min(num, 2 ** 32 - 1)));
-  const numberArray = [];
-  while (true) {
-    const b = num & 0x7f;
-    num = num >>> 7;
-    if (num === 0) {
-      numberArray.push(b);
-      return numberArray;
+export const encodeInt32 = (value: number): ReadonlyArray<number> => {
+  value = value | 0;
+  const padTo = 0;
+  let more = false;
+  let count = 0;
+  const result: Array<number> = [];
+  do {
+    let byte = value & 0x7f;
+    value >>= 7;
+    more = !(
+      (value === 0 && (byte & 0x40) === 0) ||
+      (value === -1 && (byte & 0x40) !== 0)
+    );
+    count += 1;
+    if (more || count < padTo) {
+      byte |= 0x80;
     }
-    numberArray.push(b | 0x80);
+    result.push(byte);
+  } while (more);
+  if (count < padTo) {
+    const PadValue = value < 0 ? 0x7f : 0x00;
+    for (; count < padTo - 1; count++) {
+      result.push(PadValue | 0x80);
+    }
+    result.push(PadValue);
+    count++;
   }
+  return result;
 };
 
 /**
@@ -114,7 +130,7 @@ export const encodeStringList = (
   list: ReadonlyArray<string>
 ): ReadonlyArray<number> => {
   let result: Array<number> = [];
-  result = result.concat(encodeUInt32(list.length));
+  result = result.concat(encodeInt32(list.length));
   for (const element of list) {
     result = result.concat(encodeString(element));
   }
@@ -270,7 +286,7 @@ type User = {
 export const encodeUser = (user: User): ReadonlyArray<number> => {
   return encodeId(user.id)
     .concat(encodeString(user.name))
-    .concat(encodeUInt32(user.age));
+    .concat(encodeInt32(user.age));
 };
 
 export const decodeUser = (
