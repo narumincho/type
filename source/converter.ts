@@ -9,33 +9,20 @@ import * as type from "./type";
  * Signed Leb128で表現されたバイナリに変換する
  */
 export const encodeInt32 = (value: number): ReadonlyArray<number> => {
-  value = value | 0;
-  const padTo = 0;
-  let more = false;
-  let count = 0;
+  value |= 0;
   const result: Array<number> = [];
-  do {
-    let byte = value & 0x7f;
+  while (true) {
+    const byte = value & 0x7f;
     value >>= 7;
-    more = !(
+    if (
       (value === 0 && (byte & 0x40) === 0) ||
       (value === -1 && (byte & 0x40) !== 0)
-    );
-    count += 1;
-    if (more || count < padTo) {
-      byte |= 0x80;
+    ) {
+      result.push(byte);
+      return result;
     }
-    result.push(byte);
-  } while (more);
-  if (count < padTo) {
-    const PadValue = value < 0 ? 0x7f : 0x00;
-    for (; count < padTo - 1; count++) {
-      result.push(PadValue | 0x80);
-    }
-    result.push(PadValue);
-    count++;
+    result.push(byte | 0x80);
   }
-  return result;
 };
 
 /**
