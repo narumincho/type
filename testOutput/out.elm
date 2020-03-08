@@ -1,4 +1,4 @@
-module Data exposing (Language(..), ResultType, Type(..))
+module Data exposing (FileToken(..), Language(..), ResultType, Type(..), UserId(..), fileTokenJsonDecoder, fileTokenToJsonValue, languageJsonDecoder, languageToJsonValue, maybeJsonDecoder, maybeToJsonValue, resultJsonDecoder, resultToJsonValue, resultTypeJsonDecoder, resultTypeToJsonValue, typeJsonDecoder, typeToJsonValue, userIdJsonDecoder, userIdToJsonValue)
 
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp

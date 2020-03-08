@@ -6,7 +6,7 @@ export const generateCode = (
   schema: type.Schema
 ): string => {
   return [
-    moduleExportList(moduleName, schema.customTypeList),
+    moduleExportList(moduleName, schema),
     importList,
     ...schema.customTypeList.map(customTypeToTypeDefinitionCode),
     ...schema.idOrTokenTypeNameList.map(idOrTokenTypeToTypeDefinitionCode),
@@ -21,24 +21,40 @@ export const generateCode = (
   ].join("\n\n");
 };
 
-const moduleExportList = (
-  name: string,
-  customTypeDictionary: ReadonlyArray<type.CustomType>
-): string => {
+const moduleExportList = (name: string, schema: type.Schema): string => {
   return (
     "module " +
     name +
     " exposing (" +
-    customTypeDictionary
-      .map(customType => {
+    [
+      ...schema.idOrTokenTypeNameList.map(
+        idOrTokenTypeName => idOrTokenTypeName + "(..)"
+      ),
+      ...schema.customTypeList.map(customType => {
         switch (customType.body._) {
           case "Sum":
             return customType.name + "(..)";
           case "Product":
             return customType.name;
         }
-      })
-      .join(", ") +
+      }),
+      "maybeToJsonValue",
+      "resultToJsonValue",
+      ...schema.idOrTokenTypeNameList.map(
+        customOrIdOrTokenTypeNameToToJsonValueFunctionName
+      ),
+      ...schema.customTypeList.map(customType =>
+        customOrIdOrTokenTypeNameToToJsonValueFunctionName(customType.name)
+      ),
+      "maybeJsonDecoder",
+      "resultJsonDecoder",
+      ...schema.idOrTokenTypeNameList.map(
+        customOrIdOrTokenTypeNameToJsonDecoderFunctionName
+      ),
+      ...schema.customTypeList.map(customType =>
+        customOrIdOrTokenTypeNameToJsonDecoderFunctionName(customType.name)
+      )
+    ].join(", ") +
     ")"
   );
 };
