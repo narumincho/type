@@ -604,7 +604,7 @@ const resultCode = (): ts.Function => {
 */
 
 const customName = (customTypeName: string): identifer.Identifer =>
-  identifer.fromString("decodeCustom" + customTypeName);
+  identifer.fromString("decode" + customTypeName);
 
 const customCode = (customType: type.CustomType): ts.Function => {
   const statementList = ((): ReadonlyArray<ts.Statement> => {

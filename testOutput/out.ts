@@ -193,7 +193,7 @@ export const encodeList = <T>(
  *
  *
  */
-export const maybe = <T>(
+export const encodeMaybe = <T>(
   encodeFunction: (a: T) => ReadonlyArray<number>
 ): ((a: Maybe<T>) => ReadonlyArray<number>) => (
   maybe: Maybe<T>
@@ -256,7 +256,7 @@ export const encodeHashOrAccessToken = (id: string): ReadonlyArray<number> => {
  *
  *
  */
-export const encodeCustomType = (type_: Type): ReadonlyArray<number> => {
+export const encodeType = (type_: Type): ReadonlyArray<number> => {
   switch (type_._) {
     case "Int": {
       return [0];
@@ -268,13 +268,13 @@ export const encodeCustomType = (type_: Type): ReadonlyArray<number> => {
       return [2];
     }
     case "List": {
-      return [3].concat(encodeCustomType(type_.type_));
+      return [3].concat(encodeType(type_.type_));
     }
     case "Maybe": {
-      return [4].concat(encodeCustomType(type_.type_));
+      return [4].concat(encodeType(type_.type_));
     }
     case "Result": {
-      return [5].concat(encodeCustomResultType(type_.resultType));
+      return [5].concat(encodeResultType(type_.resultType));
     }
     case "Id": {
       return [6].concat(encodeString(type_.string_));
@@ -292,18 +292,16 @@ export const encodeCustomType = (type_: Type): ReadonlyArray<number> => {
  *
  *
  */
-export const encodeCustomResultType = (
+export const encodeResultType = (
   resultType: ResultType
 ): ReadonlyArray<number> =>
-  encodeCustomType(resultType.ok).concat(encodeCustomType(resultType.error));
+  encodeType(resultType.ok).concat(encodeType(resultType.error));
 
 /**
  *
  *
  */
-export const encodeCustomLanguage = (
-  language: Language
-): ReadonlyArray<number> => {
+export const encodeLanguage = (language: Language): ReadonlyArray<number> => {
   switch (language) {
     case "TypeScript": {
       return [0];
@@ -532,7 +530,7 @@ export const decodeHashOrAccessToken = (
  * @param binary バイナリ
  *
  */
-export const decodeCustomType = (
+export const decodeType = (
   index: number,
   binary: Uint8Array
 ): { result: Type; nextIndex: number } => {
@@ -550,24 +548,24 @@ export const decodeCustomType = (
     return { result: typeBool, nextIndex: patternIndex.nextIndex };
   }
   if (patternIndex.result === 3) {
-    const result: { result: Type; nextIndex: number } = decodeCustomType(
+    const result: { result: Type; nextIndex: number } = decodeType(
       patternIndex.nextIndex,
       binary
     );
     return { result: typeList(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 4) {
-    const result: { result: Type; nextIndex: number } = decodeCustomType(
+    const result: { result: Type; nextIndex: number } = decodeType(
       patternIndex.nextIndex,
       binary
     );
     return { result: typeMaybe(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 5) {
-    const result: {
-      result: ResultType;
-      nextIndex: number;
-    } = decodeCustomResultType(patternIndex.nextIndex, binary);
+    const result: { result: ResultType; nextIndex: number } = decodeResultType(
+      patternIndex.nextIndex,
+      binary
+    );
     return { result: typeResult(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 6) {
@@ -600,18 +598,18 @@ export const decodeCustomType = (
  * @param binary バイナリ
  *
  */
-export const decodeCustomResultType = (
+export const decodeResultType = (
   index: number,
   binary: Uint8Array
 ): { result: ResultType; nextIndex: number } => {
-  const okAndNextIndex: { result: Type; nextIndex: number } = decodeCustomType(
+  const okAndNextIndex: { result: Type; nextIndex: number } = decodeType(
     index,
     binary
   );
-  const errorAndNextIndex: {
-    result: Type;
-    nextIndex: number;
-  } = decodeCustomType(okAndNextIndex.nextIndex, binary);
+  const errorAndNextIndex: { result: Type; nextIndex: number } = decodeType(
+    okAndNextIndex.nextIndex,
+    binary
+  );
   return {
     result: { ok: okAndNextIndex.result, error: errorAndNextIndex.result },
     nextIndex: errorAndNextIndex.nextIndex
@@ -624,7 +622,7 @@ export const decodeCustomResultType = (
  * @param binary バイナリ
  *
  */
-export const decodeCustomLanguage = (
+export const decodeLanguage = (
   index: number,
   binary: Uint8Array
 ): { result: Language; nextIndex: number } => {
