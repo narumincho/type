@@ -485,7 +485,7 @@ const resultCode = (): ts.Function => {
 */
 
 const customName = (customTypeName: string): identifer.Identifer =>
-  identifer.fromString("encodeCustom" + customTypeName);
+  identifer.fromString("encode" + customTypeName);
 
 export const customCode = (customType: type.CustomType): ts.Function => {
   const parameterName = util.typeToMemberOrParameterName(
