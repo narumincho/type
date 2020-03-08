@@ -313,8 +313,8 @@ const maybeCode = (): ts.Function => {
   const encodeFunctionName = identifer.fromString("encodeFunction");
   const encodeFunctionVar = ts.variable(encodeFunctionName);
   const elementTypeName = identifer.fromString("T");
-  const maybeName = identifer.fromString("maybe");
-  const maybeVar = ts.variable(maybeName);
+  const parameterMaybeName = identifer.fromString("maybe");
+  const parameterMaybeVar = ts.variable(parameterMaybeName);
 
   return {
     name: maybeName,
@@ -344,7 +344,7 @@ const maybeCode = (): ts.Function => {
         ts.lambda(
           [
             {
-              name: maybeName,
+              name: parameterMaybeName,
               type_: ts.typeWithParameter(
                 ts.typeScopeInFile(identifer.fromString("Maybe")),
                 [ts.typeScopeInFile(elementTypeName)]
@@ -354,7 +354,7 @@ const maybeCode = (): ts.Function => {
           readonlyArrayNumber,
           [
             ts.statementSwitch({
-              expr: ts.get(maybeVar, "_"),
+              expr: ts.get(parameterMaybeVar, "_"),
               patternList: [
                 {
                   caseTag: "Just",
@@ -365,7 +365,7 @@ const maybeCode = (): ts.Function => {
                         "concat",
                         [
                           ts.call(encodeFunctionVar, [
-                            ts.get(maybeVar, "value")
+                            ts.get(parameterMaybeVar, "value")
                           ])
                         ]
                       )

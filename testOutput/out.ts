@@ -193,7 +193,7 @@ export const encodeList = <T>(
  *
  *
  */
-export const maybe = <T>(
+export const encodeMaybe = <T>(
   encodeFunction: (a: T) => ReadonlyArray<number>
 ): ((a: Maybe<T>) => ReadonlyArray<number>) => (
   maybe: Maybe<T>
