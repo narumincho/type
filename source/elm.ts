@@ -501,10 +501,10 @@ const typeToDecoder = (type_: type.Type): string => {
     case "List":
       return "(Jd.list " + typeToDecoder(type_.type_) + ")";
     case "Maybe":
-      return "(maybeToJsonValue " + typeToDecoder(type_.type_) + ")";
+      return "(maybeJsonDecoder " + typeToDecoder(type_.type_) + ")";
     case "Result":
       return (
-        "(resultToJsonValue " +
+        "(resultJsonDecoder " +
         typeToDecoder(type_.resultType.ok) +
         " " +
         typeToDecoder(type_.resultType.error) +
