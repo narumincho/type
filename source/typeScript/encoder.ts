@@ -268,7 +268,8 @@ const listName = identifer.fromString("encodeList");
 
 const listCode = (): ts.Function => {
   const elementTypeName = identifer.fromString("T");
-  const parameterList = identifer.fromString("list");
+  const parameterListName = identifer.fromString("list");
+  const parameterListVar = ts.variable(parameterListName);
   const resultName = identifer.fromString("result");
   const elementName = identifer.fromString("element");
   const encodeFunctionName = identifer.fromString("encodeFunction");
@@ -296,7 +297,7 @@ const listCode = (): ts.Function => {
         ts.lambda(
           [
             {
-              name: parameterList,
+              name: parameterListName,
               type_: ts.readonlyArrayType(ts.typeScopeInFile(elementTypeName))
             }
           ],
@@ -305,9 +306,14 @@ const listCode = (): ts.Function => {
             ts.statementLetVariableDefinition(
               resultName,
               ts.arrayType(ts.typeNumber),
-              ts.arrayLiteral([])
+              ts.callMethod(ts.arrayLiteral([]), "concat", [
+                encodeVarEval(
+                  type.typeInt32,
+                  ts.get(parameterListVar, "length")
+                )
+              ])
             ),
-            ts.statementForOf(elementName, ts.variable(parameterList), [
+            ts.statementForOf(elementName, parameterListVar, [
               ts.statementSet(
                 ts.variable(resultName),
                 null,
