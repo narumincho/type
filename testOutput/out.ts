@@ -162,7 +162,9 @@ export const encodeInt32 = (value: number): ReadonlyArray<number> => {
  */
 export const encodeString = (text: string): ReadonlyArray<number> =>
   Array["from"](
-    new (process === undefined ? TextEncoder : a.TextEncoder)().encode(text)
+    new (process === undefined || process.title === "browser"
+      ? TextEncoder
+      : a.TextEncoder)().encode(text)
   );
 
 /**
