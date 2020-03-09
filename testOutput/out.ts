@@ -160,12 +160,14 @@ export const encodeInt32 = (value: number): ReadonlyArray<number> => {
  * stringからバイナリに変換する.
  *
  */
-export const encodeString = (text: string): ReadonlyArray<number> =>
-  Array["from"](
+export const encodeString = (text: string): ReadonlyArray<number> => {
+  const result: ReadonlyArray<number> = Array["from"](
     new (process === undefined || process.title === "browser"
       ? TextEncoder
       : a.TextEncoder)().encode(text)
   );
+  return encodeInt32(result.length).concat(result);
+};
 
 /**
  * boolからバイナリに変換する

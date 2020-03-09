@@ -7,7 +7,7 @@ export const generateCode = (
 ): ReadonlyArray<ts.Function> => {
   return [
     int32Code(),
-    stringCode,
+    stringCode(),
     boolCode,
     listCode(),
     maybeCode(),
@@ -115,48 +115,62 @@ const stringName = identifer.fromString("encodeString");
  * stringからバイナリに変換するコード
  * ブラウザではグローバルのTextDecoderを使い、node.jsではutilのTextDecoderを使う
  */
-const stringCode: ts.Function = {
-  name: stringName,
-  document: "stringからバイナリに変換する.",
-  parameterList: [
-    {
-      name: identifer.fromString("text"),
-      type_: ts.typeString,
-      document: ""
-    }
-  ],
-  typeParameterList: [],
-  returnType: readonlyArrayNumber,
-  statementList: [
-    ts.statementReturn(
-      ts.callMethod(ts.globalObjects(identifer.fromString("Array")), "from", [
-        ts.callMethod(
-          ts.newExpr(
-            ts.conditionalOperator(
-              ts.logicalOr(
-                ts.equal(
-                  ts.globalObjects(identifer.fromString("process")),
-                  ts.undefinedLiteral
-                ),
-                ts.equal(
-                  ts.get(
+const stringCode = (): ts.Function => {
+  const resultName = identifer.fromString("result");
+  const resultVar = ts.variable(resultName);
+
+  return {
+    name: stringName,
+    document: "stringからバイナリに変換する.",
+    parameterList: [
+      {
+        name: identifer.fromString("text"),
+        type_: ts.typeString,
+        document: ""
+      }
+    ],
+    typeParameterList: [],
+    returnType: readonlyArrayNumber,
+    statementList: [
+      ts.statementVariableDefinition(
+        resultName,
+        ts.readonlyArrayType(ts.typeNumber),
+        ts.callMethod(ts.globalObjects(identifer.fromString("Array")), "from", [
+          ts.callMethod(
+            ts.newExpr(
+              ts.conditionalOperator(
+                ts.logicalOr(
+                  ts.equal(
                     ts.globalObjects(identifer.fromString("process")),
-                    "title"
+                    ts.undefinedLiteral
                   ),
-                  ts.stringLiteral("browser")
-                )
+                  ts.equal(
+                    ts.get(
+                      ts.globalObjects(identifer.fromString("process")),
+                      "title"
+                    ),
+                    ts.stringLiteral("browser")
+                  )
+                ),
+                ts.globalObjects(identifer.fromString("TextEncoder")),
+                ts.importedVariable("util", identifer.fromString("TextEncoder"))
               ),
-              ts.globalObjects(identifer.fromString("TextEncoder")),
-              ts.importedVariable("util", identifer.fromString("TextEncoder"))
+              []
             ),
-            []
-          ),
-          "encode",
-          [ts.variable(identifer.fromString("text"))]
+            "encode",
+            [ts.variable(identifer.fromString("text"))]
+          )
+        ])
+      ),
+      ts.statementReturn(
+        ts.callMethod(
+          encodeVarEval(type.typeInt32, ts.get(resultVar, "length")),
+          "concat",
+          [resultVar]
         )
-      ])
-    )
-  ]
+      )
+    ]
+  };
 };
 
 /* ========================================
