@@ -133,9 +133,18 @@ const stringCode: ts.Function = {
         ts.callMethod(
           ts.newExpr(
             ts.conditionalOperator(
-              ts.equal(
-                ts.globalObjects(identifer.fromString("process")),
-                ts.undefinedLiteral
+              ts.logicalOr(
+                ts.equal(
+                  ts.globalObjects(identifer.fromString("process")),
+                  ts.undefinedLiteral
+                ),
+                ts.equal(
+                  ts.get(
+                    ts.globalObjects(identifer.fromString("process")),
+                    "title"
+                  ),
+                  ts.stringLiteral("browser")
+                )
               ),
               ts.globalObjects(identifer.fromString("TextEncoder")),
               ts.importedVariable("util", identifer.fromString("TextEncoder"))

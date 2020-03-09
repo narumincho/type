@@ -162,7 +162,9 @@ export const encodeInt32 = (value: number): ReadonlyArray<number> => {
  */
 export const encodeString = (text: string): ReadonlyArray<number> =>
   Array["from"](
-    new (process === undefined ? TextEncoder : a.TextEncoder)().encode(text)
+    new (process === undefined || process.title === "browser"
+      ? TextEncoder
+      : a.TextEncoder)().encode(text)
   );
 
 /**
@@ -357,14 +359,22 @@ export const decodeString = (
     index,
     binary
   );
+  const nextIndex: number = index + length.nextIndex + length.result;
+  const textBinary: Uint8Array = binary.slice(
+    index + length.nextIndex,
+    nextIndex
+  );
+  const isBrowser: boolean =
+    process === undefined || process.title === "browser";
+  if (isBrowser) {
+    return {
+      result: new TextDecoder().decode(textBinary),
+      nextIndex: nextIndex
+    };
+  }
   return {
-    result: new (process === undefined ? TextDecoder : a.TextDecoder)().decode(
-      binary.slice(
-        index + length.nextIndex,
-        index + length.nextIndex + length.result
-      )
-    ),
-    nextIndex: index + length.nextIndex + length.result
+    result: new a.TextDecoder().decode(textBinary),
+    nextIndex: nextIndex
   };
 };
 
