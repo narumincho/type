@@ -3,6 +3,7 @@ import { type } from "../source/main";
 import * as generator from "js-ts-code-generator";
 import * as fileSystem from "fs";
 import * as ts from "typescript";
+import * as childProcess from "child_process";
 
 const typeType: type.CustomType = {
   name: "Type",
@@ -108,36 +109,47 @@ const typeDefinitionTypeScriptCode = generator.generateCodeAsString(
   "TypeScript"
 );
 const elmCodeAsString: string = t.elm.generateCode("Data", schema);
+
 const testOutFolderName = "testOut";
+const typeScriptPath = testOutFolderName + "/out.ts";
+const elmPath = testOutFolderName + "/out.elm";
+
 const createTypeScriptCode = (): Promise<void> =>
-  fileSystem.promises.writeFile(
-    testOutFolderName + "/out.ts",
-    typeDefinitionTypeScriptCode
-  );
+  fileSystem.promises.writeFile(typeScriptPath, typeDefinitionTypeScriptCode);
 
 const createElmCode = (): Promise<void> =>
-  fileSystem.promises.writeFile(
-    testOutFolderName + "/out.elm",
-    elmCodeAsString
-  );
+  fileSystem.promises.writeFile(elmPath, elmCodeAsString);
 
 fileSystem.mkdir(testOutFolderName, () => {
   createTypeScriptCode().then(() => {
-    ts.createProgram({
-      rootNames: [testOutFolderName + "/main.ts"],
-      options: {
-        target: ts.ScriptTarget.ES2020,
-        module: ts.ModuleKind.CommonJS,
-        lib: ["ES2020"],
-        moduleResolution: ts.ModuleResolutionKind.NodeJs,
-        newLine: ts.NewLineKind.LineFeed,
-        outDir: "testOutJs",
-        strict: true
-      }
-    }).emit();
+    childProcess.exec(
+      "npx prettier " + typeScriptPath,
+      (error, standardOutput) => {
+        fileSystem.promises
+          .writeFile(typeScriptPath, standardOutput)
+          .then(() => {
+            ts.createProgram({
+              rootNames: [testOutFolderName + "/main.ts"],
+              options: {
+                target: ts.ScriptTarget.ES2020,
+                module: ts.ModuleKind.CommonJS,
+                lib: ["ES2020"],
+                moduleResolution: ts.ModuleResolutionKind.NodeJs,
+                newLine: ts.NewLineKind.LineFeed,
+                outDir: "testOutJs",
+                strict: true
+              }
+            }).emit();
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require("../../testOutJs/main.js");
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            require("../../testOutJs/main.js");
+          });
+      }
+    );
   });
-  createElmCode();
+  createElmCode().then(() => {
+    childProcess.exec("elm-format --yes " + elmPath, () => {
+      console.log("elm formatted");
+    });
+  });
 });

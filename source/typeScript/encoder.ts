@@ -83,7 +83,7 @@ const int32Code = (): ts.Function => {
             ts.logicalAnd(
               ts.equal(valueVar, ts.numberLiteral(-1)),
               ts.notEqual(
-                ts.bitwiseAnd(byteVar, ts.numberLiteral(0x04)),
+                ts.bitwiseAnd(byteVar, ts.numberLiteral(0x40)),
                 ts.numberLiteral(0)
               )
             )

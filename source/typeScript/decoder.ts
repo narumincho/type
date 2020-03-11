@@ -91,7 +91,7 @@ const getNextIndex = (resultAndNextIndexExpr: ts.Expr): ts.Expr =>
    ========================================
 */
 
-const int32Name = identifer.fromString("decodeInt");
+const int32Name = identifer.fromString("decodeInt32");
 
 const intVarEval = (indexExpr: ts.Expr, binaryExpr: ts.Expr): ts.Expr =>
   ts.call(ts.variable(int32Name), [indexExpr, binaryExpr]);
@@ -211,16 +211,13 @@ export const stringCode = (): ts.Function => {
       ts.statementVariableDefinition(
         nextIndexName,
         ts.typeNumber,
-        ts.addition(
-          ts.addition(parameterIndex, getNextIndex(lengthVar)),
-          getResult(lengthVar)
-        )
+        ts.addition(getNextIndex(lengthVar), getResult(lengthVar))
       ),
       ts.statementVariableDefinition(
         textBinaryName,
         ts.uint8ArrayType,
         ts.callMethod(parameterBinary, "slice", [
-          ts.addition(parameterIndex, getNextIndex(lengthVar)),
+          getNextIndex(lengthVar),
           nextIndexVar
         ])
       ),
@@ -363,6 +360,8 @@ const listCode = (): ts.Function => {
   const decodeFunctionVar = ts.variable(decodeFunctionName);
   const resultName = identifer.fromString("result");
   const resultVar = ts.variable(resultName);
+  const lengthResultName = identifer.fromString("lengthResult");
+  const lengthResultVar = ts.variable(lengthResultName);
   const resultAndNextIndexName = identifer.fromString("resultAndNextIndex");
   const resultAndNextIndexVar = ts.variable(resultAndNextIndexName);
 
@@ -391,9 +390,14 @@ const listCode = (): ts.Function => {
           returnType(ts.readonlyArrayType(elementTypeVar)),
           [
             ts.statementVariableDefinition(
-              identifer.fromString("length"),
-              ts.typeNumber,
-              ts.getByExpr(parameterBinary, parameterIndex)
+              lengthResultName,
+              returnType(ts.typeNumber),
+              decodeVarEval(type.typeInt32, parameterIndex, parameterBinary)
+            ),
+            ts.statementSet(
+              parameterIndex,
+              null,
+              getNextIndex(lengthResultVar)
             ),
             ts.statementVariableDefinition(
               resultName,
@@ -402,7 +406,7 @@ const listCode = (): ts.Function => {
             ),
             ts.statementFor(
               identifer.fromString("i"),
-              ts.variable(identifer.fromString("length")),
+              getResult(lengthResultVar),
               [
                 ts.statementVariableDefinition(
                   resultAndNextIndexName,
