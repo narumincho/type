@@ -42,9 +42,9 @@ const test = <T>(
   const decodedJsValue = decodeFunction(0, new Uint8Array(binary)).result;
   console.log("decoded js value:", decodedJsValue);
   if (objectEqual(jsValue, decodedJsValue)) {
-    console.log(cliColor.red("failure!!"));
-  } else {
     console.log(cliColor.green("ok"));
+  } else {
+    console.log(cliColor.red("failure!!"));
   }
   console.log();
   console.groupEnd();
