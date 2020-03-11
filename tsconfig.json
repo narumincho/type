@@ -10,5 +10,5 @@
     "outDir": "distribution",
     "declaration": true
   },
-  "include": ["source/*"]
+  "include": ["source/**/*", "testOutput/*"]
 }

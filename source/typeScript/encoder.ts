@@ -306,12 +306,13 @@ const listCode = (): ts.Function => {
             ts.statementLetVariableDefinition(
               resultName,
               ts.arrayType(ts.typeNumber),
-              ts.callMethod(ts.arrayLiteral([]), "concat", [
+              ts.typeAssertion(
                 encodeVarEval(
                   type.typeInt32,
                   ts.get(parameterListVar, "length")
-                )
-              ])
+                ),
+                ts.arrayType(ts.typeNumber)
+              )
             ),
             ts.statementForOf(elementName, parameterListVar, [
               ts.statementSet(

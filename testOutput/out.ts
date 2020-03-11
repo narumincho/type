@@ -186,7 +186,7 @@ export const encodeList = <T>(
 ): ((a: ReadonlyArray<T>) => ReadonlyArray<number>) => (
   list: ReadonlyArray<T>
 ): ReadonlyArray<number> => {
-  let result: Array<number> = [].concat(encodeInt32(list.length));
+  let result: Array<number> = encodeInt32(list.length) as Array<number>;
   for (const element of list) {
     result = result.concat(encodeFunction(element));
   }
