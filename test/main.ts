@@ -107,7 +107,7 @@ const typeDefinitionTypeScriptCode = generator.generateCodeAsString(
   "TypeScript"
 );
 const elmCodeAsString: string = t.elm.generateCode("Data", schema);
-fs.promises.writeFile("test/out.ts", typeDefinitionTypeScriptCode);
-fs.promises.writeFile("test/out.elm", elmCodeAsString);
+fs.promises.writeFile("testOut/out.ts", typeDefinitionTypeScriptCode);
+fs.promises.writeFile("testOut/out.elm", elmCodeAsString);
 
 console.log("ok!!");

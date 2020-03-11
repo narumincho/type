@@ -4,9 +4,7 @@
     "module": "CommonJS",
     "lib": ["ES2020"],
     "strict": true,
-    "newLine": "LF",
-    "declaration": true
     "moduleResolution": "Node"
   },
-  "include": ["test.ts"]
+  "include": ["main.ts"]
 }
