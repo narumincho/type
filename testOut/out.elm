@@ -1,44 +1,37 @@
-module Data exposing (FileToken(..), Language(..), ResultType, Type(..), UserId(..), fileTokenJsonDecoder, fileTokenToJsonValue, languageJsonDecoder, languageToJsonValue, maybeJsonDecoder, maybeToJsonValue, resultJsonDecoder, resultToJsonValue, resultTypeJsonDecoder, resultTypeToJsonValue, typeJsonDecoder, typeToJsonValue, userIdJsonDecoder, userIdToJsonValue)
+module Data exposing (UserId(..), FileToken(..), Type(..), ResultType, Language(..), maybeToJsonValue, resultToJsonValue, userIdToJsonValue, fileTokenToJsonValue, typeToJsonValue, resultTypeToJsonValue, languageToJsonValue, maybeJsonDecoder, resultJsonDecoder, userIdJsonDecoder, fileTokenJsonDecoder, typeJsonDecoder, resultTypeJsonDecoder, languageJsonDecoder)
 
+
+import Json.Encode as Je
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp
-import Json.Encode as Je
 
 
-{-| 型
--}
+{-| 型 -}
 type Type
-    = Int
-    | String
-    | Bool
-    | List Type
-    | Maybe Type
-    | Result ResultType
-    | Id String
-    | Token String
-    | Custom String
+  = Int
+  | String
+  | Bool
+  | List Type
+  | Maybe Type
+  | Result ResultType
+  | Id String
+  | Token String
+  | Custom String
 
 
-{-| 正常値と異常値
--}
-type alias ResultType =
-    { ok : Type, error : Type }
+{-| 正常値と異常値 -}
+type alias ResultType = { ok: Type, error: Type }
 
-
-{-| プログラミング言語
--}
+{-| プログラミング言語 -}
 type Language
-    = TypeScript
-    | JavaScript
-    | Elm
+  = TypeScript
+  | JavaScript
+  | Elm
 
 
-type UserId
-    = UserId String
+type UserId = UserId String
 
-
-type FileToken
-    = FileToken String
+type FileToken = FileToken String
 
 
 maybeToJsonValue : (a -> Je.Value) -> Maybe a -> Je.Value
@@ -49,6 +42,7 @@ maybeToJsonValue toJsonValueFunction maybe =
 
         Nothing ->
             Je.object [ ( "_", Je.string "Nothing" ) ]
+
 
 
 resultToJsonValue : (ok -> Je.Value) -> (error -> Je.Value) -> Result error ok -> Je.Value
@@ -62,69 +56,52 @@ resultToJsonValue okToJsonValueFunction errorToJsonValueFunction result =
 
 
 userIdToJsonValue : UserId -> Je.Value
-userIdToJsonValue (UserId string) =
+userIdToJsonValue (UserId string) = 
     Je.string string
-
 
 fileTokenToJsonValue : FileToken -> Je.Value
-fileTokenToJsonValue (FileToken string) =
+fileTokenToJsonValue (FileToken string) = 
     Je.string string
 
-
-{-| TypeのJSONへのエンコーダ
--}
+{-| TypeのJSONへのエンコーダ -}
 typeToJsonValue : Type -> Je.Value
 typeToJsonValue type_ =
     case type_ of
         Int ->
-            Je.object [ ( "_", Je.string "Int" ) ]
-
+            Je.object [ ( "_", Je.string "Int") ]
         String ->
-            Je.object [ ( "_", Je.string "String" ) ]
-
+            Je.object [ ( "_", Je.string "String") ]
         Bool ->
-            Je.object [ ( "_", Je.string "Bool" ) ]
-
+            Je.object [ ( "_", Je.string "Bool") ]
         List parameter ->
-            Je.object [ ( "_", Je.string "List" ), ( "type_", typeToJsonValue parameter ) ]
-
+            Je.object [ ( "_", Je.string "List"), ( "type_", (typeToJsonValue parameter))]
         Maybe parameter ->
-            Je.object [ ( "_", Je.string "Maybe" ), ( "type_", typeToJsonValue parameter ) ]
-
+            Je.object [ ( "_", Je.string "Maybe"), ( "type_", (typeToJsonValue parameter))]
         Result parameter ->
-            Je.object [ ( "_", Je.string "Result" ), ( "resultType", resultTypeToJsonValue parameter ) ]
-
+            Je.object [ ( "_", Je.string "Result"), ( "resultType", (resultTypeToJsonValue parameter))]
         Id parameter ->
-            Je.object [ ( "_", Je.string "Id" ), ( "string_", Je.string parameter ) ]
-
+            Je.object [ ( "_", Je.string "Id"), ( "string_", (Je.string parameter))]
         Token parameter ->
-            Je.object [ ( "_", Je.string "Token" ), ( "string_", Je.string parameter ) ]
-
+            Je.object [ ( "_", Je.string "Token"), ( "string_", (Je.string parameter))]
         Custom parameter ->
-            Je.object [ ( "_", Je.string "Custom" ), ( "string_", Je.string parameter ) ]
+            Je.object [ ( "_", Je.string "Custom"), ( "string_", (Je.string parameter))]
 
-
-{-| ResultTypeのJSONへのエンコーダ
--}
+{-| ResultTypeのJSONへのエンコーダ -}
 resultTypeToJsonValue : ResultType -> Je.Value
 resultTypeToJsonValue resultType =
     Je.object
-        [ ( "ok", typeToJsonValue resultType.ok )
-        , ( "error", typeToJsonValue resultType.error )
+        [ ( "ok", (typeToJsonValue resultType.ok) )
+        , ( "error", (typeToJsonValue resultType.error) )
         ]
 
-
-{-| LanguageのJSONへのエンコーダ
--}
+{-| LanguageのJSONへのエンコーダ -}
 languageToJsonValue : Language -> Je.Value
 languageToJsonValue language =
     case language of
         TypeScript ->
             Je.string "TypeScript"
-
         JavaScript ->
             Je.string "JavaScript"
-
         Elm ->
             Je.string "Elm"
 
@@ -133,7 +110,7 @@ maybeJsonDecoder : Jd.Decoder a -> Jd.Decoder (Maybe a)
 maybeJsonDecoder decoder =
     Jd.field "_" Jd.string
         |> Jd.andThen
-            (\tag ->
+            (\ tag ->
                 case tag of
                     "Just" ->
                         Jd.field "value" decoder |> Jd.map Just
@@ -146,11 +123,12 @@ maybeJsonDecoder decoder =
             )
 
 
+
 resultJsonDecoder : Jd.Decoder ok -> Jd.Decoder error -> Jd.Decoder (Result error ok)
 resultJsonDecoder okDecoder errorDecoder =
     Jd.field "_" Jd.string
         |> Jd.andThen
-            (\tag ->
+            (\ tag ->
                 case tag of
                     "Ok" ->
                         Jd.field "ok" okDecoder |> Jd.map Ok
@@ -167,14 +145,11 @@ userIdJsonDecoder : Jd.Decoder UserId
 userIdJsonDecoder =
     Jd.map UserId Jd.string
 
-
 fileTokenJsonDecoder : Jd.Decoder FileToken
 fileTokenJsonDecoder =
     Jd.map FileToken Jd.string
 
-
-{-| TypeのJSON Decoder
--}
+{-| TypeのJSON Decoder -}
 typeJsonDecoder : Jd.Decoder Type
 typeJsonDecoder =
     Jd.field "_" Jd.string
@@ -183,52 +158,38 @@ typeJsonDecoder =
                 case tag of
                     "Int" ->
                         Jd.succeed Int
-
                     "String" ->
                         Jd.succeed String
-
                     "Bool" ->
                         Jd.succeed Bool
-
                     "List" ->
                         Jd.field "type_" typeJsonDecoder |> Jd.map List
-
                     "Maybe" ->
                         Jd.field "type_" typeJsonDecoder |> Jd.map Maybe
-
                     "Result" ->
                         Jd.field "resultType" resultTypeJsonDecoder |> Jd.map Result
-
                     "Id" ->
                         Jd.field "string_" Jd.string |> Jd.map Id
-
                     "Token" ->
                         Jd.field "string_" Jd.string |> Jd.map Token
-
                     "Custom" ->
                         Jd.field "string_" Jd.string |> Jd.map Custom
-
                     _ ->
                         Jd.fail ("Typeで不明なタグを受けたとった tag=" ++ tag)
             )
 
-
-{-| ResultTypeのJSON Decoder
--}
+{-| ResultTypeのJSON Decoder -}
 resultTypeJsonDecoder : Jd.Decoder ResultType
 resultTypeJsonDecoder =
     Jd.succeed
         (\ok error ->
             { ok = ok
-            , error = error
-            }
+            , error = error            }
         )
         |> Jdp.required "ok" typeJsonDecoder
         |> Jdp.required "error" typeJsonDecoder
 
-
-{-| LanguageのJSON Decoder
--}
+{-| LanguageのJSON Decoder -}
 languageJsonDecoder : Jd.Decoder Language
 languageJsonDecoder =
     Jd.string
@@ -237,13 +198,10 @@ languageJsonDecoder =
                 case tag of
                     "TypeScript" ->
                         Jd.succeed TypeScript
-
                     "JavaScript" ->
                         Jd.succeed JavaScript
-
                     "Elm" ->
                         Jd.succeed Elm
-
                     _ ->
                         Jd.fail ("Languageで不明なタグを受けたとった tag=" ++ tag)
             )
