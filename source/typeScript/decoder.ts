@@ -91,7 +91,7 @@ const getNextIndex = (resultAndNextIndexExpr: ts.Expr): ts.Expr =>
    ========================================
 */
 
-const int32Name = identifer.fromString("decodeInt");
+const int32Name = identifer.fromString("decodeInt32");
 
 const intVarEval = (indexExpr: ts.Expr, binaryExpr: ts.Expr): ts.Expr =>
   ts.call(ts.variable(int32Name), [indexExpr, binaryExpr]);

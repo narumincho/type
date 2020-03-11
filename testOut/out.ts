@@ -325,7 +325,7 @@ export const encodeLanguage = (language: Language): ReadonlyArray<number> => {
  * @param binary バイナリ
  *
  */
-export const decodeInt = (
+export const decodeInt32 = (
   index: number,
   binary: Uint8Array
 ): { result: number; nextIndex: number } => {
@@ -357,7 +357,7 @@ export const decodeString = (
   index: number,
   binary: Uint8Array
 ): { result: string; nextIndex: number } => {
-  const length: { result: number; nextIndex: number } = decodeInt(
+  const length: { result: number; nextIndex: number } = decodeInt32(
     index,
     binary
   );
@@ -407,7 +407,7 @@ export const decodeList = <T>(
   index: number,
   binary: Uint8Array
 ): { result: ReadonlyArray<T>; nextIndex: number } => {
-  const lengthResult: { result: number; nextIndex: number } = decodeInt(
+  const lengthResult: { result: number; nextIndex: number } = decodeInt32(
     index,
     binary
   );
@@ -437,7 +437,7 @@ export const decodeMaybe = <T>(
   const patternIndexAndNextIndex: {
     result: number;
     nextIndex: number;
-  } = decodeInt(index, binary);
+  } = decodeInt32(index, binary);
   if (patternIndexAndNextIndex.result === 0) {
     const valueAndNextIndex: { result: T; nextIndex: number } = decodeFunction(
       patternIndexAndNextIndex.nextIndex,
@@ -482,7 +482,7 @@ export const decodeResult = <ok, error>(
   const patternIndexAndNextIndex: {
     result: number;
     nextIndex: number;
-  } = decodeInt(index, binary);
+  } = decodeInt32(index, binary);
   if (patternIndexAndNextIndex.result === 0) {
     const okAndNextIndex: { result: ok; nextIndex: number } = okDecodeFunction(
       patternIndexAndNextIndex.nextIndex,
@@ -550,7 +550,7 @@ export const decodeType = (
   index: number,
   binary: Uint8Array
 ): { result: Type; nextIndex: number } => {
-  const patternIndex: { result: number; nextIndex: number } = decodeInt(
+  const patternIndex: { result: number; nextIndex: number } = decodeInt32(
     index,
     binary
   );
@@ -642,7 +642,7 @@ export const decodeLanguage = (
   index: number,
   binary: Uint8Array
 ): { result: Language; nextIndex: number } => {
-  const patternIndex: { result: number; nextIndex: number } = decodeInt(
+  const patternIndex: { result: number; nextIndex: number } = decodeInt32(
     index,
     binary
   );

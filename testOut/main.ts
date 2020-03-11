@@ -34,7 +34,7 @@ const test = <T>(
   jsValue: T,
   encodeFunction: (a: T) => ReadonlyArray<number>,
   decodeFunction: (a: number, b: Uint8Array) => { result: T; nextIndex: number }
-) => {
+): void => {
   console.group(title);
   console.log("js value        :", jsValue);
   const binary = encodeFunction(jsValue);
@@ -59,8 +59,8 @@ test(
 );
 test(
   "list number",
-  [1, 43, 6423, 334, 663, 74],
+  [1, 43, 6423, 334, 663, 0, 74, -1, -29031, 2 ** 31 - 1],
   out.encodeList(out.encodeInt32),
-  out.decodeList(out.decodeInt)
+  out.decodeList(out.decodeInt32)
 );
 test("custom", out.typeList(out.typeInt), out.encodeType, out.decodeType);
