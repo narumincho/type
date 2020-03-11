@@ -411,9 +411,7 @@ const customTypeSumToJsonDecoderCodeBody = (
   tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
   customTypeName: string
 ): string => {
-  return (
-    indentString +
-    'Jd.field "_" Jd.string\n' +
+  const tagToDecoderLambda =
     indentString.repeat(2) +
     "|> Jd.andThen\n" +
     indentString.repeat(3) +
@@ -449,8 +447,11 @@ const customTypeSumToJsonDecoderCodeBody = (
     'で不明なタグを受けたとった tag=" ++ tag)' +
     "\n" +
     indentString.repeat(3) +
-    ")"
-  );
+    ")";
+  if (type.isProductTypeAllNoParameter(tagNameAndParameterArray)) {
+    return indentString + "Jd.string\n" + tagToDecoderLambda;
+  }
+  return indentString + 'Jd.field "_" Jd.string\n' + tagToDecoderLambda;
 };
 
 const customTypeProductToJsonDecoderCodeBody = (
