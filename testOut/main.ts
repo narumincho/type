@@ -9,7 +9,12 @@ const objectEqual = <T>(a: T, b: T): boolean => {
     return false;
   }
   for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
-    if (!objectEqual(a[key], b[key])) {
+    if (
+      !objectEqual(
+        (a as Record<string, unknown>)[key],
+        (b as Record<string, unknown>)[key]
+      )
+    ) {
       return false;
     }
   }
