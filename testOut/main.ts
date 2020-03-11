@@ -40,7 +40,8 @@ const test = <T>(
   const binary = encodeFunction(jsValue);
   console.log(
     "binary          :",
-    binary.map(e => e.toString(16).padStart(2, "0"))
+    binary
+    // binary.map(e => e.toString(16).padStart(2, "0"))
   );
   const decodedJsValue = decodeFunction(0, new Uint8Array(binary)).result;
   console.log("decoded js value:", decodedJsValue);
@@ -84,7 +85,7 @@ test(
 );
 test(
   "maybe string",
-  out.maybeJust("それな"),
+  out.maybeJust("sample"),
   out.encodeMaybe(out.encodeString),
   out.decodeMaybe(out.decodeString)
 );

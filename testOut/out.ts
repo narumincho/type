@@ -361,11 +361,8 @@ export const decodeString = (
     index,
     binary
   );
-  const nextIndex: number = index + length.nextIndex + length.result;
-  const textBinary: Uint8Array = binary.slice(
-    index + length.nextIndex,
-    nextIndex
-  );
+  const nextIndex: number = length.nextIndex + length.result;
+  const textBinary: Uint8Array = binary.slice(length.nextIndex, nextIndex);
   const isBrowser: boolean =
     process === undefined || process.title === "browser";
   if (isBrowser) {

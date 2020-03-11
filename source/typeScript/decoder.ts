@@ -211,16 +211,13 @@ export const stringCode = (): ts.Function => {
       ts.statementVariableDefinition(
         nextIndexName,
         ts.typeNumber,
-        ts.addition(
-          ts.addition(parameterIndex, getNextIndex(lengthVar)),
-          getResult(lengthVar)
-        )
+        ts.addition(getNextIndex(lengthVar), getResult(lengthVar))
       ),
       ts.statementVariableDefinition(
         textBinaryName,
         ts.uint8ArrayType,
         ts.callMethod(parameterBinary, "slice", [
-          ts.addition(parameterIndex, getNextIndex(lengthVar)),
+          getNextIndex(lengthVar),
           nextIndexVar
         ])
       ),
