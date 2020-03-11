@@ -1,7 +1,8 @@
 import * as t from "../source/main";
 import { type } from "../source/main";
 import * as generator from "js-ts-code-generator";
-import * as fs from "fs";
+import * as fileSystem from "fs";
+import * as ts from "typescript";
 
 const typeType: type.CustomType = {
   name: "Type",
@@ -107,7 +108,36 @@ const typeDefinitionTypeScriptCode = generator.generateCodeAsString(
   "TypeScript"
 );
 const elmCodeAsString: string = t.elm.generateCode("Data", schema);
-fs.promises.writeFile("testOut/out.ts", typeDefinitionTypeScriptCode);
-fs.promises.writeFile("testOut/out.elm", elmCodeAsString);
+const testOutFolderName = "testOut";
+const createTypeScriptCode = (): Promise<void> =>
+  fileSystem.promises.writeFile(
+    testOutFolderName + "/out.ts",
+    typeDefinitionTypeScriptCode
+  );
 
-console.log("ok!!");
+const createElmCode = (): Promise<void> =>
+  fileSystem.promises.writeFile(
+    testOutFolderName + "/out.elm",
+    elmCodeAsString
+  );
+
+fileSystem.mkdir(testOutFolderName, () => {
+  createTypeScriptCode().then(() => {
+    ts.createProgram({
+      rootNames: [testOutFolderName + "/main.ts"],
+      options: {
+        target: ts.ScriptTarget.ES2020,
+        module: ts.ModuleKind.CommonJS,
+        lib: ["ES2020"],
+        moduleResolution: ts.ModuleResolutionKind.NodeJs,
+        newLine: ts.NewLineKind.LineFeed,
+        outDir: "testOutJs",
+        strict: true
+      }
+    }).emit();
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require("../../testOutJs/main.js");
+  });
+  createElmCode();
+});
