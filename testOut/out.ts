@@ -407,9 +407,13 @@ export const decodeList = <T>(
   index: number,
   binary: Uint8Array
 ): { result: ReadonlyArray<T>; nextIndex: number } => {
-  const length: number = binary[index];
+  const lengthResult: { result: number; nextIndex: number } = decodeInt(
+    index,
+    binary
+  );
+  index = lengthResult.nextIndex;
   const result: Array<T> = [];
-  for (let i = 0; i < length; i += 1) {
+  for (let i = 0; i < lengthResult.result; i += 1) {
     const resultAndNextIndex: { result: T; nextIndex: number } = decodeFunction(
       index,
       binary

@@ -363,6 +363,8 @@ const listCode = (): ts.Function => {
   const decodeFunctionVar = ts.variable(decodeFunctionName);
   const resultName = identifer.fromString("result");
   const resultVar = ts.variable(resultName);
+  const lengthResultName = identifer.fromString("lengthResult");
+  const lengthResultVar = ts.variable(lengthResultName);
   const resultAndNextIndexName = identifer.fromString("resultAndNextIndex");
   const resultAndNextIndexVar = ts.variable(resultAndNextIndexName);
 
@@ -391,9 +393,14 @@ const listCode = (): ts.Function => {
           returnType(ts.readonlyArrayType(elementTypeVar)),
           [
             ts.statementVariableDefinition(
-              identifer.fromString("length"),
-              ts.typeNumber,
-              ts.getByExpr(parameterBinary, parameterIndex)
+              lengthResultName,
+              returnType(ts.typeNumber),
+              decodeVarEval(type.typeInt32, parameterIndex, parameterBinary)
+            ),
+            ts.statementSet(
+              parameterIndex,
+              null,
+              getNextIndex(lengthResultVar)
             ),
             ts.statementVariableDefinition(
               resultName,
@@ -402,7 +409,7 @@ const listCode = (): ts.Function => {
             ),
             ts.statementFor(
               identifer.fromString("i"),
-              ts.variable(identifer.fromString("length")),
+              getResult(lengthResultVar),
               [
                 ts.statementVariableDefinition(
                   resultAndNextIndexName,
