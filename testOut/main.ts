@@ -50,6 +50,7 @@ const test = <T>(
   console.groupEnd();
 };
 
+test("min int32", -(2 ** 31), out.encodeInt32, out.decodeInt32);
 test("string", "sample text", out.encodeString, out.decodeString);
 test(
   "maybe string",
