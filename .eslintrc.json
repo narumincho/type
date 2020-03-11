@@ -11,7 +11,11 @@
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "sourceType": "module",
-    "project": ["./tsconfig.json", "./test/tsconfig.json"]
+    "project": [
+      "./tsconfig.json",
+      "./test/tsconfig.json",
+      "./testOut/tsconfig.json"
+    ]
   },
   "rules": {
     "no-template-curly-in-string": ["error"],
