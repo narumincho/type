@@ -19,7 +19,7 @@ jobs:
       - name: Install npm dependencies (npm ci)
         run: npm ci
       - name: npm test (using jest)
-        run: npx jest --verbose false
+        run: npm test
 
   npm-publish:
     name: npm publish
