@@ -1,8 +1,6 @@
 /// @ts-check
 
 const ts = require("typescript");
-const childProcess = require("child_process");
-const fs = require("fs");
 
 ts.createProgram({
   rootNames: ["test/main.ts"],
@@ -17,15 +15,4 @@ ts.createProgram({
   }
 }).emit();
 
-childProcess.exec(
-  "node testJs/test/main.js",
-  (error, standardOutput, standardError) => {
-    if (error !== undefined) {
-      throw error;
-    }
-    if (standardError !== "") {
-      console.error("standardError", standardError);
-    }
-    console.log(standardOutput);
-  }
-);
+require("../testJs/test/main.js");
