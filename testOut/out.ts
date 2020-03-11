@@ -147,7 +147,7 @@ export const encodeInt32 = (value: number): ReadonlyArray<number> => {
     value >>= 7;
     if (
       (value === 0 && (byte & 64) === 0) ||
-      (value === -1 && (byte & 4) !== 0)
+      (value === -1 && (byte & 64) !== 0)
     ) {
       result.push(byte);
       return result;

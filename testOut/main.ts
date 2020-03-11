@@ -40,8 +40,7 @@ const test = <T>(
   const binary = encodeFunction(jsValue);
   console.log(
     "binary          :",
-    binary
-    // binary.map(e => e.toString(16).padStart(2, "0"))
+    binary.map(e => e.toString(16).padStart(2, "0"))
   );
   const decodedJsValue = decodeFunction(0, new Uint8Array(binary)).result;
   console.log("decoded js value:", decodedJsValue);
@@ -55,9 +54,6 @@ const test = <T>(
 };
 
 /* 
-正解: 80 80 80 80 78
-実際: 81 80 80 80 80 7f
-
 0000: 0
 0001: 1
 0010: 2
@@ -76,23 +72,28 @@ const test = <T>(
 1111: F
 */
 test("min int32", -(2 ** 31), out.encodeInt32, out.decodeInt32);
+
 test("string ascii", "sample text", out.encodeString, out.decodeString);
+
 test(
   "string japanese emoji",
   "やったぜ😀👨‍👩‍👧‍👦",
   out.encodeString,
   out.decodeString
 );
+
 test(
   "maybe string",
   out.maybeJust("sample"),
   out.encodeMaybe(out.encodeString),
   out.decodeMaybe(out.decodeString)
 );
+
 test(
   "list number",
   [1, 43, 6423, 334, 663, 0, 74, -1, -29031, 2 ** 31 - 1],
   out.encodeList(out.encodeInt32),
   out.decodeList(out.decodeInt32)
 );
+
 test("custom", out.typeList(out.typeInt), out.encodeType, out.decodeType);
