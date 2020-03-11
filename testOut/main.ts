@@ -38,7 +38,10 @@ const test = <T>(
   console.group(title);
   console.log("js value        :", jsValue);
   const binary = encodeFunction(jsValue);
-  console.log("binary          :", binary);
+  console.log(
+    "binary          :",
+    binary.map(e => e.toString(16).padStart(2, "0"))
+  );
   const decodedJsValue = decodeFunction(0, new Uint8Array(binary)).result;
   console.log("decoded js value:", decodedJsValue);
   if (objectEqual(jsValue, decodedJsValue)) {
@@ -50,8 +53,35 @@ const test = <T>(
   console.groupEnd();
 };
 
+/* 
+正解: 80 80 80 80 78
+実際: 81 80 80 80 80 7f
+
+0000: 0
+0001: 1
+0010: 2
+0011: 3
+0100: 4
+0101: 5
+0110: 6
+0111: 7
+1000: 8
+1001: 9
+1010: A
+1011: B
+1100: C
+1101: D
+1110: E
+1111: F
+*/
 test("min int32", -(2 ** 31), out.encodeInt32, out.decodeInt32);
-test("string", "sample text", out.encodeString, out.decodeString);
+test("string ascii", "sample text", out.encodeString, out.decodeString);
+test(
+  "string japanese emoji",
+  "やったぜ😀👨‍👩‍👧‍👦",
+  out.encodeString,
+  out.decodeString
+);
 test(
   "maybe string",
   out.maybeJust("それな"),
