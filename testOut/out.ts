@@ -1,3 +1,4 @@
+import * as a from "util";
 /**
  * Maybe
  */
@@ -38,18 +39,34 @@ export type UserId = string & { _userId: never };
 
 export type FileToken = string & { _fileToken: never };
 
+/**
+ *
+ *
+ */
 export const maybeJust = <T>(value: T): Maybe<T> => ({
   _: "Just",
   value: value
 });
 
+/**
+ *
+ *
+ */
 export const maybeNothing = <T>(): Maybe<T> => ({ _: "Nothing" });
 
+/**
+ *
+ *
+ */
 export const resultOk = <ok, error>(ok: ok): Result<ok, error> => ({
   _: "Ok",
   ok: ok
 });
 
+/**
+ *
+ *
+ */
 export const resultError = <ok, error>(error: error): Result<ok, error> => ({
   _: "Error",
   error: error
@@ -72,16 +89,19 @@ export const typeBool: Type = { _: "Bool" };
 
 /**
  * リスト
+ *
  */
 export const typeList = (type_: Type): Type => ({ _: "List", type_: type_ });
 
 /**
  * Maybe
+ *
  */
 export const typeMaybe = (type_: Type): Type => ({ _: "Maybe", type_: type_ });
 
 /**
  * Result
+ *
  */
 export const typeResult = (resultType: ResultType): Type => ({
   _: "Result",
@@ -90,6 +110,7 @@ export const typeResult = (resultType: ResultType): Type => ({
 
 /**
  * データを識別するためのもの. カスタムの型名を指定する. 16byte. 16進数文字列で32文字
+ *
  */
 export const typeId = (string_: string): Type => ({
   _: "Id",
@@ -98,6 +119,7 @@ export const typeId = (string_: string): Type => ({
 
 /**
  * データを識別するため. カスタムの型名を指定する. 32byte. 16進数文字列で64文字
+ *
  */
 export const typeToken = (string_: string): Type => ({
   _: "Token",
@@ -106,6 +128,7 @@ export const typeToken = (string_: string): Type => ({
 
 /**
  * 用意されていないアプリ特有の型
+ *
  */
 export const typeCustom = (string_: string): Type => ({
   _: "Custom",
@@ -114,6 +137,7 @@ export const typeCustom = (string_: string): Type => ({
 
 /**
  * numberの32bit符号あり整数をSigned Leb128のバイナリに変換する
+ *
  */
 export const encodeInt32 = (value: number): ReadonlyArray<number> => {
   value |= 0;
@@ -134,21 +158,29 @@ export const encodeInt32 = (value: number): ReadonlyArray<number> => {
 
 /**
  * stringからバイナリに変換する.
+ *
  */
 export const encodeString = (text: string): ReadonlyArray<number> => {
   const result: ReadonlyArray<number> = Array["from"](
-    new TextEncoder().encode(text)
+    new (process === undefined || process.title === "browser"
+      ? TextEncoder
+      : a.TextEncoder)().encode(text)
   );
   return encodeInt32(result.length).concat(result);
 };
 
 /**
  * boolからバイナリに変換する
+ *
  */
 export const encodeBool = (value: boolean): ReadonlyArray<number> => [
   value ? 1 : 0
 ];
 
+/**
+ *
+ *
+ */
 export const encodeList = <T>(
   encodeFunction: (a: T) => ReadonlyArray<number>
 ): ((a: ReadonlyArray<T>) => ReadonlyArray<number>) => (
@@ -161,6 +193,10 @@ export const encodeList = <T>(
   return result;
 };
 
+/**
+ *
+ *
+ */
 export const encodeMaybe = <T>(
   encodeFunction: (a: T) => ReadonlyArray<number>
 ): ((a: Maybe<T>) => ReadonlyArray<number>) => (
@@ -176,6 +212,10 @@ export const encodeMaybe = <T>(
   }
 };
 
+/**
+ *
+ *
+ */
 export const encodeResult = <ok, error>(
   okEncodeFunction: (a: ok) => ReadonlyArray<number>,
   errorEncodeFunction: (a: error) => ReadonlyArray<number>
@@ -192,6 +232,10 @@ export const encodeResult = <ok, error>(
   }
 };
 
+/**
+ *
+ *
+ */
 export const encodeId = (id: string): ReadonlyArray<number> => {
   const result: Array<number> = [];
   for (let i = 0; i < 16; i += 1) {
@@ -200,6 +244,10 @@ export const encodeId = (id: string): ReadonlyArray<number> => {
   return result;
 };
 
+/**
+ *
+ *
+ */
 export const encodeToken = (id: string): ReadonlyArray<number> => {
   const result: Array<number> = [];
   for (let i = 0; i < 32; i += 1) {
@@ -208,6 +256,10 @@ export const encodeToken = (id: string): ReadonlyArray<number> => {
   return result;
 };
 
+/**
+ *
+ *
+ */
 export const encodeType = (type_: Type): ReadonlyArray<number> => {
   switch (type_._) {
     case "Int": {
@@ -240,11 +292,19 @@ export const encodeType = (type_: Type): ReadonlyArray<number> => {
   }
 };
 
+/**
+ *
+ *
+ */
 export const encodeResultType = (
   resultType: ResultType
 ): ReadonlyArray<number> =>
   encodeType(resultType.ok).concat(encodeType(resultType.error));
 
+/**
+ *
+ *
+ */
 export const encodeLanguage = (language: Language): ReadonlyArray<number> => {
   switch (language) {
     case "TypeScript": {
@@ -263,6 +323,7 @@ export const encodeLanguage = (language: Language): ReadonlyArray<number> => {
  * SignedLeb128で表現されたバイナリをnumberのビット演算ができる32bit符号付き整数の範囲の数値に変換するコード
  * @param index バイナリを読み込み開始位置
  * @param binary バイナリ
+ *
  */
 export const decodeInt32 = (
   index: number,
@@ -290,6 +351,7 @@ export const decodeInt32 = (
  * バイナリからstringに変換する.
  * @param index バイナリを読み込み開始位置
  * @param binary バイナリ
+ *
  */
 export const decodeString = (
   index: number,
@@ -300,15 +362,26 @@ export const decodeString = (
     binary
   );
   const nextIndex: number = length.nextIndex + length.result;
+  const textBinary: Uint8Array = binary.slice(length.nextIndex, nextIndex);
+  const isBrowser: boolean =
+    process === undefined || process.title === "browser";
+  if (isBrowser) {
+    return {
+      result: new TextDecoder().decode(textBinary),
+      nextIndex: nextIndex
+    };
+  }
   return {
-    result: new TextDecoder().decode(binary.slice(length.nextIndex, nextIndex)),
+    result: new a.TextDecoder().decode(textBinary),
     nextIndex: nextIndex
   };
 };
 
 /**
+ *
  * @param index バイナリを読み込み開始位置
  * @param binary バイナリ
+ *
  */
 export const decodeBool = (
   index: number,
@@ -318,6 +391,10 @@ export const decodeBool = (
   nextIndex: index + 1
 });
 
+/**
+ *
+ *
+ */
 export const decodeList = <T>(
   decodeFunction: (a: number, b: Uint8Array) => { result: T; nextIndex: number }
 ): ((
@@ -344,6 +421,10 @@ export const decodeList = <T>(
   return { result: result, nextIndex: index };
 };
 
+/**
+ *
+ *
+ */
 export const decodeMaybe = <T>(
   decodeFunction: (a: number, b: Uint8Array) => { result: T; nextIndex: number }
 ): ((a: number, b: Uint8Array) => { result: Maybe<T>; nextIndex: number }) => (
@@ -375,6 +456,10 @@ export const decodeMaybe = <T>(
   );
 };
 
+/**
+ *
+ *
+ */
 export const decodeResult = <ok, error>(
   okDecodeFunction: (
     a: number,
@@ -421,8 +506,10 @@ export const decodeResult = <ok, error>(
 };
 
 /**
+ *
  * @param index バイナリを読み込み開始位置
  * @param binary バイナリ
+ *
  */
 export const decodeId = (
   index: number,
@@ -435,8 +522,10 @@ export const decodeId = (
 });
 
 /**
+ *
  * @param index バイナリを読み込み開始位置
  * @param binary バイナリ
+ *
  */
 export const decodeToken = (
   index: number,
@@ -449,8 +538,10 @@ export const decodeToken = (
 });
 
 /**
+ *
  * @param index バイナリを読み込み開始位置
  * @param binary バイナリ
+ *
  */
 export const decodeType = (
   index: number,
@@ -515,8 +606,10 @@ export const decodeType = (
 };
 
 /**
+ *
  * @param index バイナリを読み込み開始位置
  * @param binary バイナリ
+ *
  */
 export const decodeResultType = (
   index: number,
@@ -537,8 +630,10 @@ export const decodeResultType = (
 };
 
 /**
+ *
  * @param index バイナリを読み込み開始位置
  * @param binary バイナリ
+ *
  */
 export const decodeLanguage = (
   index: number,

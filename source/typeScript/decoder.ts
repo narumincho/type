@@ -185,12 +185,16 @@ const stringName = identifer.fromString("decodeString");
 
 /**
  * バイナリからstringに変換するコード
+ * ブラウザではグローバルのTextDecoderを使い、node.jsではutilのTextDecoderを使う
  */
 export const stringCode = (): ts.Function => {
   const lengthName = identifer.fromString("length");
   const lengthVar = ts.variable(lengthName);
   const nextIndexName = identifer.fromString("nextIndex");
   const nextIndexVar = ts.variable(nextIndexName);
+  const textBinaryName = identifer.fromString("textBinary");
+  const textBinaryVar = ts.variable(textBinaryName);
+  const isBrowserName = identifer.fromString("isBrowser");
 
   return {
     name: stringName,
@@ -209,16 +213,49 @@ export const stringCode = (): ts.Function => {
         ts.typeNumber,
         ts.addition(getNextIndex(lengthVar), getResult(lengthVar))
       ),
+      ts.statementVariableDefinition(
+        textBinaryName,
+        ts.uint8ArrayType,
+        ts.callMethod(parameterBinary, "slice", [
+          getNextIndex(lengthVar),
+          nextIndexVar
+        ])
+      ),
+      ts.statementVariableDefinition(
+        isBrowserName,
+        ts.typeBoolean,
+        ts.logicalOr(
+          ts.equal(
+            ts.globalObjects(identifer.fromString("process")),
+            ts.undefinedLiteral
+          ),
+          ts.equal(
+            ts.get(ts.globalObjects(identifer.fromString("process")), "title"),
+            ts.stringLiteral("browser")
+          )
+        )
+      ),
+      ts.statementIf(ts.variable(isBrowserName), [
+        returnStatement(
+          ts.callMethod(
+            ts.newExpr(
+              ts.globalObjects(identifer.fromString("TextDecoder")),
+              []
+            ),
+            "decode",
+            [textBinaryVar]
+          ),
+          nextIndexVar
+        )
+      ]),
       returnStatement(
         ts.callMethod(
-          ts.newExpr(ts.globalObjects(identifer.fromString("TextDecoder")), []),
+          ts.newExpr(
+            ts.importedVariable("util", identifer.fromString("TextDecoder")),
+            []
+          ),
           "decode",
-          [
-            ts.callMethod(parameterBinary, "slice", [
-              getNextIndex(lengthVar),
-              nextIndexVar
-            ])
-          ]
+          [textBinaryVar]
         ),
         nextIndexVar
       )
