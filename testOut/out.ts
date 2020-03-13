@@ -248,7 +248,7 @@ export const encodeId = (id: string): ReadonlyArray<number> => {
  *
  *
  */
-export const encodeHashOrAccessToken = (id: string): ReadonlyArray<number> => {
+export const encodeToken = (id: string): ReadonlyArray<number> => {
   const result: Array<number> = [];
   for (let i = 0; i < 32; i += 1) {
     result[i] = Number.parseInt(id.slice(i * 2, i * 2 + 2), 16);
@@ -527,7 +527,7 @@ export const decodeId = (
  * @param binary バイナリ
  *
  */
-export const decodeHashOrAccessToken = (
+export const decodeToken = (
   index: number,
   binary: Uint8Array
 ): { result: string; nextIndex: number } => ({

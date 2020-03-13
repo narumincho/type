@@ -19,7 +19,7 @@ export const generateCode = (
 };
 
 const encodeIdName = identifer.fromString("encodeId");
-const encodeTokenName = identifer.fromString("encodeHashOrAccessToken");
+const encodeTokenName = identifer.fromString("encodeToken");
 
 /**
  * `ReadonlyArray<number>`

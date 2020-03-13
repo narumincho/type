@@ -20,7 +20,7 @@ export const generateCode = (
   ];
 };
 const idName = identifer.fromString("decodeId");
-const tokenName = identifer.fromString("decodeHashOrAccessToken");
+const tokenName = identifer.fromString("decodeToken");
 
 const resultProperty = "result";
 const nextIndexProperty = "nextIndex";
