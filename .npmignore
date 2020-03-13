@@ -4,4 +4,6 @@ node_modules
 testOutput
 source
 test
-testOutput
+testJs
+testOut
+testOutJs
