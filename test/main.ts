@@ -5,8 +5,6 @@ import * as fileSystem from "fs";
 import * as ts from "typescript";
 import * as childProcess from "child_process";
 
-const userId: type.Type = type.typeId("UserId");
-
 const typeType: type.CustomType = {
   name: "Type",
   description: "型",
