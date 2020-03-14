@@ -296,7 +296,7 @@ const getIdOrTokenTypeNameInType = (type_: Type): Set<string> => {
       return new Set();
     case "Id":
     case "Token":
-      return new Set(type_.string_);
+      return new Set([type_.string_]);
     case "List":
     case "Maybe":
       return getIdOrTokenTypeNameInType(type_.type_);

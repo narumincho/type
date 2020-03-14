@@ -77,23 +77,99 @@ const resultTypeType: type.CustomType = {
   ])
 };
 
-const language: type.CustomType = {
-  name: "Language",
-  description: "プログラミング言語",
+const accessToken = type.typeToken("AccessToken");
+const urlDataName = "UrlData";
+const clientModeName = "ClientMode";
+const locationName = "Location";
+const languageName = "Language";
+
+const urlData: type.CustomType = {
+  name: urlDataName,
+  description:
+    "デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( https://support.google.com/webmasters/answer/182192?hl=ja )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は http://[::1] になる",
+  body: type.customTypeBodyProduct([
+    {
+      name: "clientMode",
+      description: "クライアントモード",
+      memberType: type.typeCustom(clientModeName)
+    },
+    {
+      name: "location",
+      description: "場所",
+      memberType: type.typeCustom(locationName)
+    },
+    {
+      name: "language",
+      description: "言語",
+      memberType: type.typeCustom(languageName)
+    },
+    {
+      name: "accessToken",
+      description:
+        "アクセストークン. ログインした後のリダイレクト先としてサーバーから渡される",
+      memberType: type.typeMaybe(accessToken)
+    }
+  ])
+};
+
+const clientMode: type.CustomType = {
+  name: clientModeName,
+  description: "デバッグの状態と, デバッグ時ならアクセスしているポート番号",
   body: type.customTypeBodySum([
     {
-      name: "TypeScript",
-      description: "TypeScript",
+      name: "DebugMode",
+      description:
+        "デバッグモード. ポート番号を保持する. オリジンは http://[::1]:2520 のようなもの",
+      parameter: type.maybeJust(type.typeInt32)
+    },
+    {
+      name: "Release",
+      description: "リリースモード. https://definy.app ",
+      parameter: type.maybeNothing()
+    }
+  ])
+};
+
+const location: type.CustomType = {
+  name: locationName,
+  description:
+    "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
+  body: type.customTypeBodySum([
+    {
+      name: "Home",
+      description: "最初のページ",
       parameter: type.maybeNothing()
     },
     {
-      name: "JavaScript",
-      description: "JavaScript",
+      name: "User",
+      description: "ユーザーの詳細ページ",
+      parameter: type.maybeJust(type.typeId("UserId"))
+    },
+    {
+      name: "Project",
+      description: "プロジェクトの詳細ページ",
+      parameter: type.maybeJust(type.typeId("ProjectId"))
+    }
+  ])
+};
+
+const language: type.CustomType = {
+  name: languageName,
+  description: "英語,日本語,エスペラント語などの言語",
+  body: type.customTypeBodySum([
+    {
+      name: "Japanese",
+      description: "日本語",
       parameter: type.maybeNothing()
     },
     {
-      name: "Elm",
-      description: "Elm",
+      name: "English",
+      description: "英語",
+      parameter: type.maybeNothing()
+    },
+    {
+      name: "Esperanto",
+      description: "エスペラント語",
       parameter: type.maybeNothing()
     }
   ])
@@ -102,7 +178,10 @@ const language: type.CustomType = {
 const customTypeList: ReadonlyArray<type.CustomType> = [
   typeType,
   resultTypeType,
-  language
+  language,
+  urlData,
+  clientMode,
+  location
 ];
 
 const typeDefinitionTypeScriptCode = generator.generateCodeAsString(

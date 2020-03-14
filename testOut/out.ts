@@ -31,9 +31,38 @@ export type Type =
 export type ResultType = { ok: Type; error: Type };
 
 /**
- * プログラミング言語
+ * 英語,日本語,エスペラント語などの言語
  */
-export type Language = "TypeScript" | "JavaScript" | "Elm";
+export type Language = "Japanese" | "English" | "Esperanto";
+
+/**
+ * デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( https://support.google.com/webmasters/answer/182192?hl=ja )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は http://[::1] になる
+ */
+export type UrlData = {
+  clientMode: ClientMode;
+  location: Location;
+  language: Language;
+  accessToken: Maybe<AccessToken>;
+};
+
+/**
+ * デバッグの状態と, デバッグ時ならアクセスしているポート番号
+ */
+export type ClientMode = { _: "DebugMode"; int32: number } | { _: "Release" };
+
+/**
+ * DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる
+ */
+export type Location =
+  | { _: "Home" }
+  | { _: "User"; userId: UserId }
+  | { _: "Project"; projectId: ProjectId };
+
+export type AccessToken = string & { _accessToken: never };
+
+export type UserId = string & { _userId: never };
+
+export type ProjectId = string & { _projectId: never };
 
 export const maybeJust = <T>(value: T): Maybe<T> => ({
   _: "Just",
@@ -107,6 +136,40 @@ export const typeToken = (string_: string): Type => ({
 export const typeCustom = (string_: string): Type => ({
   _: "Custom",
   string_: string_
+});
+
+/**
+ * デバッグモード. ポート番号を保持する. オリジンは http://[::1]:2520 のようなもの
+ */
+export const clientModeDebugMode = (int32: number): ClientMode => ({
+  _: "DebugMode",
+  int32: int32
+});
+
+/**
+ * リリースモード. https://definy.app
+ */
+export const clientModeRelease: ClientMode = { _: "Release" };
+
+/**
+ * 最初のページ
+ */
+export const locationHome: Location = { _: "Home" };
+
+/**
+ * ユーザーの詳細ページ
+ */
+export const locationUser = (userId: UserId): Location => ({
+  _: "User",
+  userId: userId
+});
+
+/**
+ * プロジェクトの詳細ページ
+ */
+export const locationProject = (projectId: ProjectId): Location => ({
+  _: "Project",
+  projectId: projectId
 });
 
 /**
@@ -246,14 +309,47 @@ export const encodeResultType = (
 
 export const encodeLanguage = (language: Language): ReadonlyArray<number> => {
   switch (language) {
-    case "TypeScript": {
+    case "Japanese": {
       return [0];
     }
-    case "JavaScript": {
+    case "English": {
       return [1];
     }
-    case "Elm": {
+    case "Esperanto": {
       return [2];
+    }
+  }
+};
+
+export const encodeUrlData = (urlData: UrlData): ReadonlyArray<number> =>
+  encodeClientMode(urlData.clientMode)
+    .concat(encodeLocation(urlData.location))
+    .concat(encodeLanguage(urlData.language))
+    .concat(encodeMaybe(encodeToken)(urlData.accessToken));
+
+export const encodeClientMode = (
+  clientMode: ClientMode
+): ReadonlyArray<number> => {
+  switch (clientMode._) {
+    case "DebugMode": {
+      return [0].concat(encodeInt32(clientMode.int32));
+    }
+    case "Release": {
+      return [1];
+    }
+  }
+};
+
+export const encodeLocation = (location: Location): ReadonlyArray<number> => {
+  switch (location._) {
+    case "Home": {
+      return [0];
+    }
+    case "User": {
+      return [1].concat(encodeId(location.userId));
+    }
+    case "Project": {
+      return [2].concat(encodeId(location.projectId));
     }
   }
 };
@@ -557,13 +653,119 @@ export const decodeLanguage = (
     binary
   );
   if (patternIndex.result === 0) {
-    return { result: "TypeScript", nextIndex: patternIndex.nextIndex };
+    return { result: "Japanese", nextIndex: patternIndex.nextIndex };
   }
   if (patternIndex.result === 1) {
-    return { result: "JavaScript", nextIndex: patternIndex.nextIndex };
+    return { result: "English", nextIndex: patternIndex.nextIndex };
   }
   if (patternIndex.result === 2) {
-    return { result: "Elm", nextIndex: patternIndex.nextIndex };
+    return { result: "Esperanto", nextIndex: patternIndex.nextIndex };
+  }
+  throw new Error("存在しないパターンを指定された 型を更新してください");
+};
+
+/**
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ */
+export const decodeUrlData = (
+  index: number,
+  binary: Uint8Array
+): { result: UrlData; nextIndex: number } => {
+  const clientModeAndNextIndex: {
+    result: ClientMode;
+    nextIndex: number;
+  } = decodeClientMode(index, binary);
+  const locationAndNextIndex: {
+    result: Location;
+    nextIndex: number;
+  } = decodeLocation(clientModeAndNextIndex.nextIndex, binary);
+  const languageAndNextIndex: {
+    result: Language;
+    nextIndex: number;
+  } = decodeLanguage(locationAndNextIndex.nextIndex, binary);
+  const accessTokenAndNextIndex: {
+    result: Maybe<AccessToken>;
+    nextIndex: number;
+  } = decodeMaybe(
+    decodeToken as (
+      a: number,
+      b: Uint8Array
+    ) => { result: AccessToken; nextIndex: number }
+  )(languageAndNextIndex.nextIndex, binary);
+  return {
+    result: {
+      clientMode: clientModeAndNextIndex.result,
+      location: locationAndNextIndex.result,
+      language: languageAndNextIndex.result,
+      accessToken: accessTokenAndNextIndex.result
+    },
+    nextIndex: accessTokenAndNextIndex.nextIndex
+  };
+};
+
+/**
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ */
+export const decodeClientMode = (
+  index: number,
+  binary: Uint8Array
+): { result: ClientMode; nextIndex: number } => {
+  const patternIndex: { result: number; nextIndex: number } = decodeInt32(
+    index,
+    binary
+  );
+  if (patternIndex.result === 0) {
+    const result: { result: number; nextIndex: number } = decodeInt32(
+      patternIndex.nextIndex,
+      binary
+    );
+    return {
+      result: clientModeDebugMode(result.result),
+      nextIndex: result.nextIndex
+    };
+  }
+  if (patternIndex.result === 1) {
+    return { result: clientModeRelease, nextIndex: patternIndex.nextIndex };
+  }
+  throw new Error("存在しないパターンを指定された 型を更新してください");
+};
+
+/**
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ */
+export const decodeLocation = (
+  index: number,
+  binary: Uint8Array
+): { result: Location; nextIndex: number } => {
+  const patternIndex: { result: number; nextIndex: number } = decodeInt32(
+    index,
+    binary
+  );
+  if (patternIndex.result === 0) {
+    return { result: locationHome, nextIndex: patternIndex.nextIndex };
+  }
+  if (patternIndex.result === 1) {
+    const result: { result: UserId; nextIndex: number } = (decodeId as (
+      a: number,
+      b: Uint8Array
+    ) => { result: UserId; nextIndex: number })(patternIndex.nextIndex, binary);
+    return { result: locationUser(result.result), nextIndex: result.nextIndex };
+  }
+  if (patternIndex.result === 2) {
+    const result: { result: ProjectId; nextIndex: number } = (decodeId as (
+      a: number,
+      b: Uint8Array
+    ) => { result: ProjectId; nextIndex: number })(
+      patternIndex.nextIndex,
+      binary
+    );
+    return {
+      result: locationProject(result.result),
+      nextIndex: result.nextIndex
+    };
   }
   throw new Error("存在しないパターンを指定された 型を更新してください");
 };
