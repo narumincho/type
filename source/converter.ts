@@ -106,7 +106,7 @@ export const decodeBoolean = (
 });
 
 export const encodeBinary = (value: Uint8Array): ReadonlyArray<number> => {
-  return [value.length].concat(Array.from(value));
+  return encodeInt32(value.length).concat(Array.from(value));
 };
 
 export const decodeBinary = (
@@ -114,9 +114,10 @@ export const decodeBinary = (
   binary: Uint8Array
 ): { result: Uint8Array; nextIndex: number } => {
   const length = decodeInt32(index, binary);
+  const nextIndex = length.nextIndex + length.result;
   return {
-    result: binary.slice(index, length.result),
-    nextIndex: length.nextIndex + length.result
+    result: binary.slice(index, nextIndex),
+    nextIndex: nextIndex
   };
 };
 

@@ -9,6 +9,7 @@ export const generateCode = (
     int32Code(),
     stringCode(),
     boolCode,
+    binaryCode(),
     listCode(),
     maybeCode(),
     resultCode(),
@@ -202,6 +203,46 @@ const boolCode: ts.Function = {
       ])
     )
   ]
+};
+
+/* ========================================
+                Binary
+   ========================================
+*/
+
+const binaryName = identifer.fromString("encodeBinary");
+
+const binaryCode = (): ts.Function => {
+  const valueName = identifer.fromString("value");
+  const valueVar = ts.variable(valueName);
+  return {
+    name: binaryName,
+    document: "",
+    parameterList: [
+      {
+        name: valueName,
+        document: "",
+        type_: ts.uint8ArrayType
+      }
+    ],
+    typeParameterList: [],
+    returnType: readonlyArrayNumber,
+    statementList: [
+      ts.statementReturn(
+        ts.callMethod(
+          encodeVarEval(type.typeInt32, ts.get(valueVar, "length")),
+          "concat",
+          [
+            ts.callMethod(
+              ts.globalObjects(identifer.fromString("Array")),
+              "from",
+              [valueVar]
+            )
+          ]
+        )
+      )
+    ]
+  };
 };
 
 /* ========================================
@@ -652,6 +693,8 @@ const encodeFunctionExpr = (type_: type.Type): ts.Expr => {
       return ts.variable(stringName);
     case "Bool":
       return ts.variable(boolName);
+    case "Binary":
+      return ts.variable(binaryName);
     case "List":
       return ts.call(ts.variable(listName), [encodeFunctionExpr(type_.type_)]);
     case "Maybe":

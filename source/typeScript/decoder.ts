@@ -11,6 +11,7 @@ export const generateCode = (
     int32Code(),
     stringCode(),
     boolCode,
+    binaryCode(),
     listCode(),
     maybeCode(),
     resultCode(),
@@ -283,6 +284,44 @@ const boolCode: ts.Function = {
       ts.addition(parameterIndex, ts.numberLiteral(1))
     )
   ]
+};
+
+/* ========================================
+                  Binary
+   ========================================
+*/
+
+const binaryName = identifer.fromString("decodeBinary");
+
+const binaryCode = (): ts.Function => {
+  const lengthName = identifer.fromString("length");
+  const lengthVar = ts.variable(lengthName);
+  const nextIndexName = identifer.fromString("nextIndex");
+  const nextIndexVar = ts.variable(nextIndexName);
+
+  return {
+    name: binaryName,
+    document: "",
+    parameterList,
+    returnType: returnType(ts.uint8ArrayType),
+    typeParameterList: [],
+    statementList: [
+      ts.statementVariableDefinition(
+        lengthName,
+        returnType(ts.typeNumber),
+        intVarEval(parameterIndex, parameterBinary)
+      ),
+      ts.statementVariableDefinition(
+        nextIndexName,
+        ts.typeNumber,
+        ts.addition(getNextIndex(lengthVar), getResult(lengthVar))
+      ),
+      returnStatement(
+        ts.callMethod(parameterBinary, "slice", [parameterIndex, nextIndexVar]),
+        nextIndexVar
+      )
+    ]
+  };
 };
 
 /* ========================================
@@ -813,6 +852,8 @@ const decodeFunctionExpr = (type_: type.Type): ts.Expr => {
       return ts.variable(stringName);
     case "Bool":
       return ts.variable(boolName);
+    case "Binary":
+      return ts.variable(binaryName);
     case "List":
       return ts.call(ts.variable(listName), [decodeFunctionExpr(type_.type_)]);
     case "Maybe":

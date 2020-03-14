@@ -211,6 +211,9 @@ export const encodeBool = (value: boolean): ReadonlyArray<number> => [
   value ? 1 : 0
 ];
 
+export const encodeBinary = (value: Uint8Array): ReadonlyArray<number> =>
+  encodeInt32(value.length).concat(Array["from"](value));
+
 export const encodeList = <T>(
   encodeFunction: (a: T) => ReadonlyArray<number>
 ): ((a: ReadonlyArray<T>) => ReadonlyArray<number>) => (
@@ -421,6 +424,22 @@ export const decodeBool = (
   result: binary[index] !== 0,
   nextIndex: index + 1
 });
+
+/**
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ */
+export const decodeBinary = (
+  index: number,
+  binary: Uint8Array
+): { result: Uint8Array; nextIndex: number } => {
+  const length: { result: number; nextIndex: number } = decodeInt32(
+    index,
+    binary
+  );
+  const nextIndex: number = length.nextIndex + length.result;
+  return { result: binary.slice(index, nextIndex), nextIndex: nextIndex };
+};
 
 export const decodeList = <T>(
   decodeFunction: (a: number, b: Uint8Array) => { result: T; nextIndex: number }
