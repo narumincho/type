@@ -102,3 +102,9 @@ test(
 );
 
 test("custom", out.typeList(out.typeInt), out.encodeType, out.decodeType);
+test(
+  "binary",
+  out.maybeJust(new Uint8Array([1, 2, 5, 2, 722, 36, 163, -31, 61])),
+  out.encodeMaybe(out.encodeBinary),
+  out.decodeMaybe(out.decodeBinary)
+);

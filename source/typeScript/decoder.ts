@@ -317,7 +317,10 @@ const binaryCode = (): ts.Function => {
         ts.addition(getNextIndex(lengthVar), getResult(lengthVar))
       ),
       returnStatement(
-        ts.callMethod(parameterBinary, "slice", [parameterIndex, nextIndexVar]),
+        ts.callMethod(parameterBinary, "slice", [
+          getNextIndex(lengthVar),
+          nextIndexVar
+        ]),
         nextIndexVar
       )
     ]

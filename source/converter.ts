@@ -116,7 +116,7 @@ export const decodeBinary = (
   const length = decodeInt32(index, binary);
   const nextIndex = length.nextIndex + length.result;
   return {
-    result: binary.slice(index, nextIndex),
+    result: binary.slice(length.nextIndex, nextIndex),
     nextIndex: nextIndex
   };
 };

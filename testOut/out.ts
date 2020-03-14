@@ -438,7 +438,10 @@ export const decodeBinary = (
     binary
   );
   const nextIndex: number = length.nextIndex + length.result;
-  return { result: binary.slice(index, nextIndex), nextIndex: nextIndex };
+  return {
+    result: binary.slice(length.nextIndex, nextIndex),
+    nextIndex: nextIndex
+  };
 };
 
 export const decodeList = <T>(
