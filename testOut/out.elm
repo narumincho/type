@@ -8,15 +8,15 @@ import Json.Encode as Je
 {-| 型
 -}
 type Type
-    = Int
-    | String
-    | Bool
-    | List Type
-    | Maybe Type
-    | Result ResultType
-    | Id String
-    | Token String
-    | Custom String
+    = TypeInt
+    | TypeString
+    | TypeBool
+    | TypeList Type
+    | TypeMaybe Type
+    | TypeResult ResultType
+    | TypeId String
+    | TypeToken String
+    | TypeCustom String
 
 
 {-| 正常値と異常値
@@ -28,9 +28,9 @@ type alias ResultType =
 {-| 英語,日本語,エスペラント語などの言語
 -}
 type Language
-    = Japanese
-    | English
-    | Esperanto
+    = LanguageJapanese
+    | LanguageEnglish
+    | LanguageEsperanto
 
 
 {-| デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( <https://support.google.com/webmasters/answer/182192?hl=ja> )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は <http://[::1]> になる
@@ -42,16 +42,16 @@ type alias UrlData =
 {-| デバッグの状態と, デバッグ時ならアクセスしているポート番号
 -}
 type ClientMode
-    = DebugMode Int
-    | Release
+    = ClientModeDebugMode Int
+    | ClientModeRelease
 
 
 {-| DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる
 -}
 type Location
-    = Home
-    | User UserId
-    | Project ProjectId
+    = LocationHome
+    | LocationUser UserId
+    | LocationProject ProjectId
 
 
 type AccessToken
