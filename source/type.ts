@@ -315,3 +315,61 @@ const getIdOrTokenTypeNameInType = (type_: Type): Set<string> => {
       ]);
   }
 };
+
+export const isIncludeBinaryType = (customType: CustomType): boolean => {
+  switch (customType.body._) {
+    case "Product":
+      return isIncludeBinaryTypeInProduct(
+        customType.body.memberNameAndTypeList
+      );
+    case "Sum":
+      return isIncludeBinaryTypeInSum(customType.body.tagNameAndParameterList);
+  }
+};
+
+const isIncludeBinaryTypeInProduct = (
+  memberNameAndTypeList: ReadonlyArray<MemberNameAndType>
+): boolean => {
+  for (const memberNameAndType of memberNameAndTypeList) {
+    if (isIncludeBinaryTypeInType(memberNameAndType.memberType)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const isIncludeBinaryTypeInSum = (
+  tagNameAndParameterList: ReadonlyArray<TagNameAndParameter>
+): boolean => {
+  for (const tagNameAndParameter of tagNameAndParameterList) {
+    switch (tagNameAndParameter.parameter._) {
+      case "Just":
+        if (isIncludeBinaryTypeInType(tagNameAndParameter.parameter.value)) {
+          return true;
+        }
+    }
+  }
+  return false;
+};
+
+const isIncludeBinaryTypeInType = (type_: Type): boolean => {
+  switch (type_._) {
+    case "Int32":
+    case "String":
+    case "Bool":
+    case "Custom":
+    case "Id":
+    case "Token":
+      return false;
+    case "Binary":
+      return true;
+    case "List":
+    case "Maybe":
+      return isIncludeBinaryTypeInType(type_.type_);
+    case "Result":
+      return (
+        isIncludeBinaryTypeInType(type_.resultType.ok) ||
+        isIncludeBinaryTypeInType(type_.resultType.error)
+      );
+  }
+};

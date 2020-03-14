@@ -7,19 +7,26 @@ export const generateCode = (
   idOrTokenTypeNameSet: Set<string>
 ): string => {
   const idOrTokenTypeNameList = [...idOrTokenTypeNameSet];
+  const notIncludeBinaryCustomTypeList = customTypeList.filter(
+    customType => !type.isIncludeBinaryType(customType)
+  );
   return [
-    moduleExportList(moduleName, customTypeList, idOrTokenTypeNameSet),
+    moduleExportList(
+      moduleName,
+      notIncludeBinaryCustomTypeList,
+      idOrTokenTypeNameSet
+    ),
     importList,
-    ...customTypeList.map(customTypeToTypeDefinitionCode),
+    ...notIncludeBinaryCustomTypeList.map(customTypeToTypeDefinitionCode),
     ...idOrTokenTypeNameList.map(idOrTokenTypeToTypeDefinitionCode),
     maybeToJsonValueCode,
     resultToJsonValueCode,
     ...idOrTokenTypeNameList.map(idOrTokenTypeToToJsonValueCode),
-    ...customTypeList.map(customTypeToToJsonValueCode),
+    ...notIncludeBinaryCustomTypeList.map(customTypeToToJsonValueCode),
     maybeJsonDecoder,
     resultJsonDecoder,
     ...idOrTokenTypeNameList.map(idOrTokenToJsonDecoderCode),
-    ...customTypeList.map(customTypeToJsonDecoder)
+    ...notIncludeBinaryCustomTypeList.map(customTypeToJsonDecoder)
   ].join("\n\n");
 };
 
@@ -315,6 +322,8 @@ const toJsonValueFunction = (type_: type.Type): string => {
       return "Je.string";
     case "Bool":
       return "Je.bool";
+    case "Binary":
+      return '"@narumincho/type not support binary encode in Elm."';
     case "List":
       return "Je.list (" + toJsonValueFunction(type_.type_) + ")";
     case "Maybe":
@@ -506,6 +515,8 @@ const typeToDecoder = (type_: type.Type): string => {
       return "Jd.string";
     case "Bool":
       return "Jd.bool";
+    case "Binary":
+      return '"@narumincho/type not support binary decode in Elm."';
     case "List":
       return "(Jd.list " + typeToDecoder(type_.type_) + ")";
     case "Maybe":
@@ -536,6 +547,8 @@ const typeToElmType = (type_: type.Type): string => {
       return "String";
     case "Bool":
       return "Bool";
+    case "Binary":
+      return '"@narumincho/type not support binary type in Elm."';
     case "Id":
     case "Token":
       return type_.string_;
