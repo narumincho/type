@@ -70,8 +70,14 @@ export const decodeUInt32 = (
   throw new Error("larger than 32-bits");
 };
 
+/**
+ * stringからバイナリに変換する.
+ */
 export const encodeString = (text: string): ReadonlyArray<number> => {
-  return Array.from(new TextEncoder().encode(text));
+  const result: ReadonlyArray<number> = Array["from"](
+    new TextEncoder().encode(text)
+  );
+  return encodeInt32(result.length).concat(result);
 };
 
 export const decodeString = (
@@ -81,12 +87,9 @@ export const decodeString = (
   const length = decodeUInt32(index, binary);
   return {
     result: new TextDecoder().decode(
-      binary.slice(
-        index + length.nextIndex,
-        index + length.nextIndex + length.result
-      )
+      binary.slice(length.nextIndex, length.nextIndex + length.result)
     ),
-    nextIndex: index + length.nextIndex + length.result
+    nextIndex: length.nextIndex + length.result
   };
 };
 
@@ -101,6 +104,21 @@ export const decodeBoolean = (
   result: binary[index] !== 0,
   nextIndex: index + 1
 });
+
+export const encodeBinary = (value: Uint8Array): ReadonlyArray<number> => {
+  return [value.length].concat(Array.from(value));
+};
+
+export const decodeBinary = (
+  index: number,
+  binary: Uint8Array
+): { result: Uint8Array; nextIndex: number } => {
+  const length = decodeInt32(index, binary);
+  return {
+    result: binary.slice(index, length.result),
+    nextIndex: length.nextIndex + length.result
+  };
+};
 
 export const encodeHash = (hash: string): ReadonlyArray<number> => {
   const result = [];
