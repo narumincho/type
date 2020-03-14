@@ -1,4 +1,4 @@
-module Data exposing (FileToken(..), Language(..), ResultType, Type(..), UserId(..), fileTokenJsonDecoder, fileTokenToJsonValue, languageJsonDecoder, languageToJsonValue, maybeJsonDecoder, maybeToJsonValue, resultJsonDecoder, resultToJsonValue, resultTypeJsonDecoder, resultTypeToJsonValue, typeJsonDecoder, typeToJsonValue, userIdJsonDecoder, userIdToJsonValue)
+module Data exposing (Language(..), ResultType, Type(..), languageJsonDecoder, languageToJsonValue, maybeJsonDecoder, maybeToJsonValue, resultJsonDecoder, resultToJsonValue, resultTypeJsonDecoder, resultTypeToJsonValue, typeJsonDecoder, typeToJsonValue)
 
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp
@@ -33,14 +33,6 @@ type Language
     | Elm
 
 
-type UserId
-    = UserId String
-
-
-type FileToken
-    = FileToken String
-
-
 maybeToJsonValue : (a -> Je.Value) -> Maybe a -> Je.Value
 maybeToJsonValue toJsonValueFunction maybe =
     case maybe of
@@ -59,16 +51,6 @@ resultToJsonValue okToJsonValueFunction errorToJsonValueFunction result =
 
         Err value ->
             Je.object [ ( "_", Je.string "Error" ), ( "error", errorToJsonValueFunction value ) ]
-
-
-userIdToJsonValue : UserId -> Je.Value
-userIdToJsonValue (UserId string) =
-    Je.string string
-
-
-fileTokenToJsonValue : FileToken -> Je.Value
-fileTokenToJsonValue (FileToken string) =
-    Je.string string
 
 
 {-| TypeのJSONへのエンコーダ
@@ -161,16 +143,6 @@ resultJsonDecoder okDecoder errorDecoder =
                     _ ->
                         Jd.fail "resultのtagの指定が間違っていた"
             )
-
-
-userIdJsonDecoder : Jd.Decoder UserId
-userIdJsonDecoder =
-    Jd.map UserId Jd.string
-
-
-fileTokenJsonDecoder : Jd.Decoder FileToken
-fileTokenJsonDecoder =
-    Jd.map FileToken Jd.string
 
 
 {-| TypeのJSON Decoder

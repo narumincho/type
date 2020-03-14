@@ -169,14 +169,14 @@ const customTypeCode = (
       case "Sum": {
         if (
           type.isProductTypeAllNoParameter(
-            customType.body.tagNameAndParameterArray
+            customType.body.tagNameAndParameterList
           )
         ) {
           break;
         }
         const definitionList = productTypeToTagList(
           customType.name,
-          customType.body.tagNameAndParameterArray
+          customType.body.tagNameAndParameterList
         );
         for (const definition of definitionList) {
           result.push(definition);

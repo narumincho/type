@@ -642,10 +642,10 @@ const customCode = (customType: type.CustomType): ts.Function => {
       case "Sum":
         return customSumCode(
           customType.name,
-          customType.body.tagNameAndParameterArray
+          customType.body.tagNameAndParameterList
         );
       case "Product":
-        return customProductCode(customType.body.memberNameAndTypeArray);
+        return customProductCode(customType.body.memberNameAndTypeList);
     }
   })();
 

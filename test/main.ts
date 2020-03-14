@@ -5,6 +5,8 @@ import * as fileSystem from "fs";
 import * as ts from "typescript";
 import * as childProcess from "child_process";
 
+const userId: type.Type = type.typeId("UserId");
+
 const typeType: type.CustomType = {
   name: "Type",
   description: "型",
@@ -99,16 +101,17 @@ const language: type.CustomType = {
   ])
 };
 
-const schema: type.Schema = {
-  customTypeList: [typeType, resultTypeType, language],
-  idOrTokenTypeNameList: ["UserId", "FileToken"]
-};
+const customTypeList: ReadonlyArray<type.CustomType> = [
+  typeType,
+  resultTypeType,
+  language
+];
 
 const typeDefinitionTypeScriptCode = generator.generateCodeAsString(
-  t.generateTypeScriptCode(schema),
+  t.generateTypeScriptCode(customTypeList),
   "TypeScript"
 );
-const elmCodeAsString: string = t.elm.generateCode("Data", schema);
+const elmCodeAsString: string = t.generateElmCode("Data", customTypeList);
 
 const testOutFolderName = "testOut";
 const typeScriptPath = testOutFolderName + "/out.ts";

@@ -35,10 +35,6 @@ export type ResultType = { ok: Type; error: Type };
  */
 export type Language = "TypeScript" | "JavaScript" | "Elm";
 
-export type UserId = string & { _userId: never };
-
-export type FileToken = string & { _fileToken: never };
-
 export const maybeJust = <T>(value: T): Maybe<T> => ({
   _: "Just",
   value: value

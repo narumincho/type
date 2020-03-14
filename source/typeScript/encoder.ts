@@ -527,12 +527,12 @@ export const customCode = (customType: type.CustomType): ts.Function => {
     switch (customType.body._) {
       case "Product":
         return customProductCode(
-          customType.body.memberNameAndTypeArray,
+          customType.body.memberNameAndTypeList,
           parameterVar
         );
       case "Sum":
         return customSumCode(
-          customType.body.tagNameAndParameterArray,
+          customType.body.tagNameAndParameterList,
           parameterVar
         );
     }

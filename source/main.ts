@@ -6,27 +6,29 @@ import * as tag from "./typeScript/tag";
 import * as type from "./type";
 import { data } from "js-ts-code-generator";
 
-export {
-  elm,
-  typeDefinition as typeDefinitionTypeScript,
-  encoder as binaryConverterTypeScriptEncoder,
-  type
-};
+export { type };
 
-export const generateTypeScriptCode = (schema: type.Schema): data.Code => {
+export const generateTypeScriptCode = (
+  customTypeList: ReadonlyArray<type.CustomType>
+): data.Code => {
+  const idOrTokenTypeNameSet = type.collectIdOrTokenTypeNameSet(customTypeList);
   return {
     exportDefinitionList: [
       ...typeDefinition
-        .generateTypeDefinition(schema)
+        .generateTypeDefinition(customTypeList, idOrTokenTypeNameSet)
         .map(data.definitionTypeAlias),
-      ...tag.generate(schema.customTypeList),
-      ...encoder
-        .generateCode(schema.customTypeList)
-        .map(data.definitionFunction),
-      ...decoder
-        .generateCode(schema.customTypeList)
-        .map(data.definitionFunction)
+      ...tag.generate(customTypeList),
+      ...encoder.generateCode(customTypeList).map(data.definitionFunction),
+      ...decoder.generateCode(customTypeList).map(data.definitionFunction)
     ],
     statementList: []
   };
+};
+
+export const generateElmCode = (
+  moduleName: string,
+  customTypeList: ReadonlyArray<type.CustomType>
+): string => {
+  const idOrTokenTypeNameSet = type.collectIdOrTokenTypeNameSet(customTypeList);
+  return elm.generateCode(moduleName, customTypeList, idOrTokenTypeNameSet);
 };

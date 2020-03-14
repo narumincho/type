@@ -3,34 +3,40 @@ import * as c from "./case";
 
 export const generateCode = (
   moduleName: string,
-  schema: type.Schema
+  customTypeList: ReadonlyArray<type.CustomType>,
+  idOrTokenTypeNameSet: Set<string>
 ): string => {
+  const idOrTokenTypeNameList = [...idOrTokenTypeNameSet];
   return [
-    moduleExportList(moduleName, schema),
+    moduleExportList(moduleName, customTypeList, idOrTokenTypeNameSet),
     importList,
-    ...schema.customTypeList.map(customTypeToTypeDefinitionCode),
-    ...schema.idOrTokenTypeNameList.map(idOrTokenTypeToTypeDefinitionCode),
+    ...customTypeList.map(customTypeToTypeDefinitionCode),
+    ...idOrTokenTypeNameList.map(idOrTokenTypeToTypeDefinitionCode),
     maybeToJsonValueCode,
     resultToJsonValueCode,
-    ...schema.idOrTokenTypeNameList.map(idOrTokenTypeToToJsonValueCode),
-    ...schema.customTypeList.map(customTypeToToJsonValueCode),
+    ...idOrTokenTypeNameList.map(idOrTokenTypeToToJsonValueCode),
+    ...customTypeList.map(customTypeToToJsonValueCode),
     maybeJsonDecoder,
     resultJsonDecoder,
-    ...schema.idOrTokenTypeNameList.map(idOrTokenToJsonDecoderCode),
-    ...schema.customTypeList.map(customTypeToJsonDecoder)
+    ...idOrTokenTypeNameList.map(idOrTokenToJsonDecoderCode),
+    ...customTypeList.map(customTypeToJsonDecoder)
   ].join("\n\n");
 };
 
-const moduleExportList = (name: string, schema: type.Schema): string => {
+const moduleExportList = (
+  moduleName: string,
+  customTypeList: ReadonlyArray<type.CustomType>,
+  idOrTokenTypeNameSet: Set<string>
+): string => {
   return (
     "module " +
-    name +
+    moduleName +
     " exposing (" +
     [
-      ...schema.idOrTokenTypeNameList.map(
+      ...[...idOrTokenTypeNameSet].map(
         idOrTokenTypeName => idOrTokenTypeName + "(..)"
       ),
-      ...schema.customTypeList.map(customType => {
+      ...customTypeList.map(customType => {
         switch (customType.body._) {
           case "Sum":
             return customType.name + "(..)";
@@ -40,18 +46,18 @@ const moduleExportList = (name: string, schema: type.Schema): string => {
       }),
       "maybeToJsonValue",
       "resultToJsonValue",
-      ...schema.idOrTokenTypeNameList.map(
+      ...[...idOrTokenTypeNameSet].map(
         customOrIdOrTokenTypeNameToToJsonValueFunctionName
       ),
-      ...schema.customTypeList.map(customType =>
+      ...customTypeList.map(customType =>
         customOrIdOrTokenTypeNameToToJsonValueFunctionName(customType.name)
       ),
       "maybeJsonDecoder",
       "resultJsonDecoder",
-      ...schema.idOrTokenTypeNameList.map(
+      ...[...idOrTokenTypeNameSet].map(
         customOrIdOrTokenTypeNameToJsonDecoderFunctionName
       ),
-      ...schema.customTypeList.map(customType =>
+      ...customTypeList.map(customType =>
         customOrIdOrTokenTypeNameToJsonDecoderFunctionName(customType.name)
       )
     ].join(", ") +
@@ -72,12 +78,12 @@ const customTypeToTypeDefinitionCode = (
     case "Sum":
       return (
         commentToCode(customType.description) +
-        createType(customType.name, customType.body.tagNameAndParameterArray)
+        createType(customType.name, customType.body.tagNameAndParameterList)
       );
     case "Product":
       return (
         commentToCode(customType.description) +
-        createTypeAlias(customType.name, customType.body.memberNameAndTypeArray)
+        createTypeAlias(customType.name, customType.body.memberNameAndTypeList)
       );
   }
 };
@@ -189,7 +195,7 @@ const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
       return (
         header +
         customTypeSumToToJsonValueCodeBody(
-          customType.body.tagNameAndParameterArray,
+          customType.body.tagNameAndParameterList,
           parameterName
         )
       );
@@ -197,7 +203,7 @@ const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
       return (
         header +
         customTypeProductToToJsonValueCodeBody(
-          customType.body.memberNameAndTypeArray,
+          customType.body.memberNameAndTypeList,
           parameterName
         )
       );
@@ -393,7 +399,7 @@ const customTypeToJsonDecoder = (customType: type.CustomType): string => {
       return (
         header +
         customTypeSumToJsonDecoderCodeBody(
-          customType.body.tagNameAndParameterArray,
+          customType.body.tagNameAndParameterList,
           customType.name
         )
       );
@@ -401,7 +407,7 @@ const customTypeToJsonDecoder = (customType: type.CustomType): string => {
       return (
         header +
         customTypeProductToJsonDecoderCodeBody(
-          customType.body.memberNameAndTypeArray
+          customType.body.memberNameAndTypeList
         )
       );
   }

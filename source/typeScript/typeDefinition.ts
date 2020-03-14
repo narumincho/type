@@ -4,13 +4,14 @@ import * as util from "./util";
 import * as c from "../case";
 
 export const generateTypeDefinition = (
-  schema: type.Schema
+  customTypeList: ReadonlyArray<type.CustomType>,
+  idOrTokenTypeNameSet: Set<string>
 ): ReadonlyArray<ts.TypeAlias> => {
   return [
     maybeDefinition,
     resultDefinition,
-    ...schema.customTypeList.map(customTypeToDefinition),
-    ...schema.idOrTokenTypeNameList.map(idOrTokenDefinition)
+    ...customTypeList.map(customTypeToDefinition),
+    ...[...idOrTokenTypeNameSet].map(idOrTokenDefinition)
   ];
 };
 
@@ -122,7 +123,7 @@ export const customTypeToDefinition = (
     case "Sum":
       if (
         type.isProductTypeAllNoParameter(
-          customType.body.tagNameAndParameterArray
+          customType.body.tagNameAndParameterList
         )
       ) {
         return {
@@ -130,7 +131,7 @@ export const customTypeToDefinition = (
           document: customType.description,
           parameterList: [],
           type_: ts.typeUnion(
-            customType.body.tagNameAndParameterArray.map(tagNameAndParameter =>
+            customType.body.tagNameAndParameterList.map(tagNameAndParameter =>
               ts.typeStringLiteral(tagNameAndParameter.name)
             )
           )
@@ -141,7 +142,7 @@ export const customTypeToDefinition = (
         document: customType.description,
         parameterList: [],
         type_: ts.typeUnion(
-          customType.body.tagNameAndParameterArray.map(tagNameAndParameter =>
+          customType.body.tagNameAndParameterList.map(tagNameAndParameter =>
             tagNameAndParameterToObjectType(tagNameAndParameter)
           )
         )
@@ -153,7 +154,7 @@ export const customTypeToDefinition = (
         parameterList: [],
         type_: ts.typeObject(
           new Map(
-            customType.body.memberNameAndTypeArray.map(memberNameAndType => [
+            customType.body.memberNameAndTypeList.map(memberNameAndType => [
               memberNameAndType.name,
               {
                 type_: util.typeToTypeScriptType(memberNameAndType.memberType),

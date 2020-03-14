@@ -1,11 +1,6 @@
 import * as c from "./case";
 import { identifer } from "js-ts-code-generator";
 
-export type Schema = {
-  customTypeList: ReadonlyArray<CustomType>;
-  idOrTokenTypeNameList: ReadonlyArray<string>;
-};
-
 /**
  * Maybe
  */
@@ -109,11 +104,11 @@ export type CustomType = {
 export type CustomTypeBody =
   | {
       _: "Product";
-      memberNameAndTypeArray: ReadonlyArray<MemberNameAndType>;
+      memberNameAndTypeList: ReadonlyArray<MemberNameAndType>;
     }
   | {
       _: "Sum";
-      tagNameAndParameterArray: ReadonlyArray<TagNameAndParameter>;
+      tagNameAndParameterList: ReadonlyArray<TagNameAndParameter>;
     };
 
 export type TagNameAndParameter = {
@@ -129,17 +124,17 @@ export type MemberNameAndType = {
 };
 
 export const customTypeBodySum = (
-  tagNameAndParameterArray: ReadonlyArray<TagNameAndParameter>
+  tagNameAndParameterList: ReadonlyArray<TagNameAndParameter>
 ): CustomTypeBody => ({
   _: "Sum",
-  tagNameAndParameterArray
+  tagNameAndParameterList
 });
 
 export const customTypeBodyProduct = (
-  memberNameAndTypeArray: ReadonlyArray<MemberNameAndType>
+  memberNameAndTypeList: ReadonlyArray<MemberNameAndType>
 ): CustomTypeBody => ({
   _: "Product",
-  memberNameAndTypeArray
+  memberNameAndTypeList
 });
 
 export const maybeJust = <T>(value: T): Maybe<T> => ({
@@ -233,3 +228,78 @@ const elmReservedList = [
   "as",
   "alias"
 ];
+
+export const collectIdOrTokenTypeNameSet = (
+  customTypeList: ReadonlyArray<CustomType>
+): Set<string> => {
+  const idAndTokenTypeNameSet: Set<string> = new Set();
+  for (const customType of customTypeList) {
+    const idAndTokenTypeNameSetInCustomType = collectIdOrTokenTypeNameSetInCustomType(
+      customType
+    );
+    for (const idAndTokenTypeName of idAndTokenTypeNameSetInCustomType) {
+      idAndTokenTypeNameSet.add(idAndTokenTypeName);
+    }
+  }
+  return idAndTokenTypeNameSet;
+};
+
+const collectIdOrTokenTypeNameSetInCustomType = (
+  customType: CustomType
+): Set<string> => {
+  switch (customType.body._) {
+    case "Product":
+      return collectIdOrTokenTypeNameSetInProduct(
+        customType.body.memberNameAndTypeList
+      );
+    case "Sum":
+      return collectIdOrTokenTypeNameSetInSum(
+        customType.body.tagNameAndParameterList
+      );
+  }
+};
+
+const collectIdOrTokenTypeNameSetInProduct = (
+  memberNameAndTypeList: ReadonlyArray<MemberNameAndType>
+): Set<string> => {
+  const idAndTokenTypeNameSet: Set<string> = new Set();
+  for (const memberNameAndType of memberNameAndTypeList) {
+    const maybeIdAndTokenTypeName = getIdOrTokenTypeNameInType(
+      memberNameAndType.memberType
+    );
+    switch (maybeIdAndTokenTypeName._) {
+      case "Just":
+        idAndTokenTypeNameSet.add(maybeIdAndTokenTypeName.value);
+    }
+  }
+  return idAndTokenTypeNameSet;
+};
+
+const collectIdOrTokenTypeNameSetInSum = (
+  tagNameAndParameterList: ReadonlyArray<TagNameAndParameter>
+): Set<string> => {
+  const idAndTokenTypeNameSet: Set<string> = new Set();
+  for (const memberNameAndType of tagNameAndParameterList) {
+    switch (memberNameAndType.parameter._) {
+      case "Just": {
+        const maybeIdAndTokenTypeName = getIdOrTokenTypeNameInType(
+          memberNameAndType.parameter.value
+        );
+        switch (maybeIdAndTokenTypeName._) {
+          case "Just":
+            idAndTokenTypeNameSet.add(maybeIdAndTokenTypeName.value);
+        }
+      }
+    }
+  }
+  return idAndTokenTypeNameSet;
+};
+
+const getIdOrTokenTypeNameInType = (type_: Type): Maybe<string> => {
+  switch (type_._) {
+    case "Id":
+    case "Token":
+      return maybeJust(type_.string_);
+  }
+  return maybeNothing();
+};
