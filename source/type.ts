@@ -20,6 +20,7 @@ export type Type =
   | { _: "Int32" }
   | { _: "String" }
   | { _: "Bool" }
+  | { _: "Binary" }
   | { _: "List"; type_: Type }
   | { _: "Maybe"; type_: Type }
   | { _: "Result"; resultType: ResultType }
@@ -47,6 +48,10 @@ export const typeString: Type = { _: "String" };
  */
 export const typeBool: Type = { _: "Bool" };
 
+/**
+ * バイナリ
+ */
+export const typeBinary: Type = { _: "Binary" };
 /**
  * リスト
  *
@@ -167,6 +172,8 @@ export const toTypeName = (type_: Type): string => {
       return "String";
     case "Bool":
       return "Bool";
+    case "Binary":
+      return "Binary";
     case "List":
       return toTypeName(type_.type_) + "List";
     case "Maybe":
@@ -292,6 +299,7 @@ const getIdOrTokenTypeNameInType = (type_: Type): Set<string> => {
     case "Int32":
     case "String":
     case "Bool":
+    case "Binary":
     case "Custom":
       return new Set();
     case "Id":
@@ -305,5 +313,63 @@ const getIdOrTokenTypeNameInType = (type_: Type): Set<string> => {
         ...getIdOrTokenTypeNameInType(type_.resultType.ok),
         ...getIdOrTokenTypeNameInType(type_.resultType.error)
       ]);
+  }
+};
+
+export const isIncludeBinaryType = (customType: CustomType): boolean => {
+  switch (customType.body._) {
+    case "Product":
+      return isIncludeBinaryTypeInProduct(
+        customType.body.memberNameAndTypeList
+      );
+    case "Sum":
+      return isIncludeBinaryTypeInSum(customType.body.tagNameAndParameterList);
+  }
+};
+
+const isIncludeBinaryTypeInProduct = (
+  memberNameAndTypeList: ReadonlyArray<MemberNameAndType>
+): boolean => {
+  for (const memberNameAndType of memberNameAndTypeList) {
+    if (isIncludeBinaryTypeInType(memberNameAndType.memberType)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const isIncludeBinaryTypeInSum = (
+  tagNameAndParameterList: ReadonlyArray<TagNameAndParameter>
+): boolean => {
+  for (const tagNameAndParameter of tagNameAndParameterList) {
+    switch (tagNameAndParameter.parameter._) {
+      case "Just":
+        if (isIncludeBinaryTypeInType(tagNameAndParameter.parameter.value)) {
+          return true;
+        }
+    }
+  }
+  return false;
+};
+
+const isIncludeBinaryTypeInType = (type_: Type): boolean => {
+  switch (type_._) {
+    case "Int32":
+    case "String":
+    case "Bool":
+    case "Custom":
+    case "Id":
+    case "Token":
+      return false;
+    case "Binary":
+      return true;
+    case "List":
+    case "Maybe":
+      return isIncludeBinaryTypeInType(type_.type_);
+    case "Result":
+      return (
+        isIncludeBinaryTypeInType(type_.resultType.ok) ||
+        isIncludeBinaryTypeInType(type_.resultType.error)
+      );
   }
 };
