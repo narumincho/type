@@ -1,6 +1,6 @@
 {
   "name": "@narumincho/type",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Generate TypeScript and Elm type definitions, encode and decode code",
   "main": "distribution/main.js",
   "scripts": {
