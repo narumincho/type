@@ -107,17 +107,19 @@ const createType = (
       switch (tagNameAndParameter.parameter._) {
         case "Just":
           return (
-            typeName +
-            tagNameAndParameter.name +
+            createConstructor(typeName, tagNameAndParameter.name) +
             " " +
             typeToElmType(tagNameAndParameter.parameter.value)
           );
         case "Nothing":
-          return typeName + tagNameAndParameter.name;
+          return createConstructor(typeName, tagNameAndParameter.name);
       }
     })
     .join("\n  | ") +
   "\n";
+
+const createConstructor = (customTypeName: string, tagName: string): string =>
+  customTypeName + tagName;
 
 const createTypeAlias = (
   typeName: string,
@@ -203,6 +205,7 @@ const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
       return (
         header +
         customTypeSumToToJsonValueCodeBody(
+          customType.name,
           customType.body.tagNameAndParameterList,
           parameterName
         )
@@ -219,6 +222,7 @@ const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
 };
 
 const customTypeSumToToJsonValueCodeBody = (
+  customTypeName: string,
   tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
   parameterName: string
 ): string => {
@@ -230,7 +234,7 @@ const customTypeSumToToJsonValueCodeBody = (
         .map(
           tagNameAndParameter =>
             indentString.repeat(2) +
-            tagNameAndParameter.name +
+            createConstructor(customTypeName, tagNameAndParameter.name) +
             " ->\n" +
             indentString.repeat(3) +
             'Je.string "' +
@@ -248,7 +252,7 @@ const customTypeSumToToJsonValueCodeBody = (
           case "Just": {
             return (
               indentString.repeat(2) +
-              tagNameAndParameter.name +
+              createConstructor(customTypeName, tagNameAndParameter.name) +
               " parameter ->\n" +
               indentString.repeat(3) +
               'Je.object [ ( "_", Je.string "' +
@@ -269,7 +273,7 @@ const customTypeSumToToJsonValueCodeBody = (
           case "Nothing":
             return (
               indentString.repeat(2) +
-              tagNameAndParameter.name +
+              createConstructor(customTypeName, tagNameAndParameter.name) +
               " ->\n" +
               indentString.repeat(3) +
               'Je.object [ ( "_", Je.string "' +
@@ -409,8 +413,8 @@ const customTypeToJsonDecoder = (customType: type.CustomType): string => {
       return (
         header +
         customTypeSumToJsonDecoderCodeBody(
-          customType.body.tagNameAndParameterList,
-          customType.name
+          customType.name,
+          customType.body.tagNameAndParameterList
         )
       );
     case "Product":
@@ -424,8 +428,8 @@ const customTypeToJsonDecoder = (customType: type.CustomType): string => {
 };
 
 const customTypeSumToJsonDecoderCodeBody = (
-  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>,
-  customTypeName: string
+  customTypeName: string,
+  tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
 ): string => {
   const tagToDecoderLambda =
     indentString.repeat(2) +
@@ -435,23 +439,8 @@ const customTypeSumToJsonDecoderCodeBody = (
     indentString.repeat(4) +
     "case tag of\n" +
     tagNameAndParameterArray
-      .map(
-        tagNameAndParameter =>
-          indentString.repeat(5) +
-          '"' +
-          tagNameAndParameter.name +
-          '" ->\n' +
-          indentString.repeat(6) +
-          (tagNameAndParameter.parameter._ === "Just"
-            ? 'Jd.field "' +
-              (type.typeToMemberOrParameterName(
-                tagNameAndParameter.parameter.value
-              ) as string) +
-              '" ' +
-              typeToDecoder(tagNameAndParameter.parameter.value) +
-              " |> Jd.map " +
-              tagNameAndParameter.name
-            : "Jd.succeed " + tagNameAndParameter.name)
+      .map(tagNameAndParameter =>
+        tagNameAndParameterToPatternCode(customTypeName, tagNameAndParameter)
       )
       .join("\n") +
     "\n" +
@@ -468,6 +457,33 @@ const customTypeSumToJsonDecoderCodeBody = (
     return indentString + "Jd.string\n" + tagToDecoderLambda;
   }
   return indentString + 'Jd.field "_" Jd.string\n' + tagToDecoderLambda;
+};
+
+const tagNameAndParameterToPatternCode = (
+  customTypeName: string,
+  tagNameAndParameter: type.TagNameAndParameter
+): string => {
+  const constructor = createConstructor(
+    customTypeName,
+    tagNameAndParameter.name
+  );
+  return (
+    indentString.repeat(5) +
+    '"' +
+    tagNameAndParameter.name +
+    '" ->\n' +
+    indentString.repeat(6) +
+    (tagNameAndParameter.parameter._ === "Just"
+      ? 'Jd.field "' +
+        (type.typeToMemberOrParameterName(
+          tagNameAndParameter.parameter.value
+        ) as string) +
+        '" ' +
+        typeToDecoder(tagNameAndParameter.parameter.value) +
+        " |> Jd.map " +
+        constructor
+      : "Jd.succeed " + constructor)
+  );
 };
 
 const customTypeProductToJsonDecoderCodeBody = (

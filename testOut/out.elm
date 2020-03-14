@@ -106,31 +106,31 @@ projectIdToJsonValue (ProjectId string) =
 typeToJsonValue : Type -> Je.Value
 typeToJsonValue type_ =
     case type_ of
-        Int ->
+        TypeInt ->
             Je.object [ ( "_", Je.string "Int" ) ]
 
-        String ->
+        TypeString ->
             Je.object [ ( "_", Je.string "String" ) ]
 
-        Bool ->
+        TypeBool ->
             Je.object [ ( "_", Je.string "Bool" ) ]
 
-        List parameter ->
+        TypeList parameter ->
             Je.object [ ( "_", Je.string "List" ), ( "type_", typeToJsonValue parameter ) ]
 
-        Maybe parameter ->
+        TypeMaybe parameter ->
             Je.object [ ( "_", Je.string "Maybe" ), ( "type_", typeToJsonValue parameter ) ]
 
-        Result parameter ->
+        TypeResult parameter ->
             Je.object [ ( "_", Je.string "Result" ), ( "resultType", resultTypeToJsonValue parameter ) ]
 
-        Id parameter ->
+        TypeId parameter ->
             Je.object [ ( "_", Je.string "Id" ), ( "string_", Je.string parameter ) ]
 
-        Token parameter ->
+        TypeToken parameter ->
             Je.object [ ( "_", Je.string "Token" ), ( "string_", Je.string parameter ) ]
 
-        Custom parameter ->
+        TypeCustom parameter ->
             Je.object [ ( "_", Je.string "Custom" ), ( "string_", Je.string parameter ) ]
 
 
@@ -149,13 +149,13 @@ resultTypeToJsonValue resultType =
 languageToJsonValue : Language -> Je.Value
 languageToJsonValue language =
     case language of
-        Japanese ->
+        LanguageJapanese ->
             Je.string "Japanese"
 
-        English ->
+        LanguageEnglish ->
             Je.string "English"
 
-        Esperanto ->
+        LanguageEsperanto ->
             Je.string "Esperanto"
 
 
@@ -176,10 +176,10 @@ urlDataToJsonValue urlData =
 clientModeToJsonValue : ClientMode -> Je.Value
 clientModeToJsonValue clientMode =
     case clientMode of
-        DebugMode parameter ->
+        ClientModeDebugMode parameter ->
             Je.object [ ( "_", Je.string "DebugMode" ), ( "int32", Je.int parameter ) ]
 
-        Release ->
+        ClientModeRelease ->
             Je.object [ ( "_", Je.string "Release" ) ]
 
 
@@ -188,13 +188,13 @@ clientModeToJsonValue clientMode =
 locationToJsonValue : Location -> Je.Value
 locationToJsonValue location =
     case location of
-        Home ->
+        LocationHome ->
             Je.object [ ( "_", Je.string "Home" ) ]
 
-        User parameter ->
+        LocationUser parameter ->
             Je.object [ ( "_", Je.string "User" ), ( "userId", userIdToJsonValue parameter ) ]
 
-        Project parameter ->
+        LocationProject parameter ->
             Je.object [ ( "_", Je.string "Project" ), ( "projectId", projectIdToJsonValue parameter ) ]
 
 
@@ -256,31 +256,31 @@ typeJsonDecoder =
             (\tag ->
                 case tag of
                     "Int" ->
-                        Jd.succeed Int
+                        Jd.succeed TypeInt
 
                     "String" ->
-                        Jd.succeed String
+                        Jd.succeed TypeString
 
                     "Bool" ->
-                        Jd.succeed Bool
+                        Jd.succeed TypeBool
 
                     "List" ->
-                        Jd.field "type_" typeJsonDecoder |> Jd.map List
+                        Jd.field "type_" typeJsonDecoder |> Jd.map TypeList
 
                     "Maybe" ->
-                        Jd.field "type_" typeJsonDecoder |> Jd.map Maybe
+                        Jd.field "type_" typeJsonDecoder |> Jd.map TypeMaybe
 
                     "Result" ->
-                        Jd.field "resultType" resultTypeJsonDecoder |> Jd.map Result
+                        Jd.field "resultType" resultTypeJsonDecoder |> Jd.map TypeResult
 
                     "Id" ->
-                        Jd.field "string_" Jd.string |> Jd.map Id
+                        Jd.field "string_" Jd.string |> Jd.map TypeId
 
                     "Token" ->
-                        Jd.field "string_" Jd.string |> Jd.map Token
+                        Jd.field "string_" Jd.string |> Jd.map TypeToken
 
                     "Custom" ->
-                        Jd.field "string_" Jd.string |> Jd.map Custom
+                        Jd.field "string_" Jd.string |> Jd.map TypeCustom
 
                     _ ->
                         Jd.fail ("Typeで不明なタグを受けたとった tag=" ++ tag)
@@ -310,13 +310,13 @@ languageJsonDecoder =
             (\tag ->
                 case tag of
                     "Japanese" ->
-                        Jd.succeed Japanese
+                        Jd.succeed LanguageJapanese
 
                     "English" ->
-                        Jd.succeed English
+                        Jd.succeed LanguageEnglish
 
                     "Esperanto" ->
-                        Jd.succeed Esperanto
+                        Jd.succeed LanguageEsperanto
 
                     _ ->
                         Jd.fail ("Languageで不明なタグを受けたとった tag=" ++ tag)
@@ -350,10 +350,10 @@ clientModeJsonDecoder =
             (\tag ->
                 case tag of
                     "DebugMode" ->
-                        Jd.field "int32" Jd.int |> Jd.map DebugMode
+                        Jd.field "int32" Jd.int |> Jd.map ClientModeDebugMode
 
                     "Release" ->
-                        Jd.succeed Release
+                        Jd.succeed ClientModeRelease
 
                     _ ->
                         Jd.fail ("ClientModeで不明なタグを受けたとった tag=" ++ tag)
@@ -369,13 +369,13 @@ locationJsonDecoder =
             (\tag ->
                 case tag of
                     "Home" ->
-                        Jd.succeed Home
+                        Jd.succeed LocationHome
 
                     "User" ->
-                        Jd.field "userId" userIdJsonDecoder |> Jd.map User
+                        Jd.field "userId" userIdJsonDecoder |> Jd.map LocationUser
 
                     "Project" ->
-                        Jd.field "projectId" projectIdJsonDecoder |> Jd.map Project
+                        Jd.field "projectId" projectIdJsonDecoder |> Jd.map LocationProject
 
                     _ ->
                         Jd.fail ("Locationで不明なタグを受けたとった tag=" ++ tag)
