@@ -20,6 +20,7 @@ export type Type =
   | { _: "Int32" }
   | { _: "String" }
   | { _: "Bool" }
+  | { _: "Binary" }
   | { _: "List"; type_: Type }
   | { _: "Maybe"; type_: Type }
   | { _: "Result"; resultType: ResultType }
@@ -47,6 +48,10 @@ export const typeString: Type = { _: "String" };
  */
 export const typeBool: Type = { _: "Bool" };
 
+/**
+ * バイナリ
+ */
+export const typeBinary: Type = { _: "Binary" };
 /**
  * リスト
  *
@@ -167,6 +172,8 @@ export const toTypeName = (type_: Type): string => {
       return "String";
     case "Bool":
       return "Bool";
+    case "Binary":
+      return "Binary";
     case "List":
       return toTypeName(type_.type_) + "List";
     case "Maybe":
@@ -292,6 +299,7 @@ const getIdOrTokenTypeNameInType = (type_: Type): Set<string> => {
     case "Int32":
     case "String":
     case "Bool":
+    case "Binary":
     case "Custom":
       return new Set();
     case "Id":
