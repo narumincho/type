@@ -89,35 +89,36 @@ const customTypeToTypeDefinitionCode = (
 };
 
 const createType = (
-  name: string,
+  typeName: string,
   tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
 ): string =>
   "type " +
-  name +
+  typeName +
   "\n  = " +
   tagNameAndParameterArray
     .map(tagNameAndParameter => {
       switch (tagNameAndParameter.parameter._) {
         case "Just":
           return (
+            typeName +
             tagNameAndParameter.name +
             " " +
             typeToElmType(tagNameAndParameter.parameter.value)
           );
         case "Nothing":
-          return tagNameAndParameter.name;
+          return typeName + tagNameAndParameter.name;
       }
     })
     .join("\n  | ") +
   "\n";
 
 const createTypeAlias = (
-  name: string,
+  typeName: string,
   memberNameAndTypeArray: ReadonlyArray<type.MemberNameAndType>
 ): string => {
   return (
     "type alias " +
-    name +
+    typeName +
     " = { " +
     memberNameAndTypeArray
       .map(
