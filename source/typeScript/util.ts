@@ -13,6 +13,9 @@ export const typeToTypeScriptType = (type_: type.Type): ts.Type => {
     case "Bool":
       return ts.typeBoolean;
 
+    case "Binary":
+      return ts.uint8ArrayType;
+
     case "List":
       return ts.readonlyArrayType(typeToTypeScriptType(type_.type_));
 
