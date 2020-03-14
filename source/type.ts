@@ -232,14 +232,12 @@ const elmReservedList = [
 export const collectIdOrTokenTypeNameSet = (
   customTypeList: ReadonlyArray<CustomType>
 ): Set<string> => {
-  const idAndTokenTypeNameSet: Set<string> = new Set();
+  let idAndTokenTypeNameSet: Set<string> = new Set();
   for (const customType of customTypeList) {
-    const idAndTokenTypeNameSetInCustomType = collectIdOrTokenTypeNameSetInCustomType(
-      customType
-    );
-    for (const idAndTokenTypeName of idAndTokenTypeNameSetInCustomType) {
-      idAndTokenTypeNameSet.add(idAndTokenTypeName);
-    }
+    idAndTokenTypeNameSet = new Set([
+      ...idAndTokenTypeNameSet,
+      ...collectIdOrTokenTypeNameSetInCustomType(customType)
+    ]);
   }
   return idAndTokenTypeNameSet;
 };
@@ -262,15 +260,12 @@ const collectIdOrTokenTypeNameSetInCustomType = (
 const collectIdOrTokenTypeNameSetInProduct = (
   memberNameAndTypeList: ReadonlyArray<MemberNameAndType>
 ): Set<string> => {
-  const idAndTokenTypeNameSet: Set<string> = new Set();
+  let idAndTokenTypeNameSet: Set<string> = new Set();
   for (const memberNameAndType of memberNameAndTypeList) {
-    const maybeIdAndTokenTypeName = getIdOrTokenTypeNameInType(
-      memberNameAndType.memberType
-    );
-    switch (maybeIdAndTokenTypeName._) {
-      case "Just":
-        idAndTokenTypeNameSet.add(maybeIdAndTokenTypeName.value);
-    }
+    idAndTokenTypeNameSet = new Set([
+      ...idAndTokenTypeNameSet,
+      ...getIdOrTokenTypeNameInType(memberNameAndType.memberType)
+    ]);
   }
   return idAndTokenTypeNameSet;
 };
@@ -278,28 +273,37 @@ const collectIdOrTokenTypeNameSetInProduct = (
 const collectIdOrTokenTypeNameSetInSum = (
   tagNameAndParameterList: ReadonlyArray<TagNameAndParameter>
 ): Set<string> => {
-  const idAndTokenTypeNameSet: Set<string> = new Set();
+  let idAndTokenTypeNameSet: Set<string> = new Set();
   for (const memberNameAndType of tagNameAndParameterList) {
     switch (memberNameAndType.parameter._) {
       case "Just": {
-        const maybeIdAndTokenTypeName = getIdOrTokenTypeNameInType(
-          memberNameAndType.parameter.value
-        );
-        switch (maybeIdAndTokenTypeName._) {
-          case "Just":
-            idAndTokenTypeNameSet.add(maybeIdAndTokenTypeName.value);
-        }
+        idAndTokenTypeNameSet = new Set([
+          ...idAndTokenTypeNameSet,
+          ...getIdOrTokenTypeNameInType(memberNameAndType.parameter.value)
+        ]);
       }
     }
   }
   return idAndTokenTypeNameSet;
 };
 
-const getIdOrTokenTypeNameInType = (type_: Type): Maybe<string> => {
+const getIdOrTokenTypeNameInType = (type_: Type): Set<string> => {
   switch (type_._) {
+    case "Int32":
+    case "String":
+    case "Bool":
+    case "Custom":
+      return new Set();
     case "Id":
     case "Token":
-      return maybeJust(type_.string_);
+      return new Set(type_.string_);
+    case "List":
+    case "Maybe":
+      return getIdOrTokenTypeNameInType(type_.type_);
+    case "Result":
+      return new Set([
+        ...getIdOrTokenTypeNameInType(type_.resultType.ok),
+        ...getIdOrTokenTypeNameInType(type_.resultType.error)
+      ]);
   }
-  return maybeNothing();
 };
