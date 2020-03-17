@@ -108,6 +108,11 @@ const urlData: type.CustomType = {
       description:
         "アクセストークン. ログインした後のリダイレクト先としてサーバーから渡される",
       memberType: type.typeMaybe(accessToken)
+    },
+    {
+      name: "if",
+      description: "予約語をこっそり入れてみる",
+      memberType: type.typeBool
     }
   ])
 };

@@ -303,7 +303,9 @@ const customTypeProductToToJsonValueCodeBody = (
           '", ' +
           toJsonValueVarEval(
             memberNameAndType.memberType,
-            parameterName + "." + memberNameAndType.name
+            parameterName +
+              "." +
+              type.elmIdentiferFromString(memberNameAndType.name)
           ) +
           " )"
       )
@@ -495,7 +497,9 @@ const customTypeProductToJsonDecoderCodeBody = (
     indentString.repeat(2) +
     "(\\" +
     memberNameAndTypeArray
-      .map(memberNameAndType => memberNameAndType.name)
+      .map(memberNameAndType =>
+        type.elmIdentiferFromString(memberNameAndType.name)
+      )
       .join(" ") +
     " ->\n" +
     indentString.repeat(3) +
@@ -503,9 +507,12 @@ const customTypeProductToJsonDecoderCodeBody = (
     memberNameAndTypeArray
       .map(
         memberNameAndType =>
-          memberNameAndType.name + " = " + memberNameAndType.name
+          type.elmIdentiferFromString(memberNameAndType.name) +
+          " = " +
+          type.elmIdentiferFromString(memberNameAndType.name)
       )
       .join("\n" + indentString.repeat(3) + ", ") +
+    "\n" +
     indentString.repeat(3) +
     "}\n" +
     indentString.repeat(2) +

@@ -43,6 +43,7 @@ export type UrlData = {
   location: Location;
   language: Language;
   accessToken: Maybe<AccessToken>;
+  if: boolean;
 };
 
 /**
@@ -328,7 +329,8 @@ export const encodeUrlData = (urlData: UrlData): ReadonlyArray<number> =>
   encodeClientMode(urlData.clientMode)
     .concat(encodeLocation(urlData.location))
     .concat(encodeLanguage(urlData.language))
-    .concat(encodeMaybe(encodeToken)(urlData.accessToken));
+    .concat(encodeMaybe(encodeToken)(urlData.accessToken))
+    .concat(encodeBool(urlData["if"]));
 
 export const encodeClientMode = (
   clientMode: ClientMode
@@ -715,14 +717,19 @@ export const decodeUrlData = (
       b: Uint8Array
     ) => { result: AccessToken; nextIndex: number }
   )(languageAndNextIndex.nextIndex, binary);
+  const ifAndNextIndex: { result: boolean; nextIndex: number } = decodeBool(
+    accessTokenAndNextIndex.nextIndex,
+    binary
+  );
   return {
     result: {
       clientMode: clientModeAndNextIndex.result,
       location: locationAndNextIndex.result,
       language: languageAndNextIndex.result,
-      accessToken: accessTokenAndNextIndex.result
+      accessToken: accessTokenAndNextIndex.result,
+      if: ifAndNextIndex.result
     },
-    nextIndex: accessTokenAndNextIndex.nextIndex
+    nextIndex: ifAndNextIndex.nextIndex
   };
 };
 

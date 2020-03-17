@@ -36,7 +36,7 @@ type Language
 {-| デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( <https://support.google.com/webmasters/answer/182192?hl=ja> )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は <http://[::1]> になる
 -}
 type alias UrlData =
-    { clientMode : ClientMode, location : Location, language : Language, accessToken : Maybe AccessToken }
+    { clientMode : ClientMode, location : Location, language : Language, accessToken : Maybe AccessToken, if_ : Bool }
 
 
 {-| デバッグの状態と, デバッグ時ならアクセスしているポート番号
@@ -168,6 +168,7 @@ urlDataToJsonValue urlData =
         , ( "location", locationToJsonValue urlData.location )
         , ( "language", languageToJsonValue urlData.language )
         , ( "accessToken", maybeToJsonValue accessTokenToJsonValue urlData.accessToken )
+        , ( "if", Je.bool urlData.if_ )
         ]
 
 
@@ -328,17 +329,19 @@ languageJsonDecoder =
 urlDataJsonDecoder : Jd.Decoder UrlData
 urlDataJsonDecoder =
     Jd.succeed
-        (\clientMode location language accessToken ->
+        (\clientMode location language accessToken if_ ->
             { clientMode = clientMode
             , location = location
             , language = language
             , accessToken = accessToken
+            , if_ = if_
             }
         )
         |> Jdp.required "clientMode" clientModeJsonDecoder
         |> Jdp.required "location" locationJsonDecoder
         |> Jdp.required "language" languageJsonDecoder
         |> Jdp.required "accessToken" (maybeJsonDecoder accessTokenJsonDecoder)
+        |> Jdp.required "if" Jd.bool
 
 
 {-| ClientModeのJSON Decoder
