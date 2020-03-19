@@ -37,12 +37,10 @@ const returnStatement = (
   nextIndexExpr: ts.Expr
 ): ts.Statement =>
   ts.statementReturn(
-    ts.objectLiteral(
-      new Map([
-        [resultProperty, resultExpr],
-        [nextIndexProperty, nextIndexExpr]
-      ])
-    )
+    ts.objectLiteral([
+      ts.memberKeyValue(resultProperty, resultExpr),
+      ts.memberKeyValue(nextIndexProperty, nextIndexExpr)
+    ])
   );
 
 const indexIdentifer = identifer.fromString("index");
@@ -825,13 +823,14 @@ const customProductCode = (
   return memberDecoderCode.statementList.concat(
     returnStatement(
       ts.objectLiteral(
-        new Map(
-          memberNameAndTypeList.map((memberNameAndType): [string, ts.Expr] => [
-            memberNameAndType.name,
-            getResult(
-              ts.variable(resultAndNextIndexNameIdentifer(memberNameAndType))
+        memberNameAndTypeList.map(
+          (memberNameAndType): ts.Member =>
+            ts.memberKeyValue(
+              memberNameAndType.name,
+              getResult(
+                ts.variable(resultAndNextIndexNameIdentifer(memberNameAndType))
+              )
             )
-          ])
         )
       ),
       memberDecoderCode.nextIndexExpr

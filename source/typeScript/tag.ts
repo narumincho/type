@@ -39,12 +39,10 @@ const maybeJustCode: ts.Function = {
   typeParameterList: [identifer.fromString("T")],
   statementList: [
     ts.statementReturn(
-      ts.objectLiteral(
-        new Map([
-          ["_", ts.stringLiteral("Just")],
-          ["value", ts.variable(identifer.fromString("value"))]
-        ])
-      )
+      ts.objectLiteral([
+        ts.memberKeyValue("_", ts.stringLiteral("Just")),
+        ts.memberKeyValue("value", ts.variable(identifer.fromString("value")))
+      ])
     )
   ]
 };
@@ -63,7 +61,7 @@ const maybeNothingCode: ts.Function = {
   typeParameterList: [identifer.fromString("T")],
   statementList: [
     ts.statementReturn(
-      ts.objectLiteral(new Map([["_", ts.stringLiteral("Nothing")]]))
+      ts.objectLiteral([ts.memberKeyValue("_", ts.stringLiteral("Nothing"))])
     )
   ]
 };
@@ -97,12 +95,10 @@ const resultOkCode: ts.Function = {
   ],
   statementList: [
     ts.statementReturn(
-      ts.objectLiteral(
-        new Map([
-          ["_", ts.stringLiteral("Ok")],
-          ["ok", ts.variable(identifer.fromString("ok"))]
-        ])
-      )
+      ts.objectLiteral([
+        ts.memberKeyValue("_", ts.stringLiteral("Ok")),
+        ts.memberKeyValue("ok", ts.variable(identifer.fromString("ok")))
+      ])
     )
   ]
 };
@@ -132,12 +128,10 @@ const resultErrorCode: ts.Function = {
   ],
   statementList: [
     ts.statementReturn(
-      ts.objectLiteral(
-        new Map([
-          ["_", ts.stringLiteral("Error")],
-          ["error", ts.variable(identifer.fromString("error"))]
-        ])
-      )
+      ts.objectLiteral([
+        ts.memberKeyValue("_", ts.stringLiteral("Error")),
+        ts.memberKeyValue("error", ts.variable(identifer.fromString("error")))
+      ])
     )
   ]
 };
@@ -200,10 +194,10 @@ const tagNameAndParameterToTag = (
   customTypeName: string,
   tagNameAndParameter: type.TagNameAndParameter
 ): ts.Definition => {
-  const tagField: [string, ts.Expr] = [
+  const tagField: ts.Member = ts.memberKeyValue(
     "_",
     ts.stringLiteral(tagNameAndParameter.name)
-  ];
+  );
 
   switch (tagNameAndParameter.parameter._) {
     case "Just":
@@ -225,21 +219,19 @@ const tagNameAndParameterToTag = (
         returnType: ts.typeScopeInFile(identifer.fromString(customTypeName)),
         statementList: [
           ts.statementReturn(
-            ts.objectLiteral(
-              new Map([
-                tagField,
-                [
+            ts.objectLiteral([
+              tagField,
+              ts.memberKeyValue(
+                util.typeToMemberOrParameterName(
+                  tagNameAndParameter.parameter.value
+                ),
+                ts.variable(
                   util.typeToMemberOrParameterName(
                     tagNameAndParameter.parameter.value
-                  ),
-                  ts.variable(
-                    util.typeToMemberOrParameterName(
-                      tagNameAndParameter.parameter.value
-                    )
                   )
-                ]
-              ])
-            )
+                )
+              )
+            ])
           )
         ]
       });
@@ -252,7 +244,7 @@ const tagNameAndParameterToTag = (
         ),
         document: tagNameAndParameter.description,
         type_: ts.typeScopeInFile(identifer.fromString(customTypeName)),
-        expr: ts.objectLiteral(new Map([tagField]))
+        expr: ts.objectLiteral([tagField])
       });
   }
 };

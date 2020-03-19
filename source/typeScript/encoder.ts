@@ -195,11 +195,14 @@ const boolCode: ts.Function = {
   statementList: [
     ts.statementReturn(
       ts.arrayLiteral([
-        ts.conditionalOperator(
-          ts.variable(identifer.fromString("value")),
-          ts.numberLiteral(1),
-          ts.numberLiteral(0)
-        )
+        {
+          expr: ts.conditionalOperator(
+            ts.variable(identifer.fromString("value")),
+            ts.numberLiteral(1),
+            ts.numberLiteral(0)
+          ),
+          spread: false
+        }
       ])
     )
   ]
@@ -432,7 +435,9 @@ const maybeCode = (): ts.Function => {
                   statementList: [
                     ts.statementReturn(
                       ts.callMethod(
-                        ts.arrayLiteral([ts.numberLiteral(0)]),
+                        ts.arrayLiteral([
+                          { expr: ts.numberLiteral(0), spread: false }
+                        ]),
                         "concat",
                         [
                           ts.call(encodeFunctionVar, [
@@ -446,7 +451,11 @@ const maybeCode = (): ts.Function => {
                 {
                   caseTag: "Nothing",
                   statementList: [
-                    ts.statementReturn(ts.arrayLiteral([ts.numberLiteral(1)]))
+                    ts.statementReturn(
+                      ts.arrayLiteral([
+                        { expr: ts.numberLiteral(1), spread: false }
+                      ])
+                    )
                   ]
                 }
               ]
@@ -514,7 +523,9 @@ const resultCode = (): ts.Function => {
                   statementList: [
                     ts.statementReturn(
                       ts.callMethod(
-                        ts.arrayLiteral([ts.numberLiteral(0)]),
+                        ts.arrayLiteral([
+                          { expr: ts.numberLiteral(0), spread: false }
+                        ]),
                         "concat",
                         [
                           ts.call(ts.variable(okEncodeFunctionName), [
@@ -530,7 +541,9 @@ const resultCode = (): ts.Function => {
                   statementList: [
                     ts.statementReturn(
                       ts.callMethod(
-                        ts.arrayLiteral([ts.numberLiteral(1)]),
+                        ts.arrayLiteral([
+                          { expr: ts.numberLiteral(1), spread: false }
+                        ]),
                         "concat",
                         [
                           ts.call(ts.variable(errorEncodeFunctionName), [
@@ -656,7 +669,7 @@ const tagNameAndParameterToSwitchPattern = (
     switch (tagNameAndParameter.parameter._) {
       case "Just":
         return ts.callMethod(
-          ts.arrayLiteral([ts.numberLiteral(index)]),
+          ts.arrayLiteral([{ expr: ts.numberLiteral(index), spread: false }]),
           "concat",
           [
             encodeVarEval(
@@ -672,7 +685,9 @@ const tagNameAndParameterToSwitchPattern = (
         );
 
       case "Nothing":
-        return ts.arrayLiteral([ts.numberLiteral(index)]);
+        return ts.arrayLiteral([
+          { expr: ts.numberLiteral(index), spread: false }
+        ]);
     }
   })();
   return {
