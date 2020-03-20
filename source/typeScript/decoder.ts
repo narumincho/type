@@ -342,16 +342,15 @@ const hexStringCode = (
     returnStatement(
       ts.callMethod(
         ts.callMethod(
-          ts.callMethod(
-            ts.globalObjects(identifer.fromString("Array")),
-            "from",
-            [
-              ts.callMethod(parameterBinary, "slice", [
+          ts.arrayLiteral([
+            {
+              expr: ts.callMethod(parameterBinary, "slice", [
                 parameterIndex,
                 ts.addition(parameterIndex, ts.numberLiteral(byteSize))
-              ])
-            ]
-          ),
+              ]),
+              spread: true
+            }
+          ]),
           "map",
           [
             ts.lambda(

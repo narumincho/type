@@ -120,6 +120,36 @@ const stringCode = (): ts.Function => {
   const resultName = identifer.fromString("result");
   const resultVar = ts.variable(resultName);
 
+  const resultExpr: ts.Expr = ts.arrayLiteral([
+    {
+      expr: ts.callMethod(
+        ts.newExpr(
+          ts.conditionalOperator(
+            ts.logicalOr(
+              ts.equal(
+                ts.globalObjects(identifer.fromString("process")),
+                ts.undefinedLiteral
+              ),
+              ts.equal(
+                ts.get(
+                  ts.globalObjects(identifer.fromString("process")),
+                  "title"
+                ),
+                ts.stringLiteral("browser")
+              )
+            ),
+            ts.globalObjects(identifer.fromString("TextEncoder")),
+            ts.importedVariable("util", identifer.fromString("TextEncoder"))
+          ),
+          []
+        ),
+        "encode",
+        [ts.variable(identifer.fromString("text"))]
+      ),
+      spread: true
+    }
+  ]);
+
   return {
     name: stringName,
     document: "stringからバイナリに変換する.",
@@ -136,32 +166,7 @@ const stringCode = (): ts.Function => {
       ts.statementVariableDefinition(
         resultName,
         ts.readonlyArrayType(ts.typeNumber),
-        ts.callMethod(ts.globalObjects(identifer.fromString("Array")), "from", [
-          ts.callMethod(
-            ts.newExpr(
-              ts.conditionalOperator(
-                ts.logicalOr(
-                  ts.equal(
-                    ts.globalObjects(identifer.fromString("process")),
-                    ts.undefinedLiteral
-                  ),
-                  ts.equal(
-                    ts.get(
-                      ts.globalObjects(identifer.fromString("process")),
-                      "title"
-                    ),
-                    ts.stringLiteral("browser")
-                  )
-                ),
-                ts.globalObjects(identifer.fromString("TextEncoder")),
-                ts.importedVariable("util", identifer.fromString("TextEncoder"))
-              ),
-              []
-            ),
-            "encode",
-            [ts.variable(identifer.fromString("text"))]
-          )
-        ])
+        resultExpr
       ),
       ts.statementReturn(
         ts.callMethod(
@@ -235,13 +240,7 @@ const binaryCode = (): ts.Function => {
         ts.callMethod(
           encodeVarEval(type.typeInt32, ts.get(valueVar, "length")),
           "concat",
-          [
-            ts.callMethod(
-              ts.globalObjects(identifer.fromString("Array")),
-              "from",
-              [valueVar]
-            )
-          ]
+          [ts.arrayLiteral([{ expr: valueVar, spread: true }])]
         )
       )
     ]

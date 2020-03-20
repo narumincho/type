@@ -197,11 +197,11 @@ export const encodeInt32 = (value: number): ReadonlyArray<number> => {
  * stringからバイナリに変換する.
  */
 export const encodeString = (text: string): ReadonlyArray<number> => {
-  const result: ReadonlyArray<number> = Array["from"](
-    new (process === undefined || process.title === "browser"
+  const result: ReadonlyArray<number> = [
+    ...new (process === undefined || process.title === "browser"
       ? TextEncoder
       : a.TextEncoder)().encode(text)
-  );
+  ];
   return encodeInt32(result.length).concat(result);
 };
 
@@ -213,7 +213,7 @@ export const encodeBool = (value: boolean): ReadonlyArray<number> => [
 ];
 
 export const encodeBinary = (value: Uint8Array): ReadonlyArray<number> =>
-  encodeInt32(value.length).concat(Array["from"](value));
+  encodeInt32(value.length).concat([...value]);
 
 export const encodeList = <T>(
   encodeFunction: (a: T) => ReadonlyArray<number>
@@ -556,7 +556,7 @@ export const decodeId = (
   index: number,
   binary: Uint8Array
 ): { result: string; nextIndex: number } => ({
-  result: Array["from"](binary.slice(index, index + 16))
+  result: [...binary.slice(index, index + 16)]
     .map((n: number): string => n.toString(16).padStart(2, "0"))
     .join(""),
   nextIndex: index + 16
@@ -570,7 +570,7 @@ export const decodeToken = (
   index: number,
   binary: Uint8Array
 ): { result: string; nextIndex: number } => ({
-  result: Array["from"](binary.slice(index, index + 32))
+  result: [...binary.slice(index, index + 32)]
     .map((n: number): string => n.toString(16).padStart(2, "0"))
     .join(""),
   nextIndex: index + 32

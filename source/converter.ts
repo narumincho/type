@@ -74,9 +74,7 @@ export const decodeUInt32 = (
  * stringからバイナリに変換する.
  */
 export const encodeString = (text: string): ReadonlyArray<number> => {
-  const result: ReadonlyArray<number> = Array["from"](
-    new TextEncoder().encode(text)
-  );
+  const result: ReadonlyArray<number> = [...new TextEncoder().encode(text)];
   return encodeInt32(result.length).concat(result);
 };
 
