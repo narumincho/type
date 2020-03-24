@@ -67,19 +67,19 @@ export type ProjectId = string & { _projectId: never };
 
 export const maybeJust = <T>(value: T): Maybe<T> => ({
   _: "Just",
-  value: value
+  value: value,
 });
 
 export const maybeNothing = <T>(): Maybe<T> => ({ _: "Nothing" });
 
 export const resultOk = <ok, error>(ok: ok): Result<ok, error> => ({
   _: "Ok",
-  ok: ok
+  ok: ok,
 });
 
 export const resultError = <ok, error>(error: error): Result<ok, error> => ({
   _: "Error",
-  error: error
+  error: error,
 });
 
 /**
@@ -112,7 +112,7 @@ export const typeMaybe = (type_: Type): Type => ({ _: "Maybe", type_: type_ });
  */
 export const typeResult = (resultType: ResultType): Type => ({
   _: "Result",
-  resultType: resultType
+  resultType: resultType,
 });
 
 /**
@@ -120,7 +120,7 @@ export const typeResult = (resultType: ResultType): Type => ({
  */
 export const typeId = (string_: string): Type => ({
   _: "Id",
-  string_: string_
+  string_: string_,
 });
 
 /**
@@ -128,7 +128,7 @@ export const typeId = (string_: string): Type => ({
  */
 export const typeToken = (string_: string): Type => ({
   _: "Token",
-  string_: string_
+  string_: string_,
 });
 
 /**
@@ -136,7 +136,7 @@ export const typeToken = (string_: string): Type => ({
  */
 export const typeCustom = (string_: string): Type => ({
   _: "Custom",
-  string_: string_
+  string_: string_,
 });
 
 /**
@@ -144,7 +144,7 @@ export const typeCustom = (string_: string): Type => ({
  */
 export const clientModeDebugMode = (int32: number): ClientMode => ({
   _: "DebugMode",
-  int32: int32
+  int32: int32,
 });
 
 /**
@@ -162,7 +162,7 @@ export const locationHome: Location = { _: "Home" };
  */
 export const locationUser = (userId: UserId): Location => ({
   _: "User",
-  userId: userId
+  userId: userId,
 });
 
 /**
@@ -170,7 +170,7 @@ export const locationUser = (userId: UserId): Location => ({
  */
 export const locationProject = (projectId: ProjectId): Location => ({
   _: "Project",
-  projectId: projectId
+  projectId: projectId,
 });
 
 /**
@@ -200,7 +200,7 @@ export const encodeString = (text: string): ReadonlyArray<number> => {
   const result: ReadonlyArray<number> = [
     ...new (process === undefined || process.title === "browser"
       ? TextEncoder
-      : a.TextEncoder)().encode(text)
+      : a.TextEncoder)().encode(text),
   ];
   return encodeInt32(result.length).concat(result);
 };
@@ -209,7 +209,7 @@ export const encodeString = (text: string): ReadonlyArray<number> => {
  * boolからバイナリに変換する
  */
 export const encodeBool = (value: boolean): ReadonlyArray<number> => [
-  value ? 1 : 0
+  value ? 1 : 0,
 ];
 
 export const encodeBinary = (value: Uint8Array): ReadonlyArray<number> =>
@@ -378,7 +378,7 @@ export const decodeInt32 = (
       if (offset * 7 < 32 && (byte & 64) !== 0) {
         return {
           result: result | (~0 << (offset * 7)),
-          nextIndex: index + offset
+          nextIndex: index + offset,
         };
       }
       return { result: result, nextIndex: index + offset };
@@ -406,12 +406,12 @@ export const decodeString = (
   if (isBrowser) {
     return {
       result: new TextDecoder().decode(textBinary),
-      nextIndex: nextIndex
+      nextIndex: nextIndex,
     };
   }
   return {
     result: new a.TextDecoder().decode(textBinary),
-    nextIndex: nextIndex
+    nextIndex: nextIndex,
   };
 };
 
@@ -424,7 +424,7 @@ export const decodeBool = (
   binary: Uint8Array
 ): { result: boolean; nextIndex: number } => ({
   result: binary[index] !== 0,
-  nextIndex: index + 1
+  nextIndex: index + 1,
 });
 
 /**
@@ -442,7 +442,7 @@ export const decodeBinary = (
   const nextIndex: number = length.nextIndex + length.result;
   return {
     result: binary.slice(length.nextIndex, nextIndex),
-    nextIndex: nextIndex
+    nextIndex: nextIndex,
   };
 };
 
@@ -489,13 +489,13 @@ export const decodeMaybe = <T>(
     );
     return {
       result: maybeJust(valueAndNextIndex.result),
-      nextIndex: valueAndNextIndex.nextIndex
+      nextIndex: valueAndNextIndex.nextIndex,
     };
   }
   if (patternIndexAndNextIndex.result === 1) {
     return {
       result: maybeNothing(),
-      nextIndex: patternIndexAndNextIndex.nextIndex
+      nextIndex: patternIndexAndNextIndex.nextIndex,
     };
   }
   throw new Error(
@@ -530,7 +530,7 @@ export const decodeResult = <ok, error>(
     );
     return {
       result: resultOk(okAndNextIndex.result),
-      nextIndex: okAndNextIndex.nextIndex
+      nextIndex: okAndNextIndex.nextIndex,
     };
   }
   if (patternIndexAndNextIndex.result === 1) {
@@ -540,7 +540,7 @@ export const decodeResult = <ok, error>(
     } = errorDecodeFunction(patternIndexAndNextIndex.nextIndex, binary);
     return {
       result: resultError(errorAndNextIndex.result),
-      nextIndex: errorAndNextIndex.nextIndex
+      nextIndex: errorAndNextIndex.nextIndex,
     };
   }
   throw new Error(
@@ -559,7 +559,7 @@ export const decodeId = (
   result: [...binary.slice(index, index + 16)]
     .map((n: number): string => n.toString(16).padStart(2, "0"))
     .join(""),
-  nextIndex: index + 16
+  nextIndex: index + 16,
 });
 
 /**
@@ -573,7 +573,7 @@ export const decodeToken = (
   result: [...binary.slice(index, index + 32)]
     .map((n: number): string => n.toString(16).padStart(2, "0"))
     .join(""),
-  nextIndex: index + 32
+  nextIndex: index + 32,
 });
 
 /**
@@ -660,7 +660,7 @@ export const decodeResultType = (
   );
   return {
     result: { ok: okAndNextIndex.result, error: errorAndNextIndex.result },
-    nextIndex: errorAndNextIndex.nextIndex
+    nextIndex: errorAndNextIndex.nextIndex,
   };
 };
 
@@ -727,9 +727,9 @@ export const decodeUrlData = (
       location: locationAndNextIndex.result,
       language: languageAndNextIndex.result,
       accessToken: accessTokenAndNextIndex.result,
-      if: ifAndNextIndex.result
+      if: ifAndNextIndex.result,
     },
-    nextIndex: ifAndNextIndex.nextIndex
+    nextIndex: ifAndNextIndex.nextIndex,
   };
 };
 
@@ -752,7 +752,7 @@ export const decodeClientMode = (
     );
     return {
       result: clientModeDebugMode(result.result),
-      nextIndex: result.nextIndex
+      nextIndex: result.nextIndex,
     };
   }
   if (patternIndex.result === 1) {
@@ -793,7 +793,7 @@ export const decodeLocation = (
     );
     return {
       result: locationProject(result.result),
-      nextIndex: result.nextIndex
+      nextIndex: result.nextIndex,
     };
   }
   throw new Error("存在しないパターンを指定された 型を更新してください");
