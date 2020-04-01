@@ -59,11 +59,18 @@ export type Location =
   | { _: "User"; userId: UserId }
   | { _: "Project"; projectId: ProjectId };
 
+/**
+ * プロジェクト
+ */
+export type Project = { name: string; icon: FileHash; image: FileHash };
+
 export type AccessToken = string & { _accessToken: never };
 
 export type UserId = string & { _userId: never };
 
 export type ProjectId = string & { _projectId: never };
+
+export type FileHash = string & { _fileHash: never };
 
 export const maybeJust = <T>(value: T): Maybe<T> => ({
   _: "Just",
@@ -358,6 +365,11 @@ export const encodeLocation = (location: Location): ReadonlyArray<number> => {
     }
   }
 };
+
+export const encodeProject = (project: Project): ReadonlyArray<number> =>
+  encodeString(project.name)
+    .concat(encodeToken(project.icon))
+    .concat(encodeToken(project.image));
 
 /**
  * SignedLeb128で表現されたバイナリをnumberのビット演算ができる32bit符号付き整数の範囲の数値に変換するコード
@@ -797,4 +809,46 @@ export const decodeLocation = (
     };
   }
   throw new Error("存在しないパターンを指定された 型を更新してください");
+};
+
+/**
+ * @param index バイナリを読み込み開始位置
+ * @param binary バイナリ
+ */
+export const decodeProject = (
+  index: number,
+  binary: Uint8Array
+): { result: Project; nextIndex: number } => {
+  const nameAndNextIndex: { result: string; nextIndex: number } = decodeString(
+    index,
+    binary
+  );
+  const iconAndNextIndex: {
+    result: FileHash;
+    nextIndex: number;
+  } = (decodeToken as (
+    a: number,
+    b: Uint8Array
+  ) => { result: FileHash; nextIndex: number })(
+    nameAndNextIndex.nextIndex,
+    binary
+  );
+  const imageAndNextIndex: {
+    result: FileHash;
+    nextIndex: number;
+  } = (decodeToken as (
+    a: number,
+    b: Uint8Array
+  ) => { result: FileHash; nextIndex: number })(
+    iconAndNextIndex.nextIndex,
+    binary
+  );
+  return {
+    result: {
+      name: nameAndNextIndex.result,
+      icon: iconAndNextIndex.result,
+      image: imageAndNextIndex.result,
+    },
+    nextIndex: imageAndNextIndex.nextIndex,
+  };
 };

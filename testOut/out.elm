@@ -1,4 +1,4 @@
-module Data exposing (AccessToken(..), ClientMode(..), Language(..), Location(..), ProjectId(..), ResultType, Type(..), UrlData, UserId(..), accessTokenJsonDecoder, accessTokenToJsonValue, clientModeJsonDecoder, clientModeToJsonValue, languageJsonDecoder, languageToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, resultJsonDecoder, resultToJsonValue, resultTypeJsonDecoder, resultTypeToJsonValue, typeJsonDecoder, typeToJsonValue, urlDataJsonDecoder, urlDataToJsonValue, userIdJsonDecoder, userIdToJsonValue)
+module Data exposing (AccessToken(..), ClientMode(..), FileHash(..), Language(..), Location(..), Project, ProjectId(..), ResultType, Type(..), UrlData, UserId(..), accessTokenJsonDecoder, accessTokenToJsonValue, clientModeJsonDecoder, clientModeToJsonValue, fileHashJsonDecoder, fileHashToJsonValue, languageJsonDecoder, languageToJsonValue, locationJsonDecoder, locationToJsonValue, maybeJsonDecoder, maybeToJsonValue, projectIdJsonDecoder, projectIdToJsonValue, projectJsonDecoder, projectToJsonValue, resultJsonDecoder, resultToJsonValue, resultTypeJsonDecoder, resultTypeToJsonValue, typeJsonDecoder, typeToJsonValue, urlDataJsonDecoder, urlDataToJsonValue, userIdJsonDecoder, userIdToJsonValue)
 
 import Json.Decode as Jd
 import Json.Decode.Pipeline as Jdp
@@ -54,6 +54,12 @@ type Location
     | LocationProject ProjectId
 
 
+{-| プロジェクト
+-}
+type alias Project =
+    { name : String, icon : FileHash, image : FileHash }
+
+
 type AccessToken
     = AccessToken String
 
@@ -64,6 +70,10 @@ type UserId
 
 type ProjectId
     = ProjectId String
+
+
+type FileHash
+    = FileHash String
 
 
 maybeToJsonValue : (a -> Je.Value) -> Maybe a -> Je.Value
@@ -98,6 +108,11 @@ userIdToJsonValue (UserId string) =
 
 projectIdToJsonValue : ProjectId -> Je.Value
 projectIdToJsonValue (ProjectId string) =
+    Je.string string
+
+
+fileHashToJsonValue : FileHash -> Je.Value
+fileHashToJsonValue (FileHash string) =
     Je.string string
 
 
@@ -199,6 +214,17 @@ locationToJsonValue location =
             Je.object [ ( "_", Je.string "Project" ), ( "projectId", projectIdToJsonValue parameter ) ]
 
 
+{-| ProjectのJSONへのエンコーダ
+-}
+projectToJsonValue : Project -> Je.Value
+projectToJsonValue project =
+    Je.object
+        [ ( "name", Je.string project.name )
+        , ( "icon", fileHashToJsonValue project.icon )
+        , ( "image", fileHashToJsonValue project.image )
+        ]
+
+
 maybeJsonDecoder : Jd.Decoder a -> Jd.Decoder (Maybe a)
 maybeJsonDecoder decoder =
     Jd.field "_" Jd.string
@@ -246,6 +272,11 @@ userIdJsonDecoder =
 projectIdJsonDecoder : Jd.Decoder ProjectId
 projectIdJsonDecoder =
     Jd.map ProjectId Jd.string
+
+
+fileHashJsonDecoder : Jd.Decoder FileHash
+fileHashJsonDecoder =
+    Jd.map FileHash Jd.string
 
 
 {-| TypeのJSON Decoder
@@ -383,3 +414,19 @@ locationJsonDecoder =
                     _ ->
                         Jd.fail ("Locationで不明なタグを受けたとった tag=" ++ tag)
             )
+
+
+{-| ProjectのJSON Decoder
+-}
+projectJsonDecoder : Jd.Decoder Project
+projectJsonDecoder =
+    Jd.succeed
+        (\name icon image ->
+            { name = name
+            , icon = icon
+            , image = image
+            }
+        )
+        |> Jdp.required "name" Jd.string
+        |> Jdp.required "icon" fileHashJsonDecoder
+        |> Jdp.required "image" fileHashJsonDecoder

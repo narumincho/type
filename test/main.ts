@@ -180,13 +180,38 @@ const language: type.CustomType = {
   ])
 };
 
+const fileHash = type.typeToken("FileHash");
+
+const project: type.CustomType = {
+  name: "Project",
+  description: "プロジェクト",
+  body: type.customTypeBodyProduct([
+    {
+      name: "name",
+      description: "プロジェクト名",
+      memberType: type.typeString
+    },
+    {
+      name: "icon",
+      description: "プロジェクトのアイコン画像",
+      memberType: fileHash
+    },
+    {
+      name: "image",
+      description: "プロジェクトのカバー画像",
+      memberType: fileHash
+    }
+  ])
+};
+
 const customTypeList: ReadonlyArray<type.CustomType> = [
   typeType,
   resultTypeType,
   language,
   urlData,
   clientMode,
-  location
+  location,
+  project
 ];
 
 const typeDefinitionTypeScriptCode = generator.generateCodeAsString(

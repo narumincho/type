@@ -108,3 +108,23 @@ test(
   out.encodeMaybe(out.encodeBinary),
   out.decodeMaybe(out.decodeBinary)
 );
+
+test(
+  "token",
+  "24b6b3789d903e841490ac04ffc2b6f9848ea529b2d9db380d190583b09995e6",
+  out.encodeToken,
+  out.decodeToken
+);
+
+test("id", "756200c85a0ff28f08daa2d201d616a9", out.encodeId, out.decodeId);
+
+test<out.Maybe<out.Project>>(
+  "maybe project",
+  out.maybeJust({
+    name: "サンプルプロジェクト",
+    icon: "b13333411078d64e9be75bebc374708868c728a340516c563c49fe9c5bd456c5" as out.FileHash,
+    image: "0cbeb09760a312a3562547115aa855a39d9e1ca837ed00331e3a84d6de50ff3b" as out.FileHash
+  }),
+  out.encodeMaybe(out.encodeProject),
+  out.decodeMaybe(out.decodeProject)
+);
