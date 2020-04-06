@@ -15,7 +15,7 @@ export const generateCode = (
     resultCode(),
     encodeHexString(16, encodeIdName),
     encodeHexString(32, encodeTokenName),
-    ...customTypeList.map(customType => customCode(customType))
+    ...customTypeList.map((customType) => customCode(customType)),
   ];
 };
 
@@ -53,8 +53,8 @@ const int32Code = (): ts.Function => {
       {
         name: valueName,
         type_: ts.typeNumber,
-        document: ""
-      }
+        document: "",
+      },
     ],
     typeParameterList: [],
     returnType: readonlyArrayNumber,
@@ -93,16 +93,16 @@ const int32Code = (): ts.Function => {
             ts.statementEvaluateExpr(
               ts.callMethod(resultVar, "push", [byteVar])
             ),
-            ts.statementReturn(resultVar)
+            ts.statementReturn(resultVar),
           ]
         ),
         ts.statementEvaluateExpr(
           ts.callMethod(resultVar, "push", [
-            ts.bitwiseOr(byteVar, ts.numberLiteral(0x80))
+            ts.bitwiseOr(byteVar, ts.numberLiteral(0x80)),
           ])
-        )
-      ])
-    ]
+        ),
+      ]),
+    ],
   };
 };
 
@@ -146,8 +146,8 @@ const stringCode = (): ts.Function => {
         "encode",
         [ts.variable(identifer.fromString("text"))]
       ),
-      spread: true
-    }
+      spread: true,
+    },
   ]);
 
   return {
@@ -157,8 +157,8 @@ const stringCode = (): ts.Function => {
       {
         name: identifer.fromString("text"),
         type_: ts.typeString,
-        document: ""
-      }
+        document: "",
+      },
     ],
     typeParameterList: [],
     returnType: readonlyArrayNumber,
@@ -174,8 +174,8 @@ const stringCode = (): ts.Function => {
           "concat",
           [resultVar]
         )
-      )
-    ]
+      ),
+    ],
   };
 };
 
@@ -192,8 +192,8 @@ const boolCode: ts.Function = {
     {
       name: identifer.fromString("value"),
       type_: ts.typeBoolean,
-      document: ""
-    }
+      document: "",
+    },
   ],
   typeParameterList: [],
   returnType: readonlyArrayNumber,
@@ -206,11 +206,11 @@ const boolCode: ts.Function = {
             ts.numberLiteral(1),
             ts.numberLiteral(0)
           ),
-          spread: false
-        }
+          spread: false,
+        },
       ])
-    )
-  ]
+    ),
+  ],
 };
 
 /* ========================================
@@ -230,8 +230,8 @@ const binaryCode = (): ts.Function => {
       {
         name: valueName,
         document: "",
-        type_: ts.uint8ArrayType
-      }
+        type_: ts.uint8ArrayType,
+      },
     ],
     typeParameterList: [],
     returnType: readonlyArrayNumber,
@@ -242,8 +242,8 @@ const binaryCode = (): ts.Function => {
           "concat",
           [ts.arrayLiteral([{ expr: valueVar, spread: true }])]
         )
-      )
-    ]
+      ),
+    ],
   };
 };
 
@@ -270,8 +270,8 @@ const encodeHexString = (
       {
         name: idName,
         type_: ts.typeString,
-        document: ""
-      }
+        document: "",
+      },
     ],
     typeParameterList: [],
     returnType: readonlyArrayNumber,
@@ -291,14 +291,14 @@ const encodeHexString = (
               ts.addition(
                 ts.multiplication(iVar, ts.numberLiteral(2)),
                 ts.numberLiteral(2)
-              )
+              ),
             ]),
-            ts.numberLiteral(16)
+            ts.numberLiteral(16),
           ])
-        )
+        ),
       ]),
-      ts.statementReturn(resultVar)
-    ]
+      ts.statementReturn(resultVar),
+    ],
   };
 };
 
@@ -327,8 +327,8 @@ const listCode = (): ts.Function => {
         type_: ts.typeFunction(
           [ts.typeScopeInFile(elementTypeName)],
           readonlyArrayNumber
-        )
-      }
+        ),
+      },
     ],
     typeParameterList: [elementTypeName],
     returnType: ts.typeFunction(
@@ -341,8 +341,8 @@ const listCode = (): ts.Function => {
           [
             {
               name: parameterListName,
-              type_: ts.readonlyArrayType(ts.typeScopeInFile(elementTypeName))
-            }
+              type_: ts.readonlyArrayType(ts.typeScopeInFile(elementTypeName)),
+            },
           ],
           readonlyArrayNumber,
           [
@@ -363,16 +363,16 @@ const listCode = (): ts.Function => {
                 null,
                 ts.callMethod(ts.variable(resultName), "concat", [
                   ts.call(ts.variable(encodeFunctionName), [
-                    ts.variable(elementName)
-                  ])
+                    ts.variable(elementName),
+                  ]),
                 ])
-              )
+              ),
             ]),
-            ts.statementReturn(ts.variable(resultName))
+            ts.statementReturn(ts.variable(resultName)),
           ]
         )
-      )
-    ]
+      ),
+    ],
   };
 };
 
@@ -397,7 +397,7 @@ const maybeCode = (): ts.Function => {
         ts.typeWithParameter(
           ts.typeScopeInFile(identifer.fromString("Maybe")),
           [ts.typeScopeInFile(elementTypeName)]
-        )
+        ),
       ],
       readonlyArrayNumber
     ),
@@ -408,8 +408,8 @@ const maybeCode = (): ts.Function => {
         type_: ts.typeFunction(
           [ts.typeScopeInFile(elementTypeName)],
           readonlyArrayNumber
-        )
-      }
+        ),
+      },
     ],
     typeParameterList: [elementTypeName],
     statementList: [
@@ -421,8 +421,8 @@ const maybeCode = (): ts.Function => {
               type_: ts.typeWithParameter(
                 ts.typeScopeInFile(identifer.fromString("Maybe")),
                 [ts.typeScopeInFile(elementTypeName)]
-              )
-            }
+              ),
+            },
           ],
           readonlyArrayNumber,
           [
@@ -435,34 +435,34 @@ const maybeCode = (): ts.Function => {
                     ts.statementReturn(
                       ts.callMethod(
                         ts.arrayLiteral([
-                          { expr: ts.numberLiteral(0), spread: false }
+                          { expr: ts.numberLiteral(0), spread: false },
                         ]),
                         "concat",
                         [
                           ts.call(encodeFunctionVar, [
-                            ts.get(parameterMaybeVar, "value")
-                          ])
+                            ts.get(parameterMaybeVar, "value"),
+                          ]),
                         ]
                       )
-                    )
-                  ]
+                    ),
+                  ],
                 },
                 {
                   caseTag: "Nothing",
                   statementList: [
                     ts.statementReturn(
                       ts.arrayLiteral([
-                        { expr: ts.numberLiteral(1), spread: false }
+                        { expr: ts.numberLiteral(1), spread: false },
                       ])
-                    )
-                  ]
-                }
-              ]
-            })
+                    ),
+                  ],
+                },
+              ],
+            }),
           ]
         )
-      )
-    ]
+      ),
+    ],
   };
 };
 
@@ -493,13 +493,13 @@ const resultCode = (): ts.Function => {
       {
         name: okEncodeFunctionName,
         document: "",
-        type_: ts.typeFunction([okTypeVar], readonlyArrayNumber)
+        type_: ts.typeFunction([okTypeVar], readonlyArrayNumber),
       },
       {
         name: errorEncodeFunctionName,
         document: "",
-        type_: ts.typeFunction([errorTypeVar], readonlyArrayNumber)
-      }
+        type_: ts.typeFunction([errorTypeVar], readonlyArrayNumber),
+      },
     ],
     returnType: ts.typeFunction([resultType], readonlyArrayNumber),
     typeParameterList: [okName, errorName],
@@ -509,8 +509,8 @@ const resultCode = (): ts.Function => {
           [
             {
               name: parameterResultName,
-              type_: resultType
-            }
+              type_: resultType,
+            },
           ],
           readonlyArrayNumber,
           [
@@ -523,17 +523,17 @@ const resultCode = (): ts.Function => {
                     ts.statementReturn(
                       ts.callMethod(
                         ts.arrayLiteral([
-                          { expr: ts.numberLiteral(0), spread: false }
+                          { expr: ts.numberLiteral(0), spread: false },
                         ]),
                         "concat",
                         [
                           ts.call(ts.variable(okEncodeFunctionName), [
-                            ts.get(parameterResultVar, "ok")
-                          ])
+                            ts.get(parameterResultVar, "ok"),
+                          ]),
                         ]
                       )
-                    )
-                  ]
+                    ),
+                  ],
                 },
                 {
                   caseTag: "Error",
@@ -541,24 +541,24 @@ const resultCode = (): ts.Function => {
                     ts.statementReturn(
                       ts.callMethod(
                         ts.arrayLiteral([
-                          { expr: ts.numberLiteral(1), spread: false }
+                          { expr: ts.numberLiteral(1), spread: false },
                         ]),
                         "concat",
                         [
                           ts.call(ts.variable(errorEncodeFunctionName), [
-                            ts.get(parameterResultVar, "error")
-                          ])
+                            ts.get(parameterResultVar, "error"),
+                          ]),
                         ]
                       )
-                    )
-                  ]
-                }
-              ]
-            })
+                    ),
+                  ],
+                },
+              ],
+            }),
           ]
         )
-      )
-    ]
+      ),
+    ],
   };
 };
 
@@ -598,12 +598,12 @@ export const customCode = (customType: type.CustomType): ts.Function => {
       {
         name: identifer.fromString(parameterName),
         document: "",
-        type_: util.typeToTypeScriptType(type.typeCustom(customType.name))
-      }
+        type_: util.typeToTypeScriptType(type.typeCustom(customType.name)),
+      },
     ],
     typeParameterList: [],
     returnType: readonlyArrayNumber,
-    statementList
+    statementList,
   };
 };
 
@@ -620,7 +620,7 @@ export const customProductCode = (
       encodeVarEval(
         memberNameAndType.memberType,
         ts.get(parameter, memberNameAndType.name)
-      )
+      ),
     ]);
   }
   return [ts.statementReturn(e)];
@@ -641,8 +641,8 @@ export const customSumCode = (
               index,
               parameter
             )
-        )
-      })
+        ),
+      }),
     ];
   }
   return [
@@ -654,8 +654,8 @@ export const customSumCode = (
           index,
           parameter
         )
-      )
-    })
+      ),
+    }),
   ];
 };
 
@@ -679,19 +679,19 @@ const tagNameAndParameterToSwitchPattern = (
                   tagNameAndParameter.parameter.value
                 )
               )
-            )
+            ),
           ]
         );
 
       case "Nothing":
         return ts.arrayLiteral([
-          { expr: ts.numberLiteral(index), spread: false }
+          { expr: ts.numberLiteral(index), spread: false },
         ]);
     }
   })();
   return {
     caseTag: tagNameAndParameter.name,
-    statementList: [ts.statementReturn(returnExpr)]
+    statementList: [ts.statementReturn(returnExpr)],
   };
 };
 
@@ -716,7 +716,7 @@ const encodeFunctionExpr = (type_: type.Type): ts.Expr => {
     case "Result":
       return ts.call(ts.variable(resultName), [
         encodeFunctionExpr(type_.resultType.ok),
-        encodeFunctionExpr(type_.resultType.error)
+        encodeFunctionExpr(type_.resultType.error),
       ]);
     case "Id":
       return ts.variable(encodeIdName);

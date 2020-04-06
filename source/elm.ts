@@ -8,7 +8,7 @@ export const generateCode = (
 ): string => {
   const idOrTokenTypeNameList = [...idOrTokenTypeNameSet];
   const notIncludeBinaryCustomTypeList = customTypeList.filter(
-    customType => !type.isIncludeBinaryType(customType)
+    (customType) => !type.isIncludeBinaryType(customType)
   );
   return [
     moduleExportList(
@@ -26,7 +26,7 @@ export const generateCode = (
     maybeJsonDecoder,
     resultJsonDecoder,
     ...idOrTokenTypeNameList.map(idOrTokenToJsonDecoderCode),
-    ...notIncludeBinaryCustomTypeList.map(customTypeToJsonDecoder)
+    ...notIncludeBinaryCustomTypeList.map(customTypeToJsonDecoder),
   ].join("\n\n");
 };
 
@@ -41,9 +41,9 @@ const moduleExportList = (
     " exposing (" +
     [
       ...[...idOrTokenTypeNameSet].map(
-        idOrTokenTypeName => idOrTokenTypeName + "(..)"
+        (idOrTokenTypeName) => idOrTokenTypeName + "(..)"
       ),
-      ...customTypeList.map(customType => {
+      ...customTypeList.map((customType) => {
         switch (customType.body._) {
           case "Sum":
             return customType.name + "(..)";
@@ -56,7 +56,7 @@ const moduleExportList = (
       ...[...idOrTokenTypeNameSet].map(
         customOrIdOrTokenTypeNameToToJsonValueFunctionName
       ),
-      ...customTypeList.map(customType =>
+      ...customTypeList.map((customType) =>
         customOrIdOrTokenTypeNameToToJsonValueFunctionName(customType.name)
       ),
       "maybeJsonDecoder",
@@ -64,9 +64,9 @@ const moduleExportList = (
       ...[...idOrTokenTypeNameSet].map(
         customOrIdOrTokenTypeNameToJsonDecoderFunctionName
       ),
-      ...customTypeList.map(customType =>
+      ...customTypeList.map((customType) =>
         customOrIdOrTokenTypeNameToJsonDecoderFunctionName(customType.name)
-      )
+      ),
     ].join(", ") +
     ")"
   );
@@ -103,7 +103,7 @@ const createType = (
   typeName +
   "\n  = " +
   tagNameAndParameterArray
-    .map(tagNameAndParameter => {
+    .map((tagNameAndParameter) => {
       switch (tagNameAndParameter.parameter._) {
         case "Just":
           return (
@@ -131,7 +131,7 @@ const createTypeAlias = (
     " = { " +
     memberNameAndTypeArray
       .map(
-        memberNameAndType =>
+        (memberNameAndType) =>
           type.elmIdentiferFromString(memberNameAndType.name) +
           ": " +
           typeToElmType(memberNameAndType.memberType)
@@ -232,7 +232,7 @@ const customTypeSumToToJsonValueCodeBody = (
       caseHeader +
       tagNameAndParameterArray
         .map(
-          tagNameAndParameter =>
+          (tagNameAndParameter) =>
             indentString.repeat(2) +
             createConstructor(customTypeName, tagNameAndParameter.name) +
             " ->\n" +
@@ -247,7 +247,7 @@ const customTypeSumToToJsonValueCodeBody = (
   return (
     caseHeader +
     tagNameAndParameterArray
-      .map(tagNameAndParameter => {
+      .map((tagNameAndParameter) => {
         switch (tagNameAndParameter.parameter._) {
           case "Just": {
             return (
@@ -297,7 +297,7 @@ const customTypeProductToToJsonValueCodeBody = (
     "[ " +
     memberNameAndTypeArray
       .map(
-        memberNameAndType =>
+        (memberNameAndType) =>
           '( "' +
           memberNameAndType.name +
           '", ' +
@@ -441,7 +441,7 @@ const customTypeSumToJsonDecoderCodeBody = (
     indentString.repeat(4) +
     "case tag of\n" +
     tagNameAndParameterArray
-      .map(tagNameAndParameter =>
+      .map((tagNameAndParameter) =>
         tagNameAndParameterToPatternCode(customTypeName, tagNameAndParameter)
       )
       .join("\n") +
@@ -497,7 +497,7 @@ const customTypeProductToJsonDecoderCodeBody = (
     indentString.repeat(2) +
     "(\\" +
     memberNameAndTypeArray
-      .map(memberNameAndType =>
+      .map((memberNameAndType) =>
         type.elmIdentiferFromString(memberNameAndType.name)
       )
       .join(" ") +
@@ -506,7 +506,7 @@ const customTypeProductToJsonDecoderCodeBody = (
     "{ " +
     memberNameAndTypeArray
       .map(
-        memberNameAndType =>
+        (memberNameAndType) =>
           type.elmIdentiferFromString(memberNameAndType.name) +
           " = " +
           type.elmIdentiferFromString(memberNameAndType.name)
@@ -519,7 +519,7 @@ const customTypeProductToJsonDecoderCodeBody = (
     ")\n" +
     memberNameAndTypeArray
       .map(
-        memberNameAndType =>
+        (memberNameAndType) =>
           indentString.repeat(2) +
           '|> Jdp.required "' +
           memberNameAndType.name +

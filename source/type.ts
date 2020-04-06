@@ -70,7 +70,7 @@ export const typeMaybe = (type_: Type): Type => ({ _: "Maybe", type_: type_ });
  */
 export const typeResult = (resultType: ResultType): Type => ({
   _: "Result",
-  resultType: resultType
+  resultType: resultType,
 });
 
 /**
@@ -79,7 +79,7 @@ export const typeResult = (resultType: ResultType): Type => ({
  */
 export const typeId = (string_: string): Type => ({
   _: "Id",
-  string_: string_
+  string_: string_,
 });
 
 /**
@@ -88,7 +88,7 @@ export const typeId = (string_: string): Type => ({
  */
 export const typeToken = (string_: string): Type => ({
   _: "Token",
-  string_: string_
+  string_: string_,
 });
 
 /**
@@ -97,7 +97,7 @@ export const typeToken = (string_: string): Type => ({
  */
 export const typeCustom = (string_: string): Type => ({
   _: "Custom",
-  string_: string_
+  string_: string_,
 });
 
 export type CustomType = {
@@ -132,33 +132,33 @@ export const customTypeBodySum = (
   tagNameAndParameterList: ReadonlyArray<TagNameAndParameter>
 ): CustomTypeBody => ({
   _: "Sum",
-  tagNameAndParameterList
+  tagNameAndParameterList,
 });
 
 export const customTypeBodyProduct = (
   memberNameAndTypeList: ReadonlyArray<MemberNameAndType>
 ): CustomTypeBody => ({
   _: "Product",
-  memberNameAndTypeList
+  memberNameAndTypeList,
 });
 
 export const maybeJust = <T>(value: T): Maybe<T> => ({
   _: "Just",
-  value: value
+  value: value,
 });
 
 export const maybeNothing = <T>(): Maybe<T> => ({
-  _: "Nothing"
+  _: "Nothing",
 });
 
 export const resultOk = <ok, error>(ok: ok): Result<ok, error> => ({
   _: "Ok",
-  ok: ok
+  ok: ok,
 });
 
 export const resultError = <ok, error>(error: error): Result<ok, error> => ({
   _: "Error",
-  error: error
+  error: error,
 });
 
 export const customTypeToTypeName = (customTypeName: string): string =>
@@ -196,7 +196,7 @@ export const isProductTypeAllNoParameter = (
   tagNameAndParameterArray: ReadonlyArray<TagNameAndParameter>
 ): boolean =>
   tagNameAndParameterArray.every(
-    tagNameAndParameter => tagNameAndParameter.parameter._ === "Nothing"
+    (tagNameAndParameter) => tagNameAndParameter.parameter._ === "Nothing"
   );
 
 export const typeToMemberOrParameterName = (
@@ -233,7 +233,7 @@ const elmReservedList = [
   "port",
   "exposing",
   "as",
-  "alias"
+  "alias",
 ];
 
 export const collectIdOrTokenTypeNameSet = (
@@ -243,7 +243,7 @@ export const collectIdOrTokenTypeNameSet = (
   for (const customType of customTypeList) {
     idAndTokenTypeNameSet = new Set([
       ...idAndTokenTypeNameSet,
-      ...collectIdOrTokenTypeNameSetInCustomType(customType)
+      ...collectIdOrTokenTypeNameSetInCustomType(customType),
     ]);
   }
   return idAndTokenTypeNameSet;
@@ -271,7 +271,7 @@ const collectIdOrTokenTypeNameSetInProduct = (
   for (const memberNameAndType of memberNameAndTypeList) {
     idAndTokenTypeNameSet = new Set([
       ...idAndTokenTypeNameSet,
-      ...getIdOrTokenTypeNameInType(memberNameAndType.memberType)
+      ...getIdOrTokenTypeNameInType(memberNameAndType.memberType),
     ]);
   }
   return idAndTokenTypeNameSet;
@@ -286,7 +286,7 @@ const collectIdOrTokenTypeNameSetInSum = (
       case "Just": {
         idAndTokenTypeNameSet = new Set([
           ...idAndTokenTypeNameSet,
-          ...getIdOrTokenTypeNameInType(memberNameAndType.parameter.value)
+          ...getIdOrTokenTypeNameInType(memberNameAndType.parameter.value),
         ]);
       }
     }
@@ -311,7 +311,7 @@ const getIdOrTokenTypeNameInType = (type_: Type): Set<string> => {
     case "Result":
       return new Set([
         ...getIdOrTokenTypeNameInType(type_.resultType.ok),
-        ...getIdOrTokenTypeNameInType(type_.resultType.error)
+        ...getIdOrTokenTypeNameInType(type_.resultType.error),
       ]);
   }
 };

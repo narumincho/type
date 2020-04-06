@@ -39,12 +39,12 @@ export const decodeInt32 = (
       if (offset * 7 < 32 && (byte & 0x40) !== 0) {
         return {
           result: result | (~0 << (offset * 7)),
-          nextIndex: index + offset
+          nextIndex: index + offset,
         };
       }
       return {
         result: result,
-        nextIndex: index + offset
+        nextIndex: index + offset,
       };
     }
   }
@@ -87,12 +87,12 @@ export const decodeString = (
     result: new TextDecoder().decode(
       binary.slice(length.nextIndex, length.nextIndex + length.result)
     ),
-    nextIndex: length.nextIndex + length.result
+    nextIndex: length.nextIndex + length.result,
   };
 };
 
 export const encodeBoolean = (value: boolean): ReadonlyArray<number> => [
-  value ? 1 : 0
+  value ? 1 : 0,
 ];
 
 export const decodeBoolean = (
@@ -100,7 +100,7 @@ export const decodeBoolean = (
   binary: Uint8Array
 ): { result: boolean; nextIndex: number } => ({
   result: binary[index] !== 0,
-  nextIndex: index + 1
+  nextIndex: index + 1,
 });
 
 export const encodeBinary = (value: Uint8Array): ReadonlyArray<number> => {
@@ -115,7 +115,7 @@ export const decodeBinary = (
   const nextIndex = length.nextIndex + length.result;
   return {
     result: binary.slice(length.nextIndex, nextIndex),
-    nextIndex: nextIndex
+    nextIndex: nextIndex,
   };
 };
 
@@ -132,9 +132,9 @@ export const decodeHash = (
   binary: Uint8Array
 ): { result: string; nextIndex: number } => ({
   result: Array.from(binary.slice(index, index + 32))
-    .map(n => n.toString(16).padStart(2, "0"))
+    .map((n) => n.toString(16).padStart(2, "0"))
     .join(""),
-  nextIndex: index + 32
+  nextIndex: index + 32,
 });
 
 export const encodeId = (id: string): ReadonlyArray<number> => {
@@ -150,9 +150,9 @@ export const decodeId = (
   binary: Uint8Array
 ): { result: string; nextIndex: number } => ({
   result: Array.from(binary.slice(index, index + 16))
-    .map(n => n.toString(16).padStart(2, "0"))
+    .map((n) => n.toString(16).padStart(2, "0"))
     .join(""),
-  nextIndex: index + 16
+  nextIndex: index + 16,
 });
 
 export const encodeStringList = (
@@ -199,7 +199,7 @@ export const decodeList = <T>(
   }
   return {
     result: result,
-    nextIndex: index
+    nextIndex: index,
   };
 };
 
@@ -234,13 +234,13 @@ export const decodeMaybe = <T>(
       );
       return {
         result: type.maybeJust(valueAndNextIndex.result),
-        nextIndex: valueAndNextIndex.nextIndex
+        nextIndex: valueAndNextIndex.nextIndex,
       };
     }
     case 1: {
       return {
         result: type.maybeNothing(),
-        nextIndex: patternIndexAndNextIndex.nextIndex
+        nextIndex: patternIndexAndNextIndex.nextIndex,
       };
     }
   }
@@ -271,7 +271,7 @@ export const decodeResult = <ok, error>(
       );
       return {
         result: type.resultOk(okAndNextIndex.result),
-        nextIndex: okAndNextIndex.nextIndex
+        nextIndex: okAndNextIndex.nextIndex,
       };
     }
     case 1: {
@@ -281,7 +281,7 @@ export const decodeResult = <ok, error>(
       );
       return {
         result: type.resultError(errorAndNextIndex.result),
-        nextIndex: errorAndNextIndex.nextIndex
+        nextIndex: errorAndNextIndex.nextIndex,
       };
     }
   }
@@ -329,8 +329,8 @@ export const decodeUser = (
     result: {
       id: idAndIndex.result as UserId,
       name: nameAndIndex.result,
-      age: ageAndIndex.result
+      age: ageAndIndex.result,
     },
-    nextIndex: ageAndIndex.nextIndex
+    nextIndex: ageAndIndex.nextIndex,
   };
 };

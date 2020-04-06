@@ -29,7 +29,7 @@ export const typeToTypeScriptType = (type_: type.Type): ts.Type => {
         ts.typeScopeInGlobal(identifer.fromString("Result")),
         [
           typeToTypeScriptType(type_.resultType.error),
-          typeToTypeScriptType(type_.resultType.ok)
+          typeToTypeScriptType(type_.resultType.ok),
         ]
       );
 

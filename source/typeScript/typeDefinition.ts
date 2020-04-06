@@ -11,7 +11,7 @@ export const generateTypeDefinition = (
     maybeDefinition,
     resultDefinition,
     ...customTypeList.map(customTypeToDefinition),
-    ...[...idOrTokenTypeNameSet].map(idOrTokenDefinition)
+    ...[...idOrTokenTypeNameSet].map(idOrTokenDefinition),
   ];
 };
 
@@ -36,15 +36,15 @@ const maybeDefinition: ts.TypeAlias = {
           "value",
           {
             type_: ts.typeScopeInFile(identifer.fromString("T")),
-            document: ""
-          }
-        ]
+            document: "",
+          },
+        ],
       ])
     ),
     ts.typeObject(
       new Map([["_", { type_: ts.typeStringLiteral("Nothing"), document: "" }]])
-    )
-  ])
+    ),
+  ]),
 };
 
 /* ========================================
@@ -68,9 +68,9 @@ const resultDefinition: ts.TypeAlias = {
           "ok",
           {
             type_: ts.typeScopeInFile(identifer.fromString("ok")),
-            document: ""
-          }
-        ]
+            document: "",
+          },
+        ],
       ])
     ),
     ts.typeObject(
@@ -80,12 +80,12 @@ const resultDefinition: ts.TypeAlias = {
           "error",
           {
             type_: ts.typeScopeInFile(identifer.fromString("error")),
-            document: ""
-          }
-        ]
+            document: "",
+          },
+        ],
       ])
-    )
-  ])
+    ),
+  ]),
 };
 /* ========================================
                 Id Token
@@ -100,10 +100,10 @@ const idOrTokenDefinition = (name: string): ts.TypeAlias => ({
     ts.typeString,
     ts.typeObject(
       new Map([
-        ["_" + c.firstLowerCase(name), { type_: ts.typeNever, document: "" }]
+        ["_" + c.firstLowerCase(name), { type_: ts.typeNever, document: "" }],
       ])
     )
-  )
+  ),
 });
 
 /* ========================================
@@ -131,10 +131,10 @@ export const customTypeToDefinition = (
           document: customType.description,
           parameterList: [],
           type_: ts.typeUnion(
-            customType.body.tagNameAndParameterList.map(tagNameAndParameter =>
+            customType.body.tagNameAndParameterList.map((tagNameAndParameter) =>
               ts.typeStringLiteral(tagNameAndParameter.name)
             )
-          )
+          ),
         };
       }
       return {
@@ -142,10 +142,10 @@ export const customTypeToDefinition = (
         document: customType.description,
         parameterList: [],
         type_: ts.typeUnion(
-          customType.body.tagNameAndParameterList.map(tagNameAndParameter =>
+          customType.body.tagNameAndParameterList.map((tagNameAndParameter) =>
             tagNameAndParameterToObjectType(tagNameAndParameter)
           )
-        )
+        ),
       };
     case "Product":
       return {
@@ -154,15 +154,15 @@ export const customTypeToDefinition = (
         parameterList: [],
         type_: ts.typeObject(
           new Map(
-            customType.body.memberNameAndTypeList.map(memberNameAndType => [
+            customType.body.memberNameAndTypeList.map((memberNameAndType) => [
               memberNameAndType.name,
               {
                 type_: util.typeToTypeScriptType(memberNameAndType.memberType),
-                document: memberNameAndType.description
-              }
+                document: memberNameAndType.description,
+              },
             ])
           )
-        )
+        ),
       };
   }
 };
@@ -174,8 +174,8 @@ const tagNameAndParameterToObjectType = (
     "_",
     {
       document: "",
-      type_: ts.typeStringLiteral(tagNameAndParameter.name)
-    }
+      type_: ts.typeStringLiteral(tagNameAndParameter.name),
+    },
   ];
 
   switch (tagNameAndParameter.parameter._) {
@@ -191,9 +191,9 @@ const tagNameAndParameterToObjectType = (
               document: "",
               type_: util.typeToTypeScriptType(
                 tagNameAndParameter.parameter.value
-              )
-            }
-          ]
+              ),
+            },
+          ],
         ])
       );
     case "Nothing":

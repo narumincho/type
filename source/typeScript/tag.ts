@@ -11,7 +11,7 @@ export const generate = (
     ts.definitionFunction(maybeJustCode),
     ts.definitionFunction(maybeNothingCode),
     ts.definitionFunction(resultOkCode),
-    ts.definitionFunction(resultErrorCode)
+    ts.definitionFunction(resultErrorCode),
   ].concat(customTypeCode(customTypeList));
 };
 
@@ -32,8 +32,8 @@ const maybeJustCode: ts.Function = {
     {
       name: identifer.fromString("value"),
       document: "",
-      type_: ts.typeScopeInFile(identifer.fromString("T"))
-    }
+      type_: ts.typeScopeInFile(identifer.fromString("T")),
+    },
   ],
   returnType: typeDef.maybeVar(ts.typeScopeInFile(identifer.fromString("T"))),
   typeParameterList: [identifer.fromString("T")],
@@ -41,10 +41,10 @@ const maybeJustCode: ts.Function = {
     ts.statementReturn(
       ts.objectLiteral([
         ts.memberKeyValue("_", ts.stringLiteral("Just")),
-        ts.memberKeyValue("value", ts.variable(identifer.fromString("value")))
+        ts.memberKeyValue("value", ts.variable(identifer.fromString("value"))),
       ])
-    )
-  ]
+    ),
+  ],
 };
 
 const maybeNothingName = identifer.fromString("maybeNothing");
@@ -62,8 +62,8 @@ const maybeNothingCode: ts.Function = {
   statementList: [
     ts.statementReturn(
       ts.objectLiteral([ts.memberKeyValue("_", ts.stringLiteral("Nothing"))])
-    )
-  ]
+    ),
+  ],
 };
 
 /* ========================================
@@ -82,8 +82,8 @@ const resultOkCode: ts.Function = {
     {
       name: identifer.fromString("ok"),
       document: "",
-      type_: ts.typeScopeInFile(identifer.fromString("ok"))
-    }
+      type_: ts.typeScopeInFile(identifer.fromString("ok")),
+    },
   ],
   returnType: typeDef.resultVar(
     ts.typeScopeInFile(identifer.fromString("ok")),
@@ -91,16 +91,16 @@ const resultOkCode: ts.Function = {
   ),
   typeParameterList: [
     identifer.fromString("ok"),
-    identifer.fromString("error")
+    identifer.fromString("error"),
   ],
   statementList: [
     ts.statementReturn(
       ts.objectLiteral([
         ts.memberKeyValue("_", ts.stringLiteral("Ok")),
-        ts.memberKeyValue("ok", ts.variable(identifer.fromString("ok")))
+        ts.memberKeyValue("ok", ts.variable(identifer.fromString("ok"))),
       ])
-    )
-  ]
+    ),
+  ],
 };
 
 const resultErrorName = identifer.fromString("resultError");
@@ -115,8 +115,8 @@ const resultErrorCode: ts.Function = {
     {
       name: identifer.fromString("error"),
       document: "",
-      type_: ts.typeScopeInFile(identifer.fromString("error"))
-    }
+      type_: ts.typeScopeInFile(identifer.fromString("error")),
+    },
   ],
   returnType: typeDef.resultVar(
     ts.typeScopeInFile(identifer.fromString("ok")),
@@ -124,16 +124,16 @@ const resultErrorCode: ts.Function = {
   ),
   typeParameterList: [
     identifer.fromString("ok"),
-    identifer.fromString("error")
+    identifer.fromString("error"),
   ],
   statementList: [
     ts.statementReturn(
       ts.objectLiteral([
         ts.memberKeyValue("_", ts.stringLiteral("Error")),
-        ts.memberKeyValue("error", ts.variable(identifer.fromString("error")))
+        ts.memberKeyValue("error", ts.variable(identifer.fromString("error"))),
       ])
-    )
-  ]
+    ),
+  ],
 };
 
 /* ========================================
@@ -185,7 +185,7 @@ const productTypeToTagList = (
   customTypeName: string,
   tagNameAndParameterList: ReadonlyArray<type.TagNameAndParameter>
 ): ReadonlyArray<ts.Definition> => {
-  return tagNameAndParameterList.map(tagNameAndParameter =>
+  return tagNameAndParameterList.map((tagNameAndParameter) =>
     tagNameAndParameterToTag(customTypeName, tagNameAndParameter)
   );
 };
@@ -212,8 +212,8 @@ const tagNameAndParameterToTag = (
             document: "",
             type_: util.typeToTypeScriptType(
               tagNameAndParameter.parameter.value
-            )
-          }
+            ),
+          },
         ],
         typeParameterList: [],
         returnType: ts.typeScopeInFile(identifer.fromString(customTypeName)),
@@ -230,10 +230,10 @@ const tagNameAndParameterToTag = (
                     tagNameAndParameter.parameter.value
                   )
                 )
-              )
+              ),
             ])
-          )
-        ]
+          ),
+        ],
       });
 
     case "Nothing":
@@ -244,7 +244,7 @@ const tagNameAndParameterToTag = (
         ),
         document: tagNameAndParameter.description,
         type_: ts.typeScopeInFile(identifer.fromString(customTypeName)),
-        expr: ts.objectLiteral([tagField])
+        expr: ts.objectLiteral([tagField]),
       });
   }
 };

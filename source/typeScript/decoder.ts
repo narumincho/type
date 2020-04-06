@@ -17,7 +17,7 @@ export const generateCode = (
     resultCode(),
     hexStringCode(16, idName),
     hexStringCode(32, tokenName),
-    ...customTypeList.map(customCode)
+    ...customTypeList.map(customCode),
   ];
 };
 const idName = identifer.fromString("decodeId");
@@ -39,7 +39,7 @@ const returnStatement = (
   ts.statementReturn(
     ts.objectLiteral([
       ts.memberKeyValue(resultProperty, resultExpr),
-      ts.memberKeyValue(nextIndexProperty, nextIndexExpr)
+      ts.memberKeyValue(nextIndexProperty, nextIndexExpr),
     ])
   );
 
@@ -53,13 +53,13 @@ const parameterList: ReadonlyArray<ts.ParameterWithDocument> = [
   {
     name: indexIdentifer,
     type_: ts.typeNumber,
-    document: "バイナリを読み込み開始位置"
+    document: "バイナリを読み込み開始位置",
   },
   {
     name: binaryIdentifer,
     type_: ts.uint8ArrayType,
-    document: "バイナリ"
-  }
+    document: "バイナリ",
+  },
 ];
 
 const parameterIndex = ts.variable(indexIdentifer);
@@ -75,7 +75,7 @@ export const returnType = (resultType: ts.Type): ts.Type =>
   ts.typeObject(
     new Map([
       [resultProperty, { type_: resultType, document: "" }],
-      [nextIndexProperty, { type_: ts.typeNumber, document: "" }]
+      [nextIndexProperty, { type_: ts.typeNumber, document: "" }],
     ])
   );
 
@@ -166,14 +166,14 @@ const int32Code = (): ts.Function => {
                     )
                   ),
                   ts.addition(parameterIndex, offsetVar)
-                )
+                ),
               ]
             ),
-            returnStatement(resultVar, ts.addition(parameterIndex, offsetVar))
+            returnStatement(resultVar, ts.addition(parameterIndex, offsetVar)),
           ]
-        )
-      ])
-    ]
+        ),
+      ]),
+    ],
   };
 };
 /* ========================================
@@ -217,7 +217,7 @@ export const stringCode = (): ts.Function => {
         ts.uint8ArrayType,
         ts.callMethod(parameterBinary, "slice", [
           getNextIndex(lengthVar),
-          nextIndexVar
+          nextIndexVar,
         ])
       ),
       ts.statementVariableDefinition(
@@ -245,7 +245,7 @@ export const stringCode = (): ts.Function => {
             [textBinaryVar]
           ),
           nextIndexVar
-        )
+        ),
       ]),
       returnStatement(
         ts.callMethod(
@@ -257,8 +257,8 @@ export const stringCode = (): ts.Function => {
           [textBinaryVar]
         ),
         nextIndexVar
-      )
-    ]
+      ),
+    ],
   };
 };
 /* ========================================
@@ -280,8 +280,8 @@ const boolCode: ts.Function = {
         ts.numberLiteral(0)
       ),
       ts.addition(parameterIndex, ts.numberLiteral(1))
-    )
-  ]
+    ),
+  ],
 };
 
 /* ========================================
@@ -317,11 +317,11 @@ const binaryCode = (): ts.Function => {
       returnStatement(
         ts.callMethod(parameterBinary, "slice", [
           getNextIndex(lengthVar),
-          nextIndexVar
+          nextIndexVar,
         ]),
         nextIndexVar
-      )
-    ]
+      ),
+    ],
   };
 };
 
@@ -346,10 +346,10 @@ const hexStringCode = (
             {
               expr: ts.callMethod(parameterBinary, "slice", [
                 parameterIndex,
-                ts.addition(parameterIndex, ts.numberLiteral(byteSize))
+                ts.addition(parameterIndex, ts.numberLiteral(byteSize)),
               ]),
-              spread: true
-            }
+              spread: true,
+            },
           ]),
           "map",
           [
@@ -357,8 +357,8 @@ const hexStringCode = (
               [
                 {
                   name: identifer.fromString("n"),
-                  type_: ts.typeNumber
-                }
+                  type_: ts.typeNumber,
+                },
               ],
               ts.typeString,
               [
@@ -372,9 +372,9 @@ const hexStringCode = (
                     "padStart",
                     [ts.numberLiteral(2), ts.stringLiteral("0")]
                   )
-                )
+                ),
               ]
-            )
+            ),
           ]
         ),
         "join",
@@ -382,8 +382,8 @@ const hexStringCode = (
       ),
 
       ts.addition(parameterIndex, ts.numberLiteral(byteSize))
-    )
-  ]
+    ),
+  ],
 });
 
 /* ========================================
@@ -414,8 +414,8 @@ const listCode = (): ts.Function => {
         type_: ts.typeFunction(
           [ts.typeNumber, ts.uint8ArrayType],
           returnType(elementTypeVar)
-        )
-      }
+        ),
+      },
     ],
     returnType: ts.typeFunction(
       [ts.typeNumber, ts.uint8ArrayType],
@@ -454,21 +454,21 @@ const listCode = (): ts.Function => {
                 ),
                 ts.statementEvaluateExpr(
                   ts.callMethod(resultVar, "push", [
-                    getResult(resultAndNextIndexVar)
+                    getResult(resultAndNextIndexVar),
                   ])
                 ),
                 ts.statementSet(
                   parameterIndex,
                   null,
                   getNextIndex(resultAndNextIndexVar)
-                )
+                ),
               ]
             ),
-            returnStatement(resultVar, parameterIndex)
+            returnStatement(resultVar, parameterIndex),
           ]
         )
-      )
-    ]
+      ),
+    ],
   };
 };
 
@@ -502,7 +502,7 @@ const maybeCode = (): ts.Function => {
           returnType(elementTypeVar),
           ts.call(ts.variable(decodeFunctionName), [
             getNextIndex(patternIndexAndNextIndexVar),
-            parameterBinary
+            parameterBinary,
           ])
         ),
         returnStatement(
@@ -510,7 +510,7 @@ const maybeCode = (): ts.Function => {
             getResult(ts.variable(identifer.fromString("valueAndNextIndex")))
           ),
           getNextIndex(ts.variable(identifer.fromString("valueAndNextIndex")))
-        )
+        ),
       ]
     ),
     ts.statementIf(
@@ -519,14 +519,14 @@ const maybeCode = (): ts.Function => {
         returnStatement(
           tag.maybeNothingVarEval,
           getNextIndex(patternIndexAndNextIndexVar)
-        )
+        ),
       ]
     ),
     ts.statementThrowError(
       ts.stringLiteral(
         "存在しないMaybeのパターンを受け取った. 型情報を更新してください"
       )
-    )
+    ),
   ];
 
   return {
@@ -539,8 +539,8 @@ const maybeCode = (): ts.Function => {
         type_: ts.typeFunction(
           [ts.typeNumber, ts.uint8ArrayType],
           returnType(elementTypeVar)
-        )
-      }
+        ),
+      },
     ],
     returnType: ts.typeFunction(
       [ts.typeNumber, ts.uint8ArrayType],
@@ -554,8 +554,8 @@ const maybeCode = (): ts.Function => {
           returnType(typeDef.maybeVar(elementTypeVar)),
           body
         )
-      )
-    ]
+      ),
+    ],
   };
 };
 
@@ -592,7 +592,7 @@ const resultCode = (): ts.Function => {
           returnType(okTypeVar),
           ts.call(ts.variable(okDecodeFunctionName), [
             getNextIndex(patternIndexAndNextIndexVar),
-            parameterBinary
+            parameterBinary,
           ])
         ),
         returnStatement(
@@ -600,7 +600,7 @@ const resultCode = (): ts.Function => {
             getResult(ts.variable(identifer.fromString("okAndNextIndex")))
           ),
           getNextIndex(ts.variable(identifer.fromString("okAndNextIndex")))
-        )
+        ),
       ]
     ),
     ts.statementIf(
@@ -611,7 +611,7 @@ const resultCode = (): ts.Function => {
           returnType(errorTypeVar),
           ts.call(ts.variable(errorDecodeFunctionName), [
             getNextIndex(patternIndexAndNextIndexVar),
-            parameterBinary
+            parameterBinary,
           ])
         ),
         returnStatement(
@@ -619,14 +619,14 @@ const resultCode = (): ts.Function => {
             getResult(ts.variable(identifer.fromString("errorAndNextIndex")))
           ),
           getNextIndex(ts.variable(identifer.fromString("errorAndNextIndex")))
-        )
+        ),
       ]
     ),
     ts.statementThrowError(
       ts.stringLiteral(
         "存在しないResultのパターンを受け取った. 型情報を更新してください"
       )
-    )
+    ),
   ];
 
   return {
@@ -639,7 +639,7 @@ const resultCode = (): ts.Function => {
         type_: ts.typeFunction(
           [ts.typeNumber, ts.uint8ArrayType],
           returnType(okTypeVar)
-        )
+        ),
       },
       {
         name: errorDecodeFunctionName,
@@ -647,8 +647,8 @@ const resultCode = (): ts.Function => {
         type_: ts.typeFunction(
           [ts.typeNumber, ts.uint8ArrayType],
           returnType(errorTypeVar)
-        )
-      }
+        ),
+      },
     ],
     returnType: ts.typeFunction(
       [ts.typeNumber, ts.uint8ArrayType],
@@ -662,8 +662,8 @@ const resultCode = (): ts.Function => {
           returnType(typeDef.resultVar(okTypeVar, errorTypeVar)),
           body
         )
-      )
-    ]
+      ),
+    ],
   };
 };
 
@@ -696,7 +696,7 @@ const customCode = (customType: type.CustomType): ts.Function => {
     returnType: returnType(
       util.typeToTypeScriptType(type.typeCustom(customType.name))
     ),
-    statementList: statementList
+    statementList: statementList,
   };
 };
 
@@ -727,7 +727,7 @@ const customSumCode = (
     ),
     ts.statementThrowError(
       ts.stringLiteral("存在しないパターンを指定された 型を更新してください")
-    )
+    ),
   ];
 };
 
@@ -763,7 +763,7 @@ const tagNameAndParameterCode = (
               [getResult(ts.variable(identifer.fromString("result")))]
             ),
             getNextIndex(ts.variable(identifer.fromString("result")))
-          )
+          ),
         ]
       );
     case "Nothing":
@@ -778,7 +778,7 @@ const tagNameAndParameterCode = (
               ? ts.stringLiteral(tagNameAndParameter.name)
               : tag.customTypeVar(customTypeName, tagNameAndParameter.name),
             getNextIndex(patternIndexAndNextIndexVar)
-          )
+          ),
         ]
       );
   }
@@ -814,7 +814,7 @@ const customProductCode = (
               parameterBinary
             )
           )
-        )
+        ),
       };
     },
     { nextIndexExpr: parameterIndex, statementList: [] }
@@ -862,7 +862,7 @@ const decodeFunctionExpr = (type_: type.Type): ts.Expr => {
     case "Result":
       return ts.call(ts.variable(resultName), [
         decodeFunctionExpr(type_.resultType.ok),
-        decodeFunctionExpr(type_.resultType.error)
+        decodeFunctionExpr(type_.resultType.error),
       ]);
     case "Id":
       return ts.typeAssertion(
