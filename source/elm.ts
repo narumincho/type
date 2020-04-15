@@ -560,7 +560,7 @@ const typeToDecoder = (type_: type.Type): string => {
 };
 
 const commentToCode = (comment: string): string =>
-  comment === "" ? "" : "{-| " + comment + " -}\n";
+  comment === "" ? "" : "{-| " + comment + " \n-}\n";
 
 const typeToElmType = (type_: type.Type): string => {
   switch (type_._) {
