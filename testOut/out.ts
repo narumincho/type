@@ -761,10 +761,8 @@ export const decodeUrlData = (
     result: Maybe<AccessToken>;
     nextIndex: number;
   } = decodeMaybe(
-    decodeToken as (
-      a: number,
-      b: Uint8Array
-    ) => { result: AccessToken; nextIndex: number }
+    decodeToken as
+      (a: number, b: Uint8Array) => { result: AccessToken; nextIndex: number }
   )(languageAndNextIndex.nextIndex, binary);
   const ifAndNextIndex: { result: boolean; nextIndex: number } = decodeBool(
     accessTokenAndNextIndex.nextIndex,
@@ -826,20 +824,17 @@ export const decodeLocation = (
     return { result: locationHome, nextIndex: patternIndex.nextIndex };
   }
   if (patternIndex.result === 1) {
-    const result: { result: UserId; nextIndex: number } = (decodeId as (
-      a: number,
-      b: Uint8Array
-    ) => { result: UserId; nextIndex: number })(patternIndex.nextIndex, binary);
+    const result: { result: UserId; nextIndex: number } = (
+      decodeId as
+      (a: number, b: Uint8Array) => { result: UserId; nextIndex: number }
+    )(patternIndex.nextIndex, binary);
     return { result: locationUser(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 2) {
-    const result: { result: ProjectId; nextIndex: number } = (decodeId as (
-      a: number,
-      b: Uint8Array
-    ) => { result: ProjectId; nextIndex: number })(
-      patternIndex.nextIndex,
-      binary
-    );
+    const result: { result: ProjectId; nextIndex: number } = (
+      decodeId as
+      (a: number, b: Uint8Array) => { result: ProjectId; nextIndex: number }
+    )(patternIndex.nextIndex, binary);
     return {
       result: locationProject(result.result),
       nextIndex: result.nextIndex,
@@ -860,26 +855,14 @@ export const decodeProject = (
     index,
     binary
   );
-  const iconAndNextIndex: {
-    result: FileHash;
-    nextIndex: number;
-  } = (decodeToken as (
-    a: number,
-    b: Uint8Array
-  ) => { result: FileHash; nextIndex: number })(
-    nameAndNextIndex.nextIndex,
-    binary
-  );
-  const imageAndNextIndex: {
-    result: FileHash;
-    nextIndex: number;
-  } = (decodeToken as (
-    a: number,
-    b: Uint8Array
-  ) => { result: FileHash; nextIndex: number })(
-    iconAndNextIndex.nextIndex,
-    binary
-  );
+  const iconAndNextIndex: { result: FileHash; nextIndex: number } = (
+    decodeToken as
+    (a: number, b: Uint8Array) => { result: FileHash; nextIndex: number }
+  )(nameAndNextIndex.nextIndex, binary);
+  const imageAndNextIndex: { result: FileHash; nextIndex: number } = (
+    decodeToken as
+    (a: number, b: Uint8Array) => { result: FileHash; nextIndex: number }
+  )(iconAndNextIndex.nextIndex, binary);
   return {
     result: {
       name: nameAndNextIndex.result,
