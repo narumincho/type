@@ -4,12 +4,14 @@ import * as c from "./case";
 export const generateCode = (
   moduleName: string,
   customTypeList: ReadonlyArray<type.CustomType>,
-  idOrTokenTypeNameSet: Set<string>
+  idOrTokenTypeNameSet: ReadonlySet<string>
 ): string => {
   const idOrTokenTypeNameList = [...idOrTokenTypeNameSet];
   const notIncludeBinaryCustomTypeList = customTypeList.filter(
     (customType) => !type.isIncludeBinaryType(customType)
   );
+  const typeAliasNameOrTagNameSet: Set<string> = new Set();
+
   return [
     moduleExportList(
       moduleName,
@@ -17,7 +19,9 @@ export const generateCode = (
       idOrTokenTypeNameSet
     ),
     importList,
-    ...notIncludeBinaryCustomTypeList.map(customTypeToTypeDefinitionCode),
+    ...notIncludeBinaryCustomTypeList.map(
+      customTypeToTypeDefinitionCode(typeAliasNameOrTagNameSet)
+    ),
     ...idOrTokenTypeNameList.map(idOrTokenTypeToTypeDefinitionCode),
     maybeToJsonValueCode,
     resultToJsonValueCode,
@@ -33,7 +37,7 @@ export const generateCode = (
 const moduleExportList = (
   moduleName: string,
   customTypeList: ReadonlyArray<type.CustomType>,
-  idOrTokenTypeNameSet: Set<string>
+  idOrTokenTypeNameSet: ReadonlySet<string>
 ): string => {
   return (
     "module " +
@@ -79,23 +83,35 @@ import Json.Decode.Pipeline as Jdp
 `;
 
 const customTypeToTypeDefinitionCode = (
-  customType: type.CustomType
-): string => {
+  typeAliasNameOrTagNameSet: Set<string>
+) => (customType: type.CustomType): string => {
   switch (customType.body._) {
     case "Sum":
       return (
         commentToCode(customType.description) +
-        createType(customType.name, customType.body.tagNameAndParameterList)
+        createType(
+          typeAliasNameOrTagNameSet,
+          customType.name,
+          customType.body.tagNameAndParameterList
+        )
       );
-    case "Product":
+    case "Product": {
+      if (typeAliasNameOrTagNameSet.has(customType.name)) {
+        throw new Error(
+          "conflict type alias name and tag name. name =" + customType.name
+        );
+      }
+      typeAliasNameOrTagNameSet.add(customType.name);
       return (
         commentToCode(customType.description) +
         createTypeAlias(customType.name, customType.body.memberNameAndTypeList)
       );
+    }
   }
 };
 
 const createType = (
+  typeAliasNameOrTagNameSet: Set<string>,
   typeName: string,
   tagNameAndParameterArray: ReadonlyArray<type.TagNameAndParameter>
 ): string =>
@@ -104,15 +120,21 @@ const createType = (
   "\n  = " +
   tagNameAndParameterArray
     .map((tagNameAndParameter) => {
+      const tagName = createConstructor(typeName, tagNameAndParameter.name);
+      if (typeAliasNameOrTagNameSet.has(tagName)) {
+        throw new Error(
+          "conflict type alias name and tag name. name =" + tagName
+        );
+      }
+      typeAliasNameOrTagNameSet.add(tagName);
+
       switch (tagNameAndParameter.parameter._) {
         case "Just":
           return (
-            createConstructor(typeName, tagNameAndParameter.name) +
-            " " +
-            typeToElmType(tagNameAndParameter.parameter.value)
+            tagName + " " + typeToElmType(tagNameAndParameter.parameter.value)
           );
         case "Nothing":
-          return createConstructor(typeName, tagNameAndParameter.name);
+          return tagName;
       }
     })
     .join("\n  | ") +
