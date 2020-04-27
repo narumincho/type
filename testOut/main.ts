@@ -45,7 +45,7 @@ const test = <T>(
   const binary = encodeFunction(jsValue);
   console.log(
     "binary          :",
-    binary.map(e => e.toString(16).padStart(2, "0"))
+    binary.map((e) => e.toString(16).padStart(2, "0"))
   );
   const decodedJsValue = decodeFunction(0, new Uint8Array(binary)).result;
   console.log("decoded js value:", decodedJsValue);
@@ -123,7 +123,7 @@ test<out.Maybe<out.Project>>(
   out.maybeJust({
     name: "サンプルプロジェクト",
     icon: "b13333411078d64e9be75bebc374708868c728a340516c563c49fe9c5bd456c5" as out.FileHash,
-    image: "0cbeb09760a312a3562547115aa855a39d9e1ca837ed00331e3a84d6de50ff3b" as out.FileHash
+    image: "0cbeb09760a312a3562547115aa855a39d9e1ca837ed00331e3a84d6de50ff3b" as out.FileHash,
   }),
   out.encodeMaybe(out.encodeProject),
   out.decodeMaybe(out.decodeProject)

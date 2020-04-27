@@ -1,29 +1,32 @@
 import * as a from "util";
+
 /**
  * Maybe
  */
-export type Maybe<T> = { _: "Just"; value: T } | { _: "Nothing" };
+export type Maybe<T> =
+  | { readonly _: "Just"; readonly value: T }
+  | { readonly _: "Nothing" };
 
 /**
  * Result
  */
 export type Result<ok, error> =
-  | { _: "Ok"; ok: ok }
-  | { _: "Error"; error: error };
+  | { readonly _: "Ok"; readonly ok: ok }
+  | { readonly _: "Error"; readonly error: error };
 
 /**
  * 型
  */
 export type Type =
-  | { _: "Int" }
-  | { _: "String" }
-  | { _: "Bool" }
-  | { _: "List"; type_: Type }
-  | { _: "Maybe"; type_: Type }
-  | { _: "Result"; resultType: ResultType }
-  | { _: "Id"; string_: string }
-  | { _: "Token"; string_: string }
-  | { _: "Custom"; string_: string };
+  | { readonly _: "Int" }
+  | { readonly _: "String" }
+  | { readonly _: "Bool" }
+  | { readonly _: "List"; readonly type_: Type }
+  | { readonly _: "Maybe"; readonly type_: Type }
+  | { readonly _: "Result"; readonly resultType: ResultType }
+  | { readonly _: "Id"; readonly string_: string }
+  | { readonly _: "Token"; readonly string_: string }
+  | { readonly _: "Custom"; readonly string_: string };
 
 /**
  * 正常値と異常値
@@ -32,11 +35,11 @@ export type ResultType = {
   /**
    * 正常値
    */
-  ok: Type;
+  readonly ok: Type;
   /**
    * 異常値
    */
-  error: Type;
+  readonly error: Type;
 };
 
 /**
@@ -51,37 +54,39 @@ export type UrlData = {
   /**
    * クライアントモード
    */
-  clientMode: ClientMode;
+  readonly clientMode: ClientMode;
   /**
    * 場所
    */
-  location: Location;
+  readonly location: Location;
   /**
    * 言語
    */
-  language: Language;
+  readonly language: Language;
   /**
    * アクセストークン. ログインした後のリダイレクト先としてサーバーから渡される
    */
-  accessToken: Maybe<AccessToken>;
+  readonly accessToken: Maybe<AccessToken>;
   /**
    * 予約語をこっそり入れてみる
    */
-  if: boolean;
+  readonly if: boolean;
 };
 
 /**
  * デバッグの状態と, デバッグ時ならアクセスしているポート番号
  */
-export type ClientMode = { _: "DebugMode"; int32: number } | { _: "Release" };
+export type ClientMode =
+  | { readonly _: "DebugMode"; readonly int32: number }
+  | { readonly _: "Release" };
 
 /**
  * DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる
  */
 export type Location =
-  | { _: "Home" }
-  | { _: "User"; userId: UserId }
-  | { _: "Project"; projectId: ProjectId };
+  | { readonly _: "Home" }
+  | { readonly _: "User"; readonly userId: UserId }
+  | { readonly _: "Project"; readonly projectId: ProjectId };
 
 /**
  * プロジェクト
@@ -90,24 +95,24 @@ export type Project = {
   /**
    * プロジェクト名
    */
-  name: string;
+  readonly name: string;
   /**
    * プロジェクトのアイコン画像
    */
-  icon: FileHash;
+  readonly icon: FileHash;
   /**
    * プロジェクトのカバー画像
    */
-  image: FileHash;
+  readonly image: FileHash;
 };
 
-export type AccessToken = string & { _accessToken: never };
+export type AccessToken = string & { readonly _accessToken: never };
 
-export type UserId = string & { _userId: never };
+export type UserId = string & { readonly _userId: never };
 
-export type ProjectId = string & { _projectId: never };
+export type ProjectId = string & { readonly _projectId: never };
 
-export type FileHash = string & { _fileHash: never };
+export type FileHash = string & { readonly _fileHash: never };
 
 export const maybeJust = <T>(value: T): Maybe<T> => ({
   _: "Just",
@@ -416,9 +421,9 @@ export const encodeProject = (project: Project): ReadonlyArray<number> =>
 export const decodeInt32 = (
   index: number,
   binary: Uint8Array
-): { result: number; nextIndex: number } => {
-  let result = 0;
-  let offset = 0;
+): { readonly result: number; readonly nextIndex: number } => {
+  let result: number = 0;
+  let offset: number = 0;
   while (true) {
     const byte: number = binary[index + offset];
     result |= (byte & 127) << (offset * 7);
@@ -443,11 +448,11 @@ export const decodeInt32 = (
 export const decodeString = (
   index: number,
   binary: Uint8Array
-): { result: string; nextIndex: number } => {
-  const length: { result: number; nextIndex: number } = decodeInt32(
-    index,
-    binary
-  );
+): { readonly result: string; readonly nextIndex: number } => {
+  const length: {
+    readonly result: number;
+    readonly nextIndex: number;
+  } = decodeInt32(index, binary);
   const nextIndex: number = length.nextIndex + length.result;
   const textBinary: Uint8Array = binary.slice(length.nextIndex, nextIndex);
   const isBrowser: boolean =
@@ -471,7 +476,7 @@ export const decodeString = (
 export const decodeBool = (
   index: number,
   binary: Uint8Array
-): { result: boolean; nextIndex: number } => ({
+): { readonly result: boolean; readonly nextIndex: number } => ({
   result: binary[index] !== 0,
   nextIndex: index + 1,
 });
@@ -483,11 +488,11 @@ export const decodeBool = (
 export const decodeBinary = (
   index: number,
   binary: Uint8Array
-): { result: Uint8Array; nextIndex: number } => {
-  const length: { result: number; nextIndex: number } = decodeInt32(
-    index,
-    binary
-  );
+): { readonly result: Uint8Array; readonly nextIndex: number } => {
+  const length: {
+    readonly result: number;
+    readonly nextIndex: number;
+  } = decodeInt32(index, binary);
   const nextIndex: number = length.nextIndex + length.result;
   return {
     result: binary.slice(length.nextIndex, nextIndex),
@@ -496,25 +501,28 @@ export const decodeBinary = (
 };
 
 export const decodeList = <T>(
-  decodeFunction: (a: number, b: Uint8Array) => { result: T; nextIndex: number }
+  decodeFunction: (
+    a: number,
+    b: Uint8Array
+  ) => { readonly result: T; readonly nextIndex: number }
 ): ((
   a: number,
   b: Uint8Array
-) => { result: ReadonlyArray<T>; nextIndex: number }) => (
+) => { readonly result: ReadonlyArray<T>; readonly nextIndex: number }) => (
   index: number,
   binary: Uint8Array
-): { result: ReadonlyArray<T>; nextIndex: number } => {
-  const lengthResult: { result: number; nextIndex: number } = decodeInt32(
-    index,
-    binary
-  );
+): { readonly result: ReadonlyArray<T>; readonly nextIndex: number } => {
+  const lengthResult: {
+    readonly result: number;
+    readonly nextIndex: number;
+  } = decodeInt32(index, binary);
   index = lengthResult.nextIndex;
   const result: Array<T> = [];
   for (let i = 0; i < lengthResult.result; i += 1) {
-    const resultAndNextIndex: { result: T; nextIndex: number } = decodeFunction(
-      index,
-      binary
-    );
+    const resultAndNextIndex: {
+      readonly result: T;
+      readonly nextIndex: number;
+    } = decodeFunction(index, binary);
     result.push(resultAndNextIndex.result);
     index = resultAndNextIndex.nextIndex;
   }
@@ -522,20 +530,26 @@ export const decodeList = <T>(
 };
 
 export const decodeMaybe = <T>(
-  decodeFunction: (a: number, b: Uint8Array) => { result: T; nextIndex: number }
-): ((a: number, b: Uint8Array) => { result: Maybe<T>; nextIndex: number }) => (
+  decodeFunction: (
+    a: number,
+    b: Uint8Array
+  ) => { readonly result: T; readonly nextIndex: number }
+): ((
+  a: number,
+  b: Uint8Array
+) => { readonly result: Maybe<T>; readonly nextIndex: number }) => (
   index: number,
   binary: Uint8Array
-): { result: Maybe<T>; nextIndex: number } => {
+): { readonly result: Maybe<T>; readonly nextIndex: number } => {
   const patternIndexAndNextIndex: {
-    result: number;
-    nextIndex: number;
+    readonly result: number;
+    readonly nextIndex: number;
   } = decodeInt32(index, binary);
   if (patternIndexAndNextIndex.result === 0) {
-    const valueAndNextIndex: { result: T; nextIndex: number } = decodeFunction(
-      patternIndexAndNextIndex.nextIndex,
-      binary
-    );
+    const valueAndNextIndex: {
+      readonly result: T;
+      readonly nextIndex: number;
+    } = decodeFunction(patternIndexAndNextIndex.nextIndex, binary);
     return {
       result: maybeJust(valueAndNextIndex.result),
       nextIndex: valueAndNextIndex.nextIndex,
@@ -556,27 +570,27 @@ export const decodeResult = <ok, error>(
   okDecodeFunction: (
     a: number,
     b: Uint8Array
-  ) => { result: ok; nextIndex: number },
+  ) => { readonly result: ok; readonly nextIndex: number },
   errorDecodeFunction: (
     a: number,
     b: Uint8Array
-  ) => { result: error; nextIndex: number }
+  ) => { readonly result: error; readonly nextIndex: number }
 ): ((
   a: number,
   b: Uint8Array
-) => { result: Result<ok, error>; nextIndex: number }) => (
+) => { readonly result: Result<ok, error>; readonly nextIndex: number }) => (
   index: number,
   binary: Uint8Array
-): { result: Result<ok, error>; nextIndex: number } => {
+): { readonly result: Result<ok, error>; readonly nextIndex: number } => {
   const patternIndexAndNextIndex: {
-    result: number;
-    nextIndex: number;
+    readonly result: number;
+    readonly nextIndex: number;
   } = decodeInt32(index, binary);
   if (patternIndexAndNextIndex.result === 0) {
-    const okAndNextIndex: { result: ok; nextIndex: number } = okDecodeFunction(
-      patternIndexAndNextIndex.nextIndex,
-      binary
-    );
+    const okAndNextIndex: {
+      readonly result: ok;
+      readonly nextIndex: number;
+    } = okDecodeFunction(patternIndexAndNextIndex.nextIndex, binary);
     return {
       result: resultOk(okAndNextIndex.result),
       nextIndex: okAndNextIndex.nextIndex,
@@ -584,8 +598,8 @@ export const decodeResult = <ok, error>(
   }
   if (patternIndexAndNextIndex.result === 1) {
     const errorAndNextIndex: {
-      result: error;
-      nextIndex: number;
+      readonly result: error;
+      readonly nextIndex: number;
     } = errorDecodeFunction(patternIndexAndNextIndex.nextIndex, binary);
     return {
       result: resultError(errorAndNextIndex.result),
@@ -604,7 +618,7 @@ export const decodeResult = <ok, error>(
 export const decodeId = (
   index: number,
   binary: Uint8Array
-): { result: string; nextIndex: number } => ({
+): { readonly result: string; readonly nextIndex: number } => ({
   result: [...binary.slice(index, index + 16)]
     .map((n: number): string => n.toString(16).padStart(2, "0"))
     .join(""),
@@ -618,7 +632,7 @@ export const decodeId = (
 export const decodeToken = (
   index: number,
   binary: Uint8Array
-): { result: string; nextIndex: number } => ({
+): { readonly result: string; readonly nextIndex: number } => ({
   result: [...binary.slice(index, index + 32)]
     .map((n: number): string => n.toString(16).padStart(2, "0"))
     .join(""),
@@ -632,11 +646,11 @@ export const decodeToken = (
 export const decodeType = (
   index: number,
   binary: Uint8Array
-): { result: Type; nextIndex: number } => {
-  const patternIndex: { result: number; nextIndex: number } = decodeInt32(
-    index,
-    binary
-  );
+): { readonly result: Type; readonly nextIndex: number } => {
+  const patternIndex: {
+    readonly result: number;
+    readonly nextIndex: number;
+  } = decodeInt32(index, binary);
   if (patternIndex.result === 0) {
     return { result: typeInt, nextIndex: patternIndex.nextIndex };
   }
@@ -647,45 +661,45 @@ export const decodeType = (
     return { result: typeBool, nextIndex: patternIndex.nextIndex };
   }
   if (patternIndex.result === 3) {
-    const result: { result: Type; nextIndex: number } = decodeType(
-      patternIndex.nextIndex,
-      binary
-    );
+    const result: {
+      readonly result: Type;
+      readonly nextIndex: number;
+    } = decodeType(patternIndex.nextIndex, binary);
     return { result: typeList(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 4) {
-    const result: { result: Type; nextIndex: number } = decodeType(
-      patternIndex.nextIndex,
-      binary
-    );
+    const result: {
+      readonly result: Type;
+      readonly nextIndex: number;
+    } = decodeType(patternIndex.nextIndex, binary);
     return { result: typeMaybe(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 5) {
-    const result: { result: ResultType; nextIndex: number } = decodeResultType(
-      patternIndex.nextIndex,
-      binary
-    );
+    const result: {
+      readonly result: ResultType;
+      readonly nextIndex: number;
+    } = decodeResultType(patternIndex.nextIndex, binary);
     return { result: typeResult(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 6) {
-    const result: { result: string; nextIndex: number } = decodeString(
-      patternIndex.nextIndex,
-      binary
-    );
+    const result: {
+      readonly result: string;
+      readonly nextIndex: number;
+    } = decodeString(patternIndex.nextIndex, binary);
     return { result: typeId(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 7) {
-    const result: { result: string; nextIndex: number } = decodeString(
-      patternIndex.nextIndex,
-      binary
-    );
+    const result: {
+      readonly result: string;
+      readonly nextIndex: number;
+    } = decodeString(patternIndex.nextIndex, binary);
     return { result: typeToken(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 8) {
-    const result: { result: string; nextIndex: number } = decodeString(
-      patternIndex.nextIndex,
-      binary
-    );
+    const result: {
+      readonly result: string;
+      readonly nextIndex: number;
+    } = decodeString(patternIndex.nextIndex, binary);
     return { result: typeCustom(result.result), nextIndex: result.nextIndex };
   }
   throw new Error("存在しないパターンを指定された 型を更新してください");
@@ -698,15 +712,15 @@ export const decodeType = (
 export const decodeResultType = (
   index: number,
   binary: Uint8Array
-): { result: ResultType; nextIndex: number } => {
-  const okAndNextIndex: { result: Type; nextIndex: number } = decodeType(
-    index,
-    binary
-  );
-  const errorAndNextIndex: { result: Type; nextIndex: number } = decodeType(
-    okAndNextIndex.nextIndex,
-    binary
-  );
+): { readonly result: ResultType; readonly nextIndex: number } => {
+  const okAndNextIndex: {
+    readonly result: Type;
+    readonly nextIndex: number;
+  } = decodeType(index, binary);
+  const errorAndNextIndex: {
+    readonly result: Type;
+    readonly nextIndex: number;
+  } = decodeType(okAndNextIndex.nextIndex, binary);
   return {
     result: { ok: okAndNextIndex.result, error: errorAndNextIndex.result },
     nextIndex: errorAndNextIndex.nextIndex,
@@ -720,11 +734,11 @@ export const decodeResultType = (
 export const decodeLanguage = (
   index: number,
   binary: Uint8Array
-): { result: Language; nextIndex: number } => {
-  const patternIndex: { result: number; nextIndex: number } = decodeInt32(
-    index,
-    binary
-  );
+): { readonly result: Language; readonly nextIndex: number } => {
+  const patternIndex: {
+    readonly result: number;
+    readonly nextIndex: number;
+  } = decodeInt32(index, binary);
   if (patternIndex.result === 0) {
     return { result: "Japanese", nextIndex: patternIndex.nextIndex };
   }
@@ -744,30 +758,32 @@ export const decodeLanguage = (
 export const decodeUrlData = (
   index: number,
   binary: Uint8Array
-): { result: UrlData; nextIndex: number } => {
+): { readonly result: UrlData; readonly nextIndex: number } => {
   const clientModeAndNextIndex: {
-    result: ClientMode;
-    nextIndex: number;
+    readonly result: ClientMode;
+    readonly nextIndex: number;
   } = decodeClientMode(index, binary);
   const locationAndNextIndex: {
-    result: Location;
-    nextIndex: number;
+    readonly result: Location;
+    readonly nextIndex: number;
   } = decodeLocation(clientModeAndNextIndex.nextIndex, binary);
   const languageAndNextIndex: {
-    result: Language;
-    nextIndex: number;
+    readonly result: Language;
+    readonly nextIndex: number;
   } = decodeLanguage(locationAndNextIndex.nextIndex, binary);
   const accessTokenAndNextIndex: {
-    result: Maybe<AccessToken>;
-    nextIndex: number;
+    readonly result: Maybe<AccessToken>;
+    readonly nextIndex: number;
   } = decodeMaybe(
-    decodeToken as
-      (a: number, b: Uint8Array) => { result: AccessToken; nextIndex: number }
+    decodeToken as (
+      a: number,
+      b: Uint8Array
+    ) => { readonly result: AccessToken; readonly nextIndex: number }
   )(languageAndNextIndex.nextIndex, binary);
-  const ifAndNextIndex: { result: boolean; nextIndex: number } = decodeBool(
-    accessTokenAndNextIndex.nextIndex,
-    binary
-  );
+  const ifAndNextIndex: {
+    readonly result: boolean;
+    readonly nextIndex: number;
+  } = decodeBool(accessTokenAndNextIndex.nextIndex, binary);
   return {
     result: {
       clientMode: clientModeAndNextIndex.result,
@@ -787,16 +803,16 @@ export const decodeUrlData = (
 export const decodeClientMode = (
   index: number,
   binary: Uint8Array
-): { result: ClientMode; nextIndex: number } => {
-  const patternIndex: { result: number; nextIndex: number } = decodeInt32(
-    index,
-    binary
-  );
+): { readonly result: ClientMode; readonly nextIndex: number } => {
+  const patternIndex: {
+    readonly result: number;
+    readonly nextIndex: number;
+  } = decodeInt32(index, binary);
   if (patternIndex.result === 0) {
-    const result: { result: number; nextIndex: number } = decodeInt32(
-      patternIndex.nextIndex,
-      binary
-    );
+    const result: {
+      readonly result: number;
+      readonly nextIndex: number;
+    } = decodeInt32(patternIndex.nextIndex, binary);
     return {
       result: clientModeDebugMode(result.result),
       nextIndex: result.nextIndex,
@@ -815,26 +831,38 @@ export const decodeClientMode = (
 export const decodeLocation = (
   index: number,
   binary: Uint8Array
-): { result: Location; nextIndex: number } => {
-  const patternIndex: { result: number; nextIndex: number } = decodeInt32(
-    index,
-    binary
-  );
+): { readonly result: Location; readonly nextIndex: number } => {
+  const patternIndex: {
+    readonly result: number;
+    readonly nextIndex: number;
+  } = decodeInt32(index, binary);
   if (patternIndex.result === 0) {
     return { result: locationHome, nextIndex: patternIndex.nextIndex };
   }
   if (patternIndex.result === 1) {
-    const result: { result: UserId; nextIndex: number } = (
-      decodeId as
-      (a: number, b: Uint8Array) => { result: UserId; nextIndex: number }
-    )(patternIndex.nextIndex, binary);
+    const result: {
+      readonly result: UserId;
+      readonly nextIndex: number;
+    } = (decodeId as (
+      a: number,
+      b: Uint8Array
+    ) => { readonly result: UserId; readonly nextIndex: number })(
+      patternIndex.nextIndex,
+      binary
+    );
     return { result: locationUser(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 2) {
-    const result: { result: ProjectId; nextIndex: number } = (
-      decodeId as
-      (a: number, b: Uint8Array) => { result: ProjectId; nextIndex: number }
-    )(patternIndex.nextIndex, binary);
+    const result: {
+      readonly result: ProjectId;
+      readonly nextIndex: number;
+    } = (decodeId as (
+      a: number,
+      b: Uint8Array
+    ) => { readonly result: ProjectId; readonly nextIndex: number })(
+      patternIndex.nextIndex,
+      binary
+    );
     return {
       result: locationProject(result.result),
       nextIndex: result.nextIndex,
@@ -850,19 +878,31 @@ export const decodeLocation = (
 export const decodeProject = (
   index: number,
   binary: Uint8Array
-): { result: Project; nextIndex: number } => {
-  const nameAndNextIndex: { result: string; nextIndex: number } = decodeString(
-    index,
+): { readonly result: Project; readonly nextIndex: number } => {
+  const nameAndNextIndex: {
+    readonly result: string;
+    readonly nextIndex: number;
+  } = decodeString(index, binary);
+  const iconAndNextIndex: {
+    readonly result: FileHash;
+    readonly nextIndex: number;
+  } = (decodeToken as (
+    a: number,
+    b: Uint8Array
+  ) => { readonly result: FileHash; readonly nextIndex: number })(
+    nameAndNextIndex.nextIndex,
     binary
   );
-  const iconAndNextIndex: { result: FileHash; nextIndex: number } = (
-    decodeToken as
-    (a: number, b: Uint8Array) => { result: FileHash; nextIndex: number }
-  )(nameAndNextIndex.nextIndex, binary);
-  const imageAndNextIndex: { result: FileHash; nextIndex: number } = (
-    decodeToken as
-    (a: number, b: Uint8Array) => { result: FileHash; nextIndex: number }
-  )(iconAndNextIndex.nextIndex, binary);
+  const imageAndNextIndex: {
+    readonly result: FileHash;
+    readonly nextIndex: number;
+  } = (decodeToken as (
+    a: number,
+    b: Uint8Array
+  ) => { readonly result: FileHash; readonly nextIndex: number })(
+    iconAndNextIndex.nextIndex,
+    binary
+  );
   return {
     result: {
       name: nameAndNextIndex.result,
