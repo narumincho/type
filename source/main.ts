@@ -36,10 +36,20 @@ export const generateElmCode = (
   return elm.generateCode(moduleName, customTypeList, idOrTokenTypeNameSet);
 };
 
+/**
+ * 指定した型の定義が正しくできているか調べる
+ * Elmの予約語判定はここではやらない
+ * @throws 型の定義が正しくできていない場合
+ */
 const validCustomTypeList = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>
 ): void => {
+  const customTypeNameSet: Set<string> = new Set();
   for (const customType of customTypeList) {
+    if (customTypeNameSet.has(customType.name)) {
+      throw new Error("duplicate custom type name. name =" + customType.name);
+    }
+    customTypeNameSet.add(customType.name);
     validCustomType(customType);
   }
 };
@@ -64,15 +74,13 @@ const validProductType = (
   const memberNameSet: Set<string> = new Set();
   for (const memberNameAndType of memberNameAndTypeList) {
     if (memberNameSet.has(memberNameAndType.name)) {
-      throw new Error(
-        "duplicate member name. member name =" + memberNameAndType.name
-      );
+      throw new Error("duplicate member name. name =" + memberNameAndType.name);
     }
     memberNameSet.add(memberNameAndType.name);
 
     if (!c.isFirstLowerCaseName(memberNameAndType.name)) {
       throw new Error(
-        "member name is invalid. member name =" + memberNameAndType.name
+        "member name is invalid. name =" + memberNameAndType.name
       );
     }
   }
@@ -84,16 +92,12 @@ const validSumType = (
   const tagNameSet: Set<string> = new Set();
   for (const tagNameAndParameter of tagNameAndParameterList) {
     if (tagNameSet.has(tagNameAndParameter.name)) {
-      throw new Error(
-        "duplicate tag name. tag name =" + tagNameAndParameter.name
-      );
+      throw new Error("duplicate tag name. name =" + tagNameAndParameter.name);
     }
     tagNameSet.add(tagNameAndParameter.name);
 
     if (!c.isFirstUpperCaseName(tagNameAndParameter.name)) {
-      throw new Error(
-        "tag name is invalid. tag name =" + tagNameAndParameter.name
-      );
+      throw new Error("tag name is invalid. name =" + tagNameAndParameter.name);
     }
   }
 };
