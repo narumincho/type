@@ -34,7 +34,7 @@ export type Type =
  */
 export type ResultType = { ok: Type; error: Type };
 
-export type CustomType = { name: string; parameter: ReadonlyArray<Type> };
+export type CustomType = { name: string; parameterList: ReadonlyArray<Type> };
 
 /**
  * -2 147 483 648 ～ 2147483647. 32bit 符号付き整数
@@ -113,7 +113,9 @@ export const typeParameter = (string_: string): Type => ({
 
 export type CustomTypeDefinition = {
   name: string;
-  typeParameter: ReadonlyArray<string>;
+  /** 型パラメーターは小文字で始めなければならない. Elmでの出力と外部の型を隠さないようにするため
+   */
+  typeParameterList: ReadonlyArray<string>;
   description: string;
   body: CustomTypeBody;
 };

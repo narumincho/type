@@ -697,7 +697,7 @@ const customCode = (customType: type.CustomTypeDefinition): ts.Function => {
       util.typeToTypeScriptType(
         type.typeCustom({
           name: customType.name,
-          parameter: customType.typeParameter.map(type.typeParameter),
+          parameterList: customType.typeParameterList.map(type.typeParameter),
         })
       )
     ),

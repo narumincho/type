@@ -40,7 +40,7 @@ export const typeToTypeScriptType = (type_: type.Type): ts.Type => {
     case "Custom":
       return ts.typeWithParameter(
         ts.typeScopeInFile(identifer.fromString(type_.customType.name)),
-        type_.customType.parameter.map(typeToTypeScriptType)
+        type_.customType.parameterList.map(typeToTypeScriptType)
       );
 
     case "Parameter":
