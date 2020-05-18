@@ -10,7 +10,7 @@ import * as c from "./case";
 export { type };
 
 export const generateTypeScriptCode = (
-  customTypeList: ReadonlyArray<type.CustomType>
+  customTypeList: ReadonlyArray<type.CustomTypeDefinition>
 ): data.Code => {
   validCustomTypeList(customTypeList);
   const idOrTokenTypeNameSet = type.collectIdOrTokenTypeNameSet(customTypeList);
@@ -29,7 +29,7 @@ export const generateTypeScriptCode = (
 
 export const generateElmCode = (
   moduleName: string,
-  customTypeList: ReadonlyArray<type.CustomType>
+  customTypeList: ReadonlyArray<type.CustomTypeDefinition>
 ): string => {
   validCustomTypeList(customTypeList);
   const idOrTokenTypeNameSet = type.collectIdOrTokenTypeNameSet(customTypeList);
@@ -37,14 +37,14 @@ export const generateElmCode = (
 };
 
 const validCustomTypeList = (
-  customTypeList: ReadonlyArray<type.CustomType>
+  customTypeList: ReadonlyArray<type.CustomTypeDefinition>
 ): void => {
   for (const customType of customTypeList) {
     validCustomType(customType);
   }
 };
 
-const validCustomType = (customType: type.CustomType): void => {
+const validCustomType = (customType: type.CustomTypeDefinition): void => {
   if (!c.isFirstUpperCaseName(customType.name)) {
     throw new Error("custom type name is invalid. name = " + customType.name);
   }

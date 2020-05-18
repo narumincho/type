@@ -3,7 +3,7 @@ import * as type from "../type";
 import * as util from "./util";
 
 export const generateCode = (
-  customTypeList: ReadonlyArray<type.CustomType>
+  customTypeList: ReadonlyArray<type.CustomTypeDefinition>
 ): ReadonlyArray<ts.Function> => {
   return [
     int32Code(),
@@ -570,10 +570,10 @@ const resultCode = (): ts.Function => {
 const customName = (customTypeName: string): identifer.Identifer =>
   identifer.fromString("encode" + customTypeName);
 
-export const customCode = (customType: type.CustomType): ts.Function => {
-  const parameterName = util.typeToMemberOrParameterName(
-    type.typeCustom(customType.name)
-  );
+export const customCode = (
+  customType: type.CustomTypeDefinition
+): ts.Function => {
+  const parameterName = identifer.fromString("value");
   const parameterVar = ts.variable(parameterName);
 
   const statementList = ((): ReadonlyArray<ts.Statement> => {
@@ -596,9 +596,9 @@ export const customCode = (customType: type.CustomType): ts.Function => {
     document: "",
     parameterList: [
       {
-        name: identifer.fromString(parameterName),
+        name: parameterName,
         document: "",
-        type_: util.typeToTypeScriptType(type.typeCustom(customType.name)),
+        type_: ts.typeScopeInFile(identifer.fromString(customType.name)),
       },
     ],
     typeParameterList: [],
@@ -723,6 +723,8 @@ const encodeFunctionExpr = (type_: type.Type): ts.Expr => {
     case "Token":
       return ts.variable(encodeTokenName);
     case "Custom":
-      return ts.variable(customName(type_.string_));
+      return ts.stringLiteral("wait custom type…");
+    case "Parameter":
+      return ts.stringLiteral("parameter not support");
   }
 };

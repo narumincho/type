@@ -3,7 +3,7 @@ import * as c from "./case";
 
 export const generateCode = (
   moduleName: string,
-  customTypeList: ReadonlyArray<type.CustomType>,
+  customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
   idOrTokenTypeNameSet: ReadonlySet<string>
 ): string => {
   const idOrTokenTypeNameList = [...idOrTokenTypeNameSet];
@@ -36,7 +36,7 @@ export const generateCode = (
 
 const moduleExportList = (
   moduleName: string,
-  customTypeList: ReadonlyArray<type.CustomType>,
+  customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
   idOrTokenTypeNameSet: ReadonlySet<string>
 ): string => {
   return (
@@ -84,7 +84,7 @@ import Json.Decode.Pipeline as Jdp
 
 const customTypeToTypeDefinitionCode = (
   typeAliasNameOrTagNameSet: Set<string>
-) => (customType: type.CustomType): string => {
+) => (customType: type.CustomTypeDefinition): string => {
   switch (customType.body._) {
     case "Sum":
       return (
@@ -206,7 +206,9 @@ const idOrTokenTypeToToJsonValueCode = (idOrTokenTypeName: string): string => {
   );
 };
 
-const customTypeToToJsonValueCode = (customType: type.CustomType): string => {
+const customTypeToToJsonValueCode = (
+  customType: type.CustomTypeDefinition
+): string => {
   const parameterName = type.elmIdentiferFromString(
     c.firstLowerCase(customType.name)
   );
@@ -366,8 +368,13 @@ const toJsonValueFunction = (type_: type.Type): string => {
       );
     case "Id":
     case "Token":
-    case "Custom":
       return customOrIdOrTokenTypeNameToToJsonValueFunctionName(type_.string_);
+    case "Custom":
+      return customOrIdOrTokenTypeNameToToJsonValueFunctionName(
+        type_.customType.name
+      );
+    case "Parameter":
+      return "@narumincho/type parameter encode function??";
   }
 };
 
@@ -422,7 +429,9 @@ const idOrTokenToJsonDecoderCode = (idOrTokenTypeName: string): string => {
   );
 };
 
-const customTypeToJsonDecoder = (customType: type.CustomType): string => {
+const customTypeToJsonDecoder = (
+  customType: type.CustomTypeDefinition
+): string => {
   const header =
     commentToCode(customType.name + "のJSON Decoder") +
     customOrIdOrTokenTypeNameToJsonDecoderFunctionName(customType.name) +
@@ -576,8 +585,11 @@ const typeToDecoder = (type_: type.Type): string => {
       );
     case "Id":
     case "Token":
-    case "Custom":
       return customOrIdOrTokenTypeNameToJsonDecoderFunctionName(type_.string_);
+    case "Custom":
+      return "customTypeDecoder……";
+    case "Parameter":
+      return type_.string_;
   }
 };
 
@@ -610,6 +622,8 @@ const typeToElmType = (type_: type.Type): string => {
         ")"
       );
     case "Custom":
+      return type_.customType.name;
+    case "Parameter":
       return type_.string_;
   }
 };

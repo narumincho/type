@@ -4,7 +4,7 @@ import * as util from "./util";
 import * as c from "../case";
 
 export const generateTypeDefinition = (
-  customTypeList: ReadonlyArray<type.CustomType>,
+  customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
   idOrTokenTypeNameSet: Set<string>
 ): ReadonlyArray<ts.TypeAlias> => {
   return [
@@ -117,7 +117,7 @@ export const customTypeVar = (customTypeName: string): ts.Type =>
   ts.typeScopeInFile(customTypeNameIdentifer(customTypeName));
 
 export const customTypeToDefinition = (
-  customType: type.CustomType
+  customType: type.CustomTypeDefinition
 ): ts.TypeAlias => {
   switch (customType.body._) {
     case "Sum":

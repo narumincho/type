@@ -6,8 +6,14 @@ import * as ts from "typescript";
 import * as childProcess from "child_process";
 import * as prettier from "prettier";
 
-const typeType: type.CustomType = {
-  name: "Type",
+const typeName = "Type";
+const typeType = type.typeCustom({ name: typeName, parameter: [] });
+const resultTypeName = "ResultType";
+const resultTypeType = type.typeCustom({ name: resultTypeName, parameter: [] });
+
+const typeDefinition: type.CustomTypeDefinition = {
+  name: typeName,
+  typeParameter: [],
   description: "型",
   body: type.customTypeBodySum([
     {
@@ -29,17 +35,17 @@ const typeType: type.CustomType = {
     {
       name: "List",
       description: "リスト",
-      parameter: type.maybeJust(type.typeCustom("Type")),
+      parameter: type.maybeJust(typeType),
     },
     {
       name: "Maybe",
       description: "Maybe",
-      parameter: type.maybeJust(type.typeCustom("Type")),
+      parameter: type.maybeJust(typeType),
     },
     {
       name: "Result",
       description: "Result",
-      parameter: type.maybeJust(type.typeCustom("ResultType")),
+      parameter: type.maybeJust(resultTypeType),
     },
     {
       name: "Id",
@@ -58,22 +64,28 @@ const typeType: type.CustomType = {
       description: "用意されていないアプリ特有の型",
       parameter: type.maybeJust(type.typeString),
     },
+    {
+      name: "Parameter",
+      description: "型パラメーター",
+      parameter: type.maybeJust(type.typeString),
+    },
   ]),
 };
 
-const resultTypeType: type.CustomType = {
-  name: "ResultType",
+const resultTypeDefinition: type.CustomTypeDefinition = {
+  name: resultTypeName,
+  typeParameter: [],
   description: "正常値と異常値",
   body: type.customTypeBodyProduct([
     {
       name: "ok",
       description: "正常値",
-      memberType: type.typeCustom("Type"),
+      memberType: typeType,
     },
     {
       name: "error",
       description: "異常値",
-      memberType: type.typeCustom("Type"),
+      memberType: typeType,
     },
   ]),
 };
@@ -81,28 +93,32 @@ const resultTypeType: type.CustomType = {
 const accessToken = type.typeToken("AccessToken");
 const urlDataName = "UrlData";
 const clientModeName = "ClientMode";
+const clientModeType = type.typeCustom({ name: clientModeName, parameter: [] });
 const locationName = "Location";
+const locationType = type.typeCustom({ name: locationName, parameter: [] });
 const languageName = "Language";
+const languageType = type.typeCustom({ name: languageName, parameter: [] });
 
-const urlData: type.CustomType = {
+const urlData: type.CustomTypeDefinition = {
   name: urlDataName,
+  typeParameter: [],
   description:
     "デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( https://support.google.com/webmasters/answer/182192?hl=ja )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は http://[::1] になる",
   body: type.customTypeBodyProduct([
     {
       name: "clientMode",
       description: "クライアントモード",
-      memberType: type.typeCustom(clientModeName),
+      memberType: clientModeType,
     },
     {
       name: "location",
       description: "場所",
-      memberType: type.typeCustom(locationName),
+      memberType: locationType,
     },
     {
       name: "language",
       description: "言語",
-      memberType: type.typeCustom(languageName),
+      memberType: languageType,
     },
     {
       name: "accessToken",
@@ -118,8 +134,9 @@ const urlData: type.CustomType = {
   ]),
 };
 
-const clientMode: type.CustomType = {
+const clientMode: type.CustomTypeDefinition = {
   name: clientModeName,
+  typeParameter: [],
   description: "デバッグの状態と, デバッグ時ならアクセスしているポート番号",
   body: type.customTypeBodySum([
     {
@@ -136,8 +153,9 @@ const clientMode: type.CustomType = {
   ]),
 };
 
-const location: type.CustomType = {
+const location: type.CustomTypeDefinition = {
   name: locationName,
+  typeParameter: [],
   description:
     "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
   body: type.customTypeBodySum([
@@ -159,8 +177,9 @@ const location: type.CustomType = {
   ]),
 };
 
-const language: type.CustomType = {
+const language: type.CustomTypeDefinition = {
   name: languageName,
+  typeParameter: [],
   description: "英語,日本語,エスペラント語などの言語",
   body: type.customTypeBodySum([
     {
@@ -183,8 +202,9 @@ const language: type.CustomType = {
 
 const fileHash = type.typeToken("FileHash");
 
-const project: type.CustomType = {
+const project: type.CustomTypeDefinition = {
   name: "Project",
+  typeParameter: [],
   description: "プロジェクト",
   body: type.customTypeBodyProduct([
     {
@@ -205,9 +225,9 @@ const project: type.CustomType = {
   ]),
 };
 
-const customTypeList: ReadonlyArray<type.CustomType> = [
-  typeType,
-  resultTypeType,
+const customTypeList: ReadonlyArray<type.CustomTypeDefinition> = [
+  typeDefinition,
+  resultTypeDefinition,
   language,
   urlData,
   clientMode,

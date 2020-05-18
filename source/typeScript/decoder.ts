@@ -5,7 +5,7 @@ import * as typeDef from "./typeDefinition";
 import * as tag from "./tag";
 
 export const generateCode = (
-  customTypeList: ReadonlyArray<type.CustomType>
+  customTypeList: ReadonlyArray<type.CustomTypeDefinition>
 ): ReadonlyArray<ts.Function> => {
   return [
     int32Code(),
@@ -675,7 +675,7 @@ const resultCode = (): ts.Function => {
 const customName = (customTypeName: string): identifer.Identifer =>
   identifer.fromString("decode" + customTypeName);
 
-const customCode = (customType: type.CustomType): ts.Function => {
+const customCode = (customType: type.CustomTypeDefinition): ts.Function => {
   const statementList = ((): ReadonlyArray<ts.Statement> => {
     switch (customType.body._) {
       case "Sum":
@@ -694,7 +694,12 @@ const customCode = (customType: type.CustomType): ts.Function => {
     parameterList: parameterList,
     typeParameterList: [],
     returnType: returnType(
-      util.typeToTypeScriptType(type.typeCustom(customType.name))
+      util.typeToTypeScriptType(
+        type.typeCustom({
+          name: customType.name,
+          parameter: customType.typeParameter.map(type.typeParameter),
+        })
+      )
     ),
     statementList: statementList,
   };
@@ -881,6 +886,8 @@ const decodeFunctionExpr = (type_: type.Type): ts.Expr => {
         )
       );
     case "Custom":
-      return ts.variable(customName(type_.string_));
+      return ts.stringLiteral("custom type ……");
+    case "Parameter":
+      return ts.stringLiteral("parameter!?");
   }
 };

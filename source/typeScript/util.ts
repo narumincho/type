@@ -38,6 +38,12 @@ export const typeToTypeScriptType = (type_: type.Type): ts.Type => {
       return ts.typeScopeInFile(identifer.fromString(type_.string_));
 
     case "Custom":
+      return ts.typeWithParameter(
+        ts.typeScopeInFile(identifer.fromString(type_.customType.name)),
+        type_.customType.parameter.map(typeToTypeScriptType)
+      );
+
+    case "Parameter":
       return ts.typeScopeInFile(identifer.fromString(type_.string_));
   }
 };
@@ -45,5 +51,6 @@ export const typeToTypeScriptType = (type_: type.Type): ts.Type => {
 export const typeToMemberOrParameterName = (
   type_: type.Type
 ): identifer.Identifer => {
+  console.log(type_);
   return identifer.fromString(c.firstLowerCase(type.toTypeName(type_)));
 };

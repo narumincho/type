@@ -21,12 +21,13 @@ export type Type =
   | { readonly _: "Int" }
   | { readonly _: "String" }
   | { readonly _: "Bool" }
-  | { readonly _: "List"; readonly type_: Type }
-  | { readonly _: "Maybe"; readonly type_: Type }
-  | { readonly _: "Result"; readonly resultType: ResultType }
+  | { readonly _: "List"; readonly type_: Type<> }
+  | { readonly _: "Maybe"; readonly type_: Type<> }
+  | { readonly _: "Result"; readonly resultType: ResultType<> }
   | { readonly _: "Id"; readonly string_: string }
   | { readonly _: "Token"; readonly string_: string }
-  | { readonly _: "Custom"; readonly string_: string };
+  | { readonly _: "Custom"; readonly string_: string }
+  | { readonly _: "Parameter"; readonly string_: string };
 
 /**
  * 正常値と異常値
@@ -35,11 +36,11 @@ export type ResultType = {
   /**
    * 正常値
    */
-  readonly ok: Type;
+  readonly ok: Type<>;
   /**
    * 異常値
    */
-  readonly error: Type;
+  readonly error: Type<>;
 };
 
 /**
@@ -54,15 +55,15 @@ export type UrlData = {
   /**
    * クライアントモード
    */
-  readonly clientMode: ClientMode;
+  readonly clientMode: ClientMode<>;
   /**
    * 場所
    */
-  readonly location: Location;
+  readonly location: Location<>;
   /**
    * 言語
    */
-  readonly language: Language;
+  readonly language: Language<>;
   /**
    * アクセストークン. ログインした後のリダイレクト先としてサーバーから渡される
    */
@@ -149,17 +150,20 @@ export const typeBool: Type = { _: "Bool" };
 /**
  * リスト
  */
-export const typeList = (type_: Type): Type => ({ _: "List", type_: type_ });
+export const typeList = (type_: Type<>): Type => ({ _: "List", type_: type_ });
 
 /**
  * Maybe
  */
-export const typeMaybe = (type_: Type): Type => ({ _: "Maybe", type_: type_ });
+export const typeMaybe = (type_: Type<>): Type => ({
+  _: "Maybe",
+  type_: type_,
+});
 
 /**
  * Result
  */
-export const typeResult = (resultType: ResultType): Type => ({
+export const typeResult = (resultType: ResultType<>): Type => ({
   _: "Result",
   resultType: resultType,
 });
@@ -185,6 +189,14 @@ export const typeToken = (string_: string): Type => ({
  */
 export const typeCustom = (string_: string): Type => ({
   _: "Custom",
+  string_: string_,
+});
+
+/**
+ * 型パラメーター
+ */
+export const typeParameter = (string_: string): Type => ({
+  _: "Parameter",
   string_: string_,
 });
 
@@ -323,8 +335,8 @@ export const encodeToken = (id: string): ReadonlyArray<number> => {
   return result;
 };
 
-export const encodeType = (type_: Type): ReadonlyArray<number> => {
-  switch (type_._) {
+export const encodeType = (value: Type): ReadonlyArray<number> => {
+  switch (value._) {
     case "Int": {
       return [0];
     }
@@ -335,33 +347,34 @@ export const encodeType = (type_: Type): ReadonlyArray<number> => {
       return [2];
     }
     case "List": {
-      return [3].concat(encodeType(type_.type_));
+      return [3].concat("wait custom type…"(value.type_));
     }
     case "Maybe": {
-      return [4].concat(encodeType(type_.type_));
+      return [4].concat("wait custom type…"(value.type_));
     }
     case "Result": {
-      return [5].concat(encodeResultType(type_.resultType));
+      return [5].concat("wait custom type…"(value.resultType));
     }
     case "Id": {
-      return [6].concat(encodeString(type_.string_));
+      return [6].concat(encodeString(value.string_));
     }
     case "Token": {
-      return [7].concat(encodeString(type_.string_));
+      return [7].concat(encodeString(value.string_));
     }
     case "Custom": {
-      return [8].concat(encodeString(type_.string_));
+      return [8].concat(encodeString(value.string_));
+    }
+    case "Parameter": {
+      return [9].concat(encodeString(value.string_));
     }
   }
 };
 
-export const encodeResultType = (
-  resultType: ResultType
-): ReadonlyArray<number> =>
-  encodeType(resultType.ok).concat(encodeType(resultType.error));
+export const encodeResultType = (value: ResultType): ReadonlyArray<number> =>
+  "wait custom type…"(value.ok).concat("wait custom type…"(value.error));
 
-export const encodeLanguage = (language: Language): ReadonlyArray<number> => {
-  switch (language) {
+export const encodeLanguage = (value: Language): ReadonlyArray<number> => {
+  switch (value) {
     case "Japanese": {
       return [0];
     }
@@ -374,19 +387,17 @@ export const encodeLanguage = (language: Language): ReadonlyArray<number> => {
   }
 };
 
-export const encodeUrlData = (urlData: UrlData): ReadonlyArray<number> =>
-  encodeClientMode(urlData.clientMode)
-    .concat(encodeLocation(urlData.location))
-    .concat(encodeLanguage(urlData.language))
-    .concat(encodeMaybe(encodeToken)(urlData.accessToken))
-    .concat(encodeBool(urlData["if"]));
+export const encodeUrlData = (value: UrlData): ReadonlyArray<number> =>
+  "wait custom type…"(value.clientMode)
+    .concat("wait custom type…"(value.location))
+    .concat("wait custom type…"(value.language))
+    .concat(encodeMaybe(encodeToken)(value.accessToken))
+    .concat(encodeBool(value["if"]));
 
-export const encodeClientMode = (
-  clientMode: ClientMode
-): ReadonlyArray<number> => {
-  switch (clientMode._) {
+export const encodeClientMode = (value: ClientMode): ReadonlyArray<number> => {
+  switch (value._) {
     case "DebugMode": {
-      return [0].concat(encodeInt32(clientMode.int32));
+      return [0].concat(encodeInt32(value.int32));
     }
     case "Release": {
       return [1];
@@ -394,24 +405,24 @@ export const encodeClientMode = (
   }
 };
 
-export const encodeLocation = (location: Location): ReadonlyArray<number> => {
-  switch (location._) {
+export const encodeLocation = (value: Location): ReadonlyArray<number> => {
+  switch (value._) {
     case "Home": {
       return [0];
     }
     case "User": {
-      return [1].concat(encodeId(location.userId));
+      return [1].concat(encodeId(value.userId));
     }
     case "Project": {
-      return [2].concat(encodeId(location.projectId));
+      return [2].concat(encodeId(value.projectId));
     }
   }
 };
 
-export const encodeProject = (project: Project): ReadonlyArray<number> =>
-  encodeString(project.name)
-    .concat(encodeToken(project.icon))
-    .concat(encodeToken(project.image));
+export const encodeProject = (value: Project): ReadonlyArray<number> =>
+  encodeString(value.name)
+    .concat(encodeToken(value.icon))
+    .concat(encodeToken(value.image));
 
 /**
  * SignedLeb128で表現されたバイナリをnumberのビット演算ができる32bit符号付き整数の範囲の数値に変換するコード
@@ -646,7 +657,7 @@ export const decodeToken = (
 export const decodeType = (
   index: number,
   binary: Uint8Array
-): { readonly result: Type; readonly nextIndex: number } => {
+): { readonly result: Type<>; readonly nextIndex: number } => {
   const patternIndex: {
     readonly result: number;
     readonly nextIndex: number;
@@ -662,23 +673,23 @@ export const decodeType = (
   }
   if (patternIndex.result === 3) {
     const result: {
-      readonly result: Type;
+      readonly result: Type<>;
       readonly nextIndex: number;
-    } = decodeType(patternIndex.nextIndex, binary);
+    } = "custom type ……"(patternIndex.nextIndex, binary);
     return { result: typeList(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 4) {
     const result: {
-      readonly result: Type;
+      readonly result: Type<>;
       readonly nextIndex: number;
-    } = decodeType(patternIndex.nextIndex, binary);
+    } = "custom type ……"(patternIndex.nextIndex, binary);
     return { result: typeMaybe(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 5) {
     const result: {
-      readonly result: ResultType;
+      readonly result: ResultType<>;
       readonly nextIndex: number;
-    } = decodeResultType(patternIndex.nextIndex, binary);
+    } = "custom type ……"(patternIndex.nextIndex, binary);
     return { result: typeResult(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 6) {
@@ -702,6 +713,16 @@ export const decodeType = (
     } = decodeString(patternIndex.nextIndex, binary);
     return { result: typeCustom(result.result), nextIndex: result.nextIndex };
   }
+  if (patternIndex.result === 9) {
+    const result: {
+      readonly result: string;
+      readonly nextIndex: number;
+    } = decodeString(patternIndex.nextIndex, binary);
+    return {
+      result: typeParameter(result.result),
+      nextIndex: result.nextIndex,
+    };
+  }
   throw new Error("存在しないパターンを指定された 型を更新してください");
 };
 
@@ -712,15 +733,15 @@ export const decodeType = (
 export const decodeResultType = (
   index: number,
   binary: Uint8Array
-): { readonly result: ResultType; readonly nextIndex: number } => {
+): { readonly result: ResultType<>; readonly nextIndex: number } => {
   const okAndNextIndex: {
-    readonly result: Type;
+    readonly result: Type<>;
     readonly nextIndex: number;
-  } = decodeType(index, binary);
+  } = "custom type ……"(index, binary);
   const errorAndNextIndex: {
-    readonly result: Type;
+    readonly result: Type<>;
     readonly nextIndex: number;
-  } = decodeType(okAndNextIndex.nextIndex, binary);
+  } = "custom type ……"(okAndNextIndex.nextIndex, binary);
   return {
     result: { ok: okAndNextIndex.result, error: errorAndNextIndex.result },
     nextIndex: errorAndNextIndex.nextIndex,
@@ -734,7 +755,7 @@ export const decodeResultType = (
 export const decodeLanguage = (
   index: number,
   binary: Uint8Array
-): { readonly result: Language; readonly nextIndex: number } => {
+): { readonly result: Language<>; readonly nextIndex: number } => {
   const patternIndex: {
     readonly result: number;
     readonly nextIndex: number;
@@ -758,19 +779,19 @@ export const decodeLanguage = (
 export const decodeUrlData = (
   index: number,
   binary: Uint8Array
-): { readonly result: UrlData; readonly nextIndex: number } => {
+): { readonly result: UrlData<>; readonly nextIndex: number } => {
   const clientModeAndNextIndex: {
-    readonly result: ClientMode;
+    readonly result: ClientMode<>;
     readonly nextIndex: number;
-  } = decodeClientMode(index, binary);
+  } = "custom type ……"(index, binary);
   const locationAndNextIndex: {
-    readonly result: Location;
+    readonly result: Location<>;
     readonly nextIndex: number;
-  } = decodeLocation(clientModeAndNextIndex.nextIndex, binary);
+  } = "custom type ……"(clientModeAndNextIndex.nextIndex, binary);
   const languageAndNextIndex: {
-    readonly result: Language;
+    readonly result: Language<>;
     readonly nextIndex: number;
-  } = decodeLanguage(locationAndNextIndex.nextIndex, binary);
+  } = "custom type ……"(locationAndNextIndex.nextIndex, binary);
   const accessTokenAndNextIndex: {
     readonly result: Maybe<AccessToken>;
     readonly nextIndex: number;
@@ -803,7 +824,7 @@ export const decodeUrlData = (
 export const decodeClientMode = (
   index: number,
   binary: Uint8Array
-): { readonly result: ClientMode; readonly nextIndex: number } => {
+): { readonly result: ClientMode<>; readonly nextIndex: number } => {
   const patternIndex: {
     readonly result: number;
     readonly nextIndex: number;
@@ -831,7 +852,7 @@ export const decodeClientMode = (
 export const decodeLocation = (
   index: number,
   binary: Uint8Array
-): { readonly result: Location; readonly nextIndex: number } => {
+): { readonly result: Location<>; readonly nextIndex: number } => {
   const patternIndex: {
     readonly result: number;
     readonly nextIndex: number;
@@ -878,7 +899,7 @@ export const decodeLocation = (
 export const decodeProject = (
   index: number,
   binary: Uint8Array
-): { readonly result: Project; readonly nextIndex: number } => {
+): { readonly result: Project<>; readonly nextIndex: number } => {
   const nameAndNextIndex: {
     readonly result: string;
     readonly nextIndex: number;

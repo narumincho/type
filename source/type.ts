@@ -26,12 +26,15 @@ export type Type =
   | { _: "Result"; resultType: ResultType }
   | { _: "Id"; string_: string }
   | { _: "Token"; string_: string }
-  | { _: "Custom"; string_: string };
+  | { _: "Custom"; customType: CustomType }
+  | { _: "Parameter"; string_: string };
 
 /**
  * 正常値と異常値
  */
 export type ResultType = { ok: Type; error: Type };
+
+export type CustomType = { name: string; parameter: ReadonlyArray<Type> };
 
 /**
  * -2 147 483 648 ～ 2147483647. 32bit 符号付き整数
@@ -95,13 +98,22 @@ export const typeToken = (string_: string): Type => ({
  * 用意されていないアプリ特有の型
  *
  */
-export const typeCustom = (string_: string): Type => ({
+export const typeCustom = (customType: CustomType): Type => ({
   _: "Custom",
+  customType: customType,
+});
+
+/**
+ * パラメーター
+ */
+export const typeParameter = (string_: string): Type => ({
+  _: "Parameter",
   string_: string_,
 });
 
-export type CustomType = {
+export type CustomTypeDefinition = {
   name: string;
+  typeParameter: ReadonlyArray<string>;
   description: string;
   body: CustomTypeBody;
 };
@@ -161,9 +173,6 @@ export const resultError = <ok, error>(error: error): Result<ok, error> => ({
   error: error,
 });
 
-export const customTypeToTypeName = (customTypeName: string): string =>
-  c.firstUpperCase(customTypeName);
-
 export const toTypeName = (type_: Type): string => {
   switch (type_._) {
     case "Int32":
@@ -186,9 +195,11 @@ export const toTypeName = (type_: Type): string => {
       );
     case "Id":
     case "Token":
-      return customTypeToTypeName(type_.string_);
+      return type_.string_;
     case "Custom":
-      return customTypeToTypeName(type_.string_);
+      return type_.customType.name;
+    case "Parameter":
+      return type_.string_;
   }
 };
 
@@ -237,7 +248,7 @@ const elmReservedList = [
 ];
 
 export const collectIdOrTokenTypeNameSet = (
-  customTypeList: ReadonlyArray<CustomType>
+  customTypeList: ReadonlyArray<CustomTypeDefinition>
 ): Set<string> => {
   let idAndTokenTypeNameSet: Set<string> = new Set();
   for (const customType of customTypeList) {
@@ -250,7 +261,7 @@ export const collectIdOrTokenTypeNameSet = (
 };
 
 const collectIdOrTokenTypeNameSetInCustomType = (
-  customType: CustomType
+  customType: CustomTypeDefinition
 ): Set<string> => {
   switch (customType.body._) {
     case "Product":
@@ -301,6 +312,7 @@ const getIdOrTokenTypeNameInType = (type_: Type): Set<string> => {
     case "Bool":
     case "Binary":
     case "Custom":
+    case "Parameter":
       return new Set();
     case "Id":
     case "Token":
@@ -316,7 +328,9 @@ const getIdOrTokenTypeNameInType = (type_: Type): Set<string> => {
   }
 };
 
-export const isIncludeBinaryType = (customType: CustomType): boolean => {
+export const isIncludeBinaryType = (
+  customType: CustomTypeDefinition
+): boolean => {
   switch (customType.body._) {
     case "Product":
       return isIncludeBinaryTypeInProduct(
@@ -371,5 +385,7 @@ const isIncludeBinaryTypeInType = (type_: Type): boolean => {
         isIncludeBinaryTypeInType(type_.resultType.ok) ||
         isIncludeBinaryTypeInType(type_.resultType.error)
       );
+    case "Parameter":
+      return false;
   }
 };

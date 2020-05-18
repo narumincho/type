@@ -5,7 +5,7 @@ import * as c from "../case";
 import * as typeDef from "./typeDefinition";
 
 export const generate = (
-  customTypeList: ReadonlyArray<type.CustomType>
+  customTypeList: ReadonlyArray<type.CustomTypeDefinition>
 ): ReadonlyArray<ts.Definition> => {
   return [
     ts.definitionFunction(maybeJustCode),
@@ -155,7 +155,7 @@ export const customTypeVar = (
 ): ts.Expr => ts.variable(customTypeNameIdentifer(customTypeName, tagName));
 
 const customTypeCode = (
-  customTypeList: ReadonlyArray<type.CustomType>
+  customTypeList: ReadonlyArray<type.CustomTypeDefinition>
 ): ReadonlyArray<ts.Definition> => {
   const result: Array<ts.Definition> = [];
   for (const customType of customTypeList) {
