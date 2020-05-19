@@ -12,7 +12,8 @@ export const generate = (
     ts.definitionFunction(maybeNothingCode),
     ts.definitionFunction(resultOkCode),
     ts.definitionFunction(resultErrorCode),
-  ].concat(customTypeCode(customTypeList));
+    ...customTypeCode(customTypeList),
+  ];
 };
 
 /* ========================================
@@ -170,6 +171,7 @@ const customTypeCode = (
         }
         const definitionList = productTypeToTagList(
           customType.name,
+          customType.typeParameterList,
           customType.body.tagNameAndParameterList
         );
         for (const definition of definitionList) {
@@ -183,27 +185,43 @@ const customTypeCode = (
 
 const productTypeToTagList = (
   customTypeName: string,
+  typeParameterList: ReadonlyArray<string>,
   tagNameAndParameterList: ReadonlyArray<type.TagNameAndParameter>
 ): ReadonlyArray<ts.Definition> => {
   return tagNameAndParameterList.map((tagNameAndParameter) =>
-    tagNameAndParameterToTag(customTypeName, tagNameAndParameter)
+    tagNameAndParameterToTag(
+      customTypeName,
+      typeParameterList,
+      tagNameAndParameter
+    )
   );
 };
 
 const tagNameAndParameterToTag = (
   customTypeName: string,
+  typeParameterList: ReadonlyArray<string>,
   tagNameAndParameter: type.TagNameAndParameter
 ): ts.Definition => {
   const tagField: ts.Member = ts.memberKeyValue(
     "_",
     ts.stringLiteral(tagNameAndParameter.name)
   );
+  const returnType =
+    typeParameterList.length === 0
+      ? ts.typeScopeInFile(identifer.fromString(customTypeName))
+      : ts.typeWithParameter(
+          ts.typeScopeInFile(identifer.fromString(customTypeName)),
+          typeParameterList.map((typeParameter) =>
+            ts.typeScopeInFile(identifer.fromString(typeParameter))
+          )
+        );
 
   switch (tagNameAndParameter.parameter._) {
     case "Just":
       return ts.definitionFunction({
         name: customTypeNameIdentifer(customTypeName, tagNameAndParameter.name),
         document: tagNameAndParameter.description,
+        typeParameterList: typeParameterList.map(identifer.fromString),
         parameterList: [
           {
             name: util.typeToMemberOrParameterName(
@@ -215,8 +233,7 @@ const tagNameAndParameterToTag = (
             ),
           },
         ],
-        typeParameterList: [],
-        returnType: ts.typeScopeInFile(identifer.fromString(customTypeName)),
+        returnType: returnType,
         statementList: [
           ts.statementReturn(
             ts.objectLiteral([
@@ -237,14 +254,29 @@ const tagNameAndParameterToTag = (
       });
 
     case "Nothing":
-      return ts.definitionVariable({
+      {
+        if (typeParameterList.length === 0) {
+          return ts.definitionVariable({
+            name: identifer.fromString(
+              c.firstLowerCase(customTypeName) +
+                c.firstUpperCase(tagNameAndParameter.name)
+            ),
+            document: tagNameAndParameter.description,
+            type_: returnType,
+            expr: ts.objectLiteral([tagField]),
+          });
+        }
+      }
+      return ts.definitionFunction({
         name: identifer.fromString(
           c.firstLowerCase(customTypeName) +
             c.firstUpperCase(tagNameAndParameter.name)
         ),
         document: tagNameAndParameter.description,
-        type_: ts.typeScopeInFile(identifer.fromString(customTypeName)),
-        expr: ts.objectLiteral([tagField]),
+        typeParameterList: typeParameterList.map(identifer.fromString),
+        parameterList: [],
+        returnType: returnType,
+        statementList: [ts.statementReturn(ts.objectLiteral([tagField]))],
       });
   }
 };

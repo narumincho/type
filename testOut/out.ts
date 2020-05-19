@@ -134,3 +134,139 @@ export type UserId = string & { readonly _userId: never };
 export type ProjectId = string & { readonly _projectId: never };
 
 export type FileHash = string & { readonly _fileHash: never };
+
+export const maybeJust = <T>(value: T): Maybe<T> => ({
+  _: "Just",
+  value: value,
+});
+
+export const maybeNothing = <T>(): Maybe<T> => ({ _: "Nothing" });
+
+export const resultOk = <ok, error>(ok: ok): Result<ok, error> => ({
+  _: "Ok",
+  ok: ok,
+});
+
+export const resultError = <ok, error>(error: error): Result<ok, error> => ({
+  _: "Error",
+  error: error,
+});
+
+/**
+ * -9007199254740991～9007199254740991 JavaScriptのNumberで正確に表現できる整数の範囲
+ */
+export const typeInt: Type = { _: "Int" };
+
+/**
+ * 文字列
+ */
+export const typeString: Type = { _: "String" };
+
+/**
+ * 真偽値
+ */
+export const typeBool: Type = { _: "Bool" };
+
+/**
+ * リスト
+ */
+export const typeList = (type_: Type): Type => ({ _: "List", type_: type_ });
+
+/**
+ * Maybe
+ */
+export const typeMaybe = (type_: Type): Type => ({ _: "Maybe", type_: type_ });
+
+/**
+ * Result
+ */
+export const typeResult = (resultType: ResultType): Type => ({
+  _: "Result",
+  resultType: resultType,
+});
+
+/**
+ * データを識別するためのもの. カスタムの型名を指定する. 16byte. 16進数文字列で32文字
+ */
+export const typeId = (string_: string): Type => ({
+  _: "Id",
+  string_: string_,
+});
+
+/**
+ * データを識別するため. カスタムの型名を指定する. 32byte. 16進数文字列で64文字
+ */
+export const typeToken = (string_: string): Type => ({
+  _: "Token",
+  string_: string_,
+});
+
+/**
+ * 用意されていないアプリ特有の型
+ */
+export const typeCustom = (string_: string): Type => ({
+  _: "Custom",
+  string_: string_,
+});
+
+/**
+ * 型パラメーター
+ */
+export const typeParameter = (string_: string): Type => ({
+  _: "Parameter",
+  string_: string_,
+});
+
+/**
+ * デバッグモード. ポート番号を保持する. オリジンは http://[::1]:2520 のようなもの
+ */
+export const clientModeDebugMode = (int32: number): ClientMode => ({
+  _: "DebugMode",
+  int32: int32,
+});
+
+/**
+ * リリースモード. https://definy.app
+ */
+export const clientModeRelease: ClientMode = { _: "Release" };
+
+/**
+ * 最初のページ
+ */
+export const locationHome: Location = { _: "Home" };
+
+/**
+ * ユーザーの詳細ページ
+ */
+export const locationUser = (userId: UserId): Location => ({
+  _: "User",
+  userId: userId,
+});
+
+/**
+ * プロジェクトの詳細ページ
+ */
+export const locationProject = (projectId: ProjectId): Location => ({
+  _: "Project",
+  projectId: projectId,
+});
+
+/**
+ * オフラインかサーバー上でエラーが発生しました
+ */
+export const responseConnectionError = <data>(): Response<data> => ({
+  _: "ConnectionError",
+});
+
+/**
+ * リソースが存在しない
+ */
+export const responseNotFound = <data>(): Response<data> => ({ _: "NotFound" });
+
+/**
+ * 取得に成功した
+ */
+export const responseFound = <data>(data: data): Response<data> => ({
+  _: "Found",
+  data: data,
+});

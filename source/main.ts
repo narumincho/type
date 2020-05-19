@@ -19,7 +19,7 @@ export const generateTypeScriptCode = (
       ...typeDefinition
         .generateTypeDefinition(customTypeList, idOrTokenTypeNameSet)
         .map(data.definitionTypeAlias),
-      // ...tag.generate(customTypeList),
+      ...tag.generate(customTypeList),
       // ...encoder.generateCode(customTypeList).map(data.definitionFunction),
       // ...decoder.generateCode(customTypeList).map(data.definitionFunction),
     ],
