@@ -1,12 +1,12 @@
 /**
- * Maybe
+ * Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
  */
 export type Maybe<value> =
   | { readonly _: "Just"; readonly value: value }
   | { readonly _: "Nothing" };
 
 /**
- * Result
+ * 成功と失敗を表す型. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
  */
 export type Result<ok, error> =
   | { readonly _: "Ok"; readonly ok: ok }

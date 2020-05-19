@@ -8,8 +8,8 @@ export const generateTypeDefinition = (
   idOrTokenTypeNameSet: Set<string>
 ): ReadonlyArray<ts.TypeAlias> => {
   return [
-    maybeDefinition,
-    resultDefinition,
+    customTypeToDefinition(maybeCustomTypeDefinition),
+    customTypeToDefinition(resultCustomTypeDefinition),
     ...customTypeList.map(customTypeToDefinition),
     ...[...idOrTokenTypeNameSet].map(idOrTokenDefinition),
   ];
@@ -20,30 +20,28 @@ export const generateTypeDefinition = (
    ========================================
 */
 
-const maybeName = identifer.fromString("Maybe");
+const maybeName = "Maybe";
 export const maybeVar = (elementType: ts.Type): ts.Type =>
-  ts.typeWithParameter(ts.typeScopeInFile(maybeName), [elementType]);
+  ts.typeWithParameter(ts.typeScopeInFile(identifer.fromString(maybeName)), [
+    elementType,
+  ]);
 
-const maybeDefinition: ts.TypeAlias = {
+const maybeCustomTypeDefinition: type.CustomTypeDefinition = {
   name: maybeName,
-  document: "Maybe",
-  parameterList: [identifer.fromString("value")],
-  type_: ts.typeUnion([
-    ts.typeObject(
-      new Map([
-        ["_", { type_: ts.typeStringLiteral("Just"), document: "" }],
-        [
-          "value",
-          {
-            type_: ts.typeScopeInFile(identifer.fromString("value")),
-            document: "",
-          },
-        ],
-      ])
-    ),
-    ts.typeObject(
-      new Map([["_", { type_: ts.typeStringLiteral("Nothing"), document: "" }]])
-    ),
+  typeParameterList: ["value"],
+  description:
+    "Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した",
+  body: type.customTypeBodySum([
+    {
+      name: "Just",
+      description: "値があるということ",
+      parameter: type.maybeJust(type.typeParameter("value")),
+    },
+    {
+      name: "Nothing",
+      description: "値がないということ",
+      parameter: type.maybeNothing(),
+    },
   ]),
 };
 
@@ -52,39 +50,29 @@ const maybeDefinition: ts.TypeAlias = {
    ========================================
 */
 
-const resultName = identifer.fromString("Result");
+const resultName = "Result";
 export const resultVar = (okType: ts.Type, errorType: ts.Type): ts.Type =>
-  ts.typeWithParameter(ts.typeScopeInFile(resultName), [okType, errorType]);
+  ts.typeWithParameter(ts.typeScopeInFile(identifer.fromString(resultName)), [
+    okType,
+    errorType,
+  ]);
 
-const resultDefinition: ts.TypeAlias = {
+const resultCustomTypeDefinition: type.CustomTypeDefinition = {
   name: resultName,
-  document: "Result",
-  parameterList: [identifer.fromString("ok"), identifer.fromString("error")],
-  type_: ts.typeUnion([
-    ts.typeObject(
-      new Map([
-        ["_", { type_: ts.typeStringLiteral("Ok"), document: "" }],
-        [
-          "ok",
-          {
-            type_: ts.typeScopeInFile(identifer.fromString("ok")),
-            document: "",
-          },
-        ],
-      ])
-    ),
-    ts.typeObject(
-      new Map([
-        ["_", { type_: ts.typeStringLiteral("Error"), document: "" }],
-        [
-          "error",
-          {
-            type_: ts.typeScopeInFile(identifer.fromString("error")),
-            document: "",
-          },
-        ],
-      ])
-    ),
+  description:
+    "成功と失敗を表す型. Elmに標準で定義されているものに変換をするためにデフォルトで用意した",
+  typeParameterList: ["ok", "error"],
+  body: type.customTypeBodySum([
+    {
+      name: "Ok",
+      description: "成功",
+      parameter: type.maybeJust(type.typeParameter("ok")),
+    },
+    {
+      name: "Error",
+      description: "失敗",
+      parameter: type.maybeJust(type.typeParameter("error")),
+    },
   ]),
 };
 /* ========================================
