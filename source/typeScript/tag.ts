@@ -8,11 +8,9 @@ export const generate = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>
 ): ReadonlyArray<ts.Definition> => {
   return [
-    ts.definitionFunction(maybeJustCode),
-    ts.definitionFunction(maybeNothingCode),
-    ts.definitionFunction(resultOkCode),
-    ts.definitionFunction(resultErrorCode),
-    ...customTypeCode(customTypeList),
+    ...customTypeDefinitionToTagFunction(typeDef.maybeCustomTypeDefinition),
+    ...customTypeDefinitionToTagFunction(typeDef.resultCustomTypeDefinition),
+    ...[...customTypeList.map(customTypeDefinitionToTagFunction)][0],
   ];
 };
 
@@ -26,46 +24,11 @@ const maybeJustName = identifer.fromString("maybeJust");
 export const maybeJustVarEval = (expr: ts.Expr): ts.Expr =>
   ts.call(ts.variable(maybeJustName), [expr]);
 
-const maybeJustCode: ts.Function = {
-  name: maybeJustName,
-  document: "",
-  parameterList: [
-    {
-      name: identifer.fromString("value"),
-      document: "",
-      type_: ts.typeScopeInFile(identifer.fromString("T")),
-    },
-  ],
-  returnType: typeDef.maybeVar(ts.typeScopeInFile(identifer.fromString("T"))),
-  typeParameterList: [identifer.fromString("T")],
-  statementList: [
-    ts.statementReturn(
-      ts.objectLiteral([
-        ts.memberKeyValue("_", ts.stringLiteral("Just")),
-        ts.memberKeyValue("value", ts.variable(identifer.fromString("value"))),
-      ])
-    ),
-  ],
-};
-
 const maybeNothingName = identifer.fromString("maybeNothing");
 export const maybeNothingVarEval: ts.Expr = ts.call(
   ts.variable(maybeNothingName),
   []
 );
-
-const maybeNothingCode: ts.Function = {
-  name: maybeNothingName,
-  document: "",
-  parameterList: [],
-  returnType: typeDef.maybeVar(ts.typeScopeInFile(identifer.fromString("T"))),
-  typeParameterList: [identifer.fromString("T")],
-  statementList: [
-    ts.statementReturn(
-      ts.objectLiteral([ts.memberKeyValue("_", ts.stringLiteral("Nothing"))])
-    ),
-  ],
-};
 
 /* ========================================
                   Result
@@ -76,66 +39,10 @@ const resultOkName = identifer.fromString("resultOk");
 export const resultOkVarEval = (okExpr: ts.Expr): ts.Expr =>
   ts.call(ts.variable(resultOkName), [okExpr]);
 
-const resultOkCode: ts.Function = {
-  name: resultOkName,
-  document: "",
-  parameterList: [
-    {
-      name: identifer.fromString("ok"),
-      document: "",
-      type_: ts.typeScopeInFile(identifer.fromString("ok")),
-    },
-  ],
-  returnType: typeDef.resultVar(
-    ts.typeScopeInFile(identifer.fromString("ok")),
-    ts.typeScopeInFile(identifer.fromString("error"))
-  ),
-  typeParameterList: [
-    identifer.fromString("ok"),
-    identifer.fromString("error"),
-  ],
-  statementList: [
-    ts.statementReturn(
-      ts.objectLiteral([
-        ts.memberKeyValue("_", ts.stringLiteral("Ok")),
-        ts.memberKeyValue("ok", ts.variable(identifer.fromString("ok"))),
-      ])
-    ),
-  ],
-};
-
 const resultErrorName = identifer.fromString("resultError");
 
 export const resultErrorVarEval = (errorExpr: ts.Expr): ts.Expr =>
   ts.call(ts.variable(resultErrorName), [errorExpr]);
-
-const resultErrorCode: ts.Function = {
-  name: resultErrorName,
-  document: "",
-  parameterList: [
-    {
-      name: identifer.fromString("error"),
-      document: "",
-      type_: ts.typeScopeInFile(identifer.fromString("error")),
-    },
-  ],
-  returnType: typeDef.resultVar(
-    ts.typeScopeInFile(identifer.fromString("ok")),
-    ts.typeScopeInFile(identifer.fromString("error"))
-  ),
-  typeParameterList: [
-    identifer.fromString("ok"),
-    identifer.fromString("error"),
-  ],
-  statementList: [
-    ts.statementReturn(
-      ts.objectLiteral([
-        ts.memberKeyValue("_", ts.stringLiteral("Error")),
-        ts.memberKeyValue("error", ts.variable(identifer.fromString("error"))),
-      ])
-    ),
-  ],
-};
 
 /* ========================================
                   Custom
@@ -155,32 +62,28 @@ export const customTypeVar = (
   tagName: string
 ): ts.Expr => ts.variable(customTypeNameIdentifer(customTypeName, tagName));
 
-const customTypeCode = (
-  customTypeList: ReadonlyArray<type.CustomTypeDefinition>
+const customTypeDefinitionToTagFunction = (
+  customType: type.CustomTypeDefinition
 ): ReadonlyArray<ts.Definition> => {
-  const result: Array<ts.Definition> = [];
-  for (const customType of customTypeList) {
-    switch (customType.body._) {
-      case "Sum": {
-        if (
-          type.isProductTypeAllNoParameter(
-            customType.body.tagNameAndParameterList
-          )
-        ) {
-          break;
-        }
-        const definitionList = productTypeToTagList(
-          customType.name,
-          customType.typeParameterList,
+  switch (customType.body._) {
+    case "Sum": {
+      if (
+        type.isProductTypeAllNoParameter(
           customType.body.tagNameAndParameterList
-        );
-        for (const definition of definitionList) {
-          result.push(definition);
-        }
+        )
+      ) {
+        return [];
       }
+      const definitionList = productTypeToTagList(
+        customType.name,
+        customType.typeParameterList,
+        customType.body.tagNameAndParameterList
+      );
+      return definitionList;
     }
+    case "Product":
+      return [];
   }
-  return result;
 };
 
 const productTypeToTagList = (

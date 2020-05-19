@@ -135,18 +135,30 @@ export type ProjectId = string & { readonly _projectId: never };
 
 export type FileHash = string & { readonly _fileHash: never };
 
-export const maybeJust = <T>(value: T): Maybe<T> => ({
+/**
+ * 値があるということ
+ */
+export const maybeJust = <value>(value: value): Maybe<value> => ({
   _: "Just",
   value: value,
 });
 
-export const maybeNothing = <T>(): Maybe<T> => ({ _: "Nothing" });
+/**
+ * 値がないということ
+ */
+export const maybeNothing = <value>(): Maybe<value> => ({ _: "Nothing" });
 
+/**
+ * 成功
+ */
 export const resultOk = <ok, error>(ok: ok): Result<ok, error> => ({
   _: "Ok",
   ok: ok,
 });
 
+/**
+ * 失敗
+ */
 export const resultError = <ok, error>(error: error): Result<ok, error> => ({
   _: "Error",
   error: error,
@@ -215,58 +227,4 @@ export const typeCustom = (string_: string): Type => ({
 export const typeParameter = (string_: string): Type => ({
   _: "Parameter",
   string_: string_,
-});
-
-/**
- * デバッグモード. ポート番号を保持する. オリジンは http://[::1]:2520 のようなもの
- */
-export const clientModeDebugMode = (int32: number): ClientMode => ({
-  _: "DebugMode",
-  int32: int32,
-});
-
-/**
- * リリースモード. https://definy.app
- */
-export const clientModeRelease: ClientMode = { _: "Release" };
-
-/**
- * 最初のページ
- */
-export const locationHome: Location = { _: "Home" };
-
-/**
- * ユーザーの詳細ページ
- */
-export const locationUser = (userId: UserId): Location => ({
-  _: "User",
-  userId: userId,
-});
-
-/**
- * プロジェクトの詳細ページ
- */
-export const locationProject = (projectId: ProjectId): Location => ({
-  _: "Project",
-  projectId: projectId,
-});
-
-/**
- * オフラインかサーバー上でエラーが発生しました
- */
-export const responseConnectionError = <data>(): Response<data> => ({
-  _: "ConnectionError",
-});
-
-/**
- * リソースが存在しない
- */
-export const responseNotFound = <data>(): Response<data> => ({ _: "NotFound" });
-
-/**
- * 取得に成功した
- */
-export const responseFound = <data>(data: data): Response<data> => ({
-  _: "Found",
-  data: data,
 });

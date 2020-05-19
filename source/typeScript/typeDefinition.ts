@@ -21,12 +21,12 @@ export const generateTypeDefinition = (
 */
 
 const maybeName = "Maybe";
-export const maybeVar = (elementType: ts.Type): ts.Type =>
+export const maybeTsType = (elementType: ts.Type): ts.Type =>
   ts.typeWithParameter(ts.typeScopeInFile(identifer.fromString(maybeName)), [
     elementType,
   ]);
 
-const maybeCustomTypeDefinition: type.CustomTypeDefinition = {
+export const maybeCustomTypeDefinition: type.CustomTypeDefinition = {
   name: maybeName,
   typeParameterList: ["value"],
   description:
@@ -51,13 +51,13 @@ const maybeCustomTypeDefinition: type.CustomTypeDefinition = {
 */
 
 const resultName = "Result";
-export const resultVar = (okType: ts.Type, errorType: ts.Type): ts.Type =>
+export const resultTsType = (okType: ts.Type, errorType: ts.Type): ts.Type =>
   ts.typeWithParameter(ts.typeScopeInFile(identifer.fromString(resultName)), [
     okType,
     errorType,
   ]);
 
-const resultCustomTypeDefinition: type.CustomTypeDefinition = {
+export const resultCustomTypeDefinition: type.CustomTypeDefinition = {
   name: resultName,
   description:
     "成功と失敗を表す型. Elmに標準で定義されているものに変換をするためにデフォルトで用意した",

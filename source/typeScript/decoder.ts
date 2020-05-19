@@ -544,14 +544,14 @@ const maybeCode = (): ts.Function => {
     ],
     returnType: ts.typeFunction(
       [ts.typeNumber, ts.uint8ArrayType],
-      returnType(typeDef.maybeVar(elementTypeVar))
+      returnType(typeDef.maybeTsType(elementTypeVar))
     ),
     typeParameterList: [elementTypeName],
     statementList: [
       ts.statementReturn(
         ts.lambda(
           parameterList,
-          returnType(typeDef.maybeVar(elementTypeVar)),
+          returnType(typeDef.maybeTsType(elementTypeVar)),
           body
         )
       ),
@@ -652,14 +652,14 @@ const resultCode = (): ts.Function => {
     ],
     returnType: ts.typeFunction(
       [ts.typeNumber, ts.uint8ArrayType],
-      returnType(typeDef.resultVar(okTypeVar, errorTypeVar))
+      returnType(typeDef.resultTsType(okTypeVar, errorTypeVar))
     ),
     typeParameterList: [okTypeName, errorTypeName],
     statementList: [
       ts.statementReturn(
         ts.lambda(
           parameterList,
-          returnType(typeDef.resultVar(okTypeVar, errorTypeVar)),
+          returnType(typeDef.resultTsType(okTypeVar, errorTypeVar)),
           body
         )
       ),
