@@ -21,9 +21,9 @@ export type Type =
   | { readonly _: "Int" }
   | { readonly _: "String" }
   | { readonly _: "Bool" }
-  | { readonly _: "List"; readonly type_: Type<> }
-  | { readonly _: "Maybe"; readonly type_: Type<> }
-  | { readonly _: "Result"; readonly resultType: ResultType<> }
+  | { readonly _: "List"; readonly type_: Type }
+  | { readonly _: "Maybe"; readonly type_: Type }
+  | { readonly _: "Result"; readonly resultType: ResultType }
   | { readonly _: "Id"; readonly string_: string }
   | { readonly _: "Token"; readonly string_: string }
   | { readonly _: "Custom"; readonly string_: string }
@@ -36,11 +36,11 @@ export type ResultType = {
   /**
    * 正常値
    */
-  readonly ok: Type<>;
+  readonly ok: Type;
   /**
    * 異常値
    */
-  readonly error: Type<>;
+  readonly error: Type;
 };
 
 /**
@@ -55,15 +55,15 @@ export type UrlData = {
   /**
    * クライアントモード
    */
-  readonly clientMode: ClientMode<>;
+  readonly clientMode: ClientMode;
   /**
    * 場所
    */
-  readonly location: Location<>;
+  readonly location: Location;
   /**
    * 言語
    */
-  readonly language: Language<>;
+  readonly language: Language;
   /**
    * アクセストークン. ログインした後のリダイレクト先としてサーバーから渡される
    */
@@ -150,20 +150,17 @@ export const typeBool: Type = { _: "Bool" };
 /**
  * リスト
  */
-export const typeList = (type_: Type<>): Type => ({ _: "List", type_: type_ });
+export const typeList = (type_: Type): Type => ({ _: "List", type_: type_ });
 
 /**
  * Maybe
  */
-export const typeMaybe = (type_: Type<>): Type => ({
-  _: "Maybe",
-  type_: type_,
-});
+export const typeMaybe = (type_: Type): Type => ({ _: "Maybe", type_: type_ });
 
 /**
  * Result
  */
-export const typeResult = (resultType: ResultType<>): Type => ({
+export const typeResult = (resultType: ResultType): Type => ({
   _: "Result",
   resultType: resultType,
 });
@@ -433,8 +430,8 @@ export const decodeInt32 = (
   index: number,
   binary: Uint8Array
 ): { readonly result: number; readonly nextIndex: number } => {
-  let result: number = 0;
-  let offset: number = 0;
+  let result = 0;
+  let offset = 0;
   while (true) {
     const byte: number = binary[index + offset];
     result |= (byte & 127) << (offset * 7);
@@ -657,7 +654,7 @@ export const decodeToken = (
 export const decodeType = (
   index: number,
   binary: Uint8Array
-): { readonly result: Type<>; readonly nextIndex: number } => {
+): { readonly result: Type; readonly nextIndex: number } => {
   const patternIndex: {
     readonly result: number;
     readonly nextIndex: number;
@@ -673,21 +670,21 @@ export const decodeType = (
   }
   if (patternIndex.result === 3) {
     const result: {
-      readonly result: Type<>;
+      readonly result: Type;
       readonly nextIndex: number;
     } = "custom type ……"(patternIndex.nextIndex, binary);
     return { result: typeList(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 4) {
     const result: {
-      readonly result: Type<>;
+      readonly result: Type;
       readonly nextIndex: number;
     } = "custom type ……"(patternIndex.nextIndex, binary);
     return { result: typeMaybe(result.result), nextIndex: result.nextIndex };
   }
   if (patternIndex.result === 5) {
     const result: {
-      readonly result: ResultType<>;
+      readonly result: ResultType;
       readonly nextIndex: number;
     } = "custom type ……"(patternIndex.nextIndex, binary);
     return { result: typeResult(result.result), nextIndex: result.nextIndex };
@@ -733,13 +730,13 @@ export const decodeType = (
 export const decodeResultType = (
   index: number,
   binary: Uint8Array
-): { readonly result: ResultType<>; readonly nextIndex: number } => {
+): { readonly result: ResultType; readonly nextIndex: number } => {
   const okAndNextIndex: {
-    readonly result: Type<>;
+    readonly result: Type;
     readonly nextIndex: number;
   } = "custom type ……"(index, binary);
   const errorAndNextIndex: {
-    readonly result: Type<>;
+    readonly result: Type;
     readonly nextIndex: number;
   } = "custom type ……"(okAndNextIndex.nextIndex, binary);
   return {
@@ -755,7 +752,7 @@ export const decodeResultType = (
 export const decodeLanguage = (
   index: number,
   binary: Uint8Array
-): { readonly result: Language<>; readonly nextIndex: number } => {
+): { readonly result: Language; readonly nextIndex: number } => {
   const patternIndex: {
     readonly result: number;
     readonly nextIndex: number;
@@ -779,17 +776,17 @@ export const decodeLanguage = (
 export const decodeUrlData = (
   index: number,
   binary: Uint8Array
-): { readonly result: UrlData<>; readonly nextIndex: number } => {
+): { readonly result: UrlData; readonly nextIndex: number } => {
   const clientModeAndNextIndex: {
-    readonly result: ClientMode<>;
+    readonly result: ClientMode;
     readonly nextIndex: number;
   } = "custom type ……"(index, binary);
   const locationAndNextIndex: {
-    readonly result: Location<>;
+    readonly result: Location;
     readonly nextIndex: number;
   } = "custom type ……"(clientModeAndNextIndex.nextIndex, binary);
   const languageAndNextIndex: {
-    readonly result: Language<>;
+    readonly result: Language;
     readonly nextIndex: number;
   } = "custom type ……"(locationAndNextIndex.nextIndex, binary);
   const accessTokenAndNextIndex: {
@@ -824,7 +821,7 @@ export const decodeUrlData = (
 export const decodeClientMode = (
   index: number,
   binary: Uint8Array
-): { readonly result: ClientMode<>; readonly nextIndex: number } => {
+): { readonly result: ClientMode; readonly nextIndex: number } => {
   const patternIndex: {
     readonly result: number;
     readonly nextIndex: number;
@@ -852,7 +849,7 @@ export const decodeClientMode = (
 export const decodeLocation = (
   index: number,
   binary: Uint8Array
-): { readonly result: Location<>; readonly nextIndex: number } => {
+): { readonly result: Location; readonly nextIndex: number } => {
   const patternIndex: {
     readonly result: number;
     readonly nextIndex: number;
@@ -899,7 +896,7 @@ export const decodeLocation = (
 export const decodeProject = (
   index: number,
   binary: Uint8Array
-): { readonly result: Project<>; readonly nextIndex: number } => {
+): { readonly result: Project; readonly nextIndex: number } => {
   const nameAndNextIndex: {
     readonly result: string;
     readonly nextIndex: number;

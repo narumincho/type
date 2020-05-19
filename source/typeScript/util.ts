@@ -37,11 +37,15 @@ export const typeToTypeScriptType = (type_: type.Type): ts.Type => {
     case "Token":
       return ts.typeScopeInFile(identifer.fromString(type_.string_));
 
-    case "Custom":
+    case "Custom": {
+      if (type_.customType.parameterList.length === 0) {
+        return ts.typeScopeInFile(identifer.fromString(type_.customType.name));
+      }
       return ts.typeWithParameter(
         ts.typeScopeInFile(identifer.fromString(type_.customType.name)),
         type_.customType.parameterList.map(typeToTypeScriptType)
       );
+    }
 
     case "Parameter":
       return ts.typeScopeInFile(identifer.fromString(type_.string_));
