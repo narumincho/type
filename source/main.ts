@@ -19,9 +19,9 @@ export const generateTypeScriptCode = (
       ...typeDefinition
         .generateTypeDefinition(customTypeList, idOrTokenTypeNameSet)
         .map(data.definitionTypeAlias),
-      ...tag.generate(customTypeList),
-      ...encoder.generateCode(customTypeList).map(data.definitionFunction),
-      ...decoder.generateCode(customTypeList).map(data.definitionFunction),
+      // ...tag.generate(customTypeList),
+      // ...encoder.generateCode(customTypeList).map(data.definitionFunction),
+      // ...decoder.generateCode(customTypeList).map(data.definitionFunction),
     ],
     statementList: [],
   };

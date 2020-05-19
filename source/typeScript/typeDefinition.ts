@@ -27,7 +27,7 @@ export const maybeVar = (elementType: ts.Type): ts.Type =>
 const maybeDefinition: ts.TypeAlias = {
   name: maybeName,
   document: "Maybe",
-  parameterList: [identifer.fromString("T")],
+  parameterList: [identifer.fromString("value")],
   type_: ts.typeUnion([
     ts.typeObject(
       new Map([
@@ -35,7 +35,7 @@ const maybeDefinition: ts.TypeAlias = {
         [
           "value",
           {
-            type_: ts.typeScopeInFile(identifer.fromString("T")),
+            type_: ts.typeScopeInFile(identifer.fromString("value")),
             document: "",
           },
         ],
@@ -110,60 +110,45 @@ const idOrTokenDefinition = (name: string): ts.TypeAlias => ({
                Custom Type
    ========================================
 */
-const customTypeNameIdentifer = (customTypeName: string): identifer.Identifer =>
-  identifer.fromString(customTypeName);
-
-export const customTypeVar = (customTypeName: string): ts.Type =>
-  ts.typeScopeInFile(customTypeNameIdentifer(customTypeName));
 
 export const customTypeToDefinition = (
   customType: type.CustomTypeDefinition
-): ts.TypeAlias => {
-  switch (customType.body._) {
+): ts.TypeAlias => ({
+  name: identifer.fromString(customType.name),
+  document: customType.description,
+  parameterList: customType.typeParameterList.map(identifer.fromString),
+  type_: customTypeDefinitionBodyToTsType(customType.body),
+});
+
+const customTypeDefinitionBodyToTsType = (
+  body: type.CustomTypeBody
+): ts.Type => {
+  switch (body._) {
     case "Sum":
-      if (
-        type.isProductTypeAllNoParameter(
-          customType.body.tagNameAndParameterList
-        )
-      ) {
-        return {
-          name: identifer.fromString(customType.name),
-          document: customType.description,
-          parameterList: [],
-          type_: ts.typeUnion(
-            customType.body.tagNameAndParameterList.map((tagNameAndParameter) =>
-              ts.typeStringLiteral(tagNameAndParameter.name)
-            )
-          ),
-        };
+      if (type.isProductTypeAllNoParameter(body.tagNameAndParameterList)) {
+        return ts.typeUnion(
+          body.tagNameAndParameterList.map((tagNameAndParameter) =>
+            ts.typeStringLiteral(tagNameAndParameter.name)
+          )
+        );
       }
-      return {
-        name: identifer.fromString(customType.name),
-        document: customType.description,
-        parameterList: [],
-        type_: ts.typeUnion(
-          customType.body.tagNameAndParameterList.map((tagNameAndParameter) =>
-            tagNameAndParameterToObjectType(tagNameAndParameter)
-          )
-        ),
-      };
+      return ts.typeUnion(
+        body.tagNameAndParameterList.map((tagNameAndParameter) =>
+          tagNameAndParameterToObjectType(tagNameAndParameter)
+        )
+      );
     case "Product":
-      return {
-        name: customTypeNameIdentifer(customType.name),
-        document: customType.description,
-        parameterList: [],
-        type_: ts.typeObject(
-          new Map(
-            customType.body.memberNameAndTypeList.map((memberNameAndType) => [
-              memberNameAndType.name,
-              {
-                type_: util.typeToTypeScriptType(memberNameAndType.memberType),
-                document: memberNameAndType.description,
-              },
-            ])
-          )
-        ),
-      };
+      return ts.typeObject(
+        new Map(
+          body.memberNameAndTypeList.map((memberNameAndType) => [
+            memberNameAndType.name,
+            {
+              type_: util.typeToTypeScriptType(memberNameAndType.memberType),
+              document: memberNameAndType.description,
+            },
+          ])
+        )
+      );
   }
 };
 

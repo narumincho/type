@@ -1,4 +1,4 @@
-module Data exposing (AccessToken(..), UserId(..), ProjectId(..), FileHash(..), Type(..), ResultType, Language(..), UrlData, ClientMode(..), Location(..), Project, maybeToJsonValue, resultToJsonValue, accessTokenToJsonValue, userIdToJsonValue, projectIdToJsonValue, fileHashToJsonValue, typeToJsonValue, resultTypeToJsonValue, languageToJsonValue, urlDataToJsonValue, clientModeToJsonValue, locationToJsonValue, projectToJsonValue, maybeJsonDecoder, resultJsonDecoder, accessTokenJsonDecoder, userIdJsonDecoder, projectIdJsonDecoder, fileHashJsonDecoder, typeJsonDecoder, resultTypeJsonDecoder, languageJsonDecoder, urlDataJsonDecoder, clientModeJsonDecoder, locationJsonDecoder, projectJsonDecoder)
+module Data exposing (AccessToken(..), UserId(..), ProjectId(..), FileHash(..), Type(..), ResultType, UrlData, ClientMode(..), Location(..), Language(..), Project, ResponseWithId, Response(..), maybeToJsonValue, resultToJsonValue, accessTokenToJsonValue, userIdToJsonValue, projectIdToJsonValue, fileHashToJsonValue, typeToJsonValue, resultTypeToJsonValue, urlDataToJsonValue, clientModeToJsonValue, locationToJsonValue, languageToJsonValue, projectToJsonValue, responseWithIdToJsonValue, responseToJsonValue, maybeJsonDecoder, resultJsonDecoder, accessTokenJsonDecoder, userIdJsonDecoder, projectIdJsonDecoder, fileHashJsonDecoder, typeJsonDecoder, resultTypeJsonDecoder, urlDataJsonDecoder, clientModeJsonDecoder, locationJsonDecoder, languageJsonDecoder, projectJsonDecoder, responseWithIdJsonDecoder, responseJsonDecoder)
 
 
 import Json.Encode as Je
@@ -25,14 +25,6 @@ type Type
 -}
 type alias ResultType = { ok: Type, error: Type }
 
-{-| 英語,日本語,エスペラント語などの言語 
--}
-type Language
-  = LanguageJapanese
-  | LanguageEnglish
-  | LanguageEsperanto
-
-
 {-| デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( https://support.google.com/webmasters/answer/182192?hl=ja )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は http://[::1] になる 
 -}
 type alias UrlData = { clientMode: ClientMode, location: Location, language: Language, accessToken: (Maybe AccessToken), if_: Bool }
@@ -52,9 +44,29 @@ type Location
   | LocationProject ProjectId
 
 
+{-| 英語,日本語,エスペラント語などの言語 
+-}
+type Language
+  = LanguageJapanese
+  | LanguageEnglish
+  | LanguageEsperanto
+
+
 {-| プロジェクト 
 -}
 type alias Project = { name: String, icon: FileHash, image: FileHash }
+
+{-| Elmで扱えるように何のリソースのレスポンスかが含まれたレスポンス 
+-}
+type alias ResponseWithId = { id: id, response: Response }
+
+{-| リソースをリクエストしたあとのレスポンス 
+-}
+type Response
+  = ResponseConnectionError
+  | ResponseNotFound
+  | ResponseFound data
+
 
 type AccessToken = AccessToken String
 
@@ -137,18 +149,6 @@ resultTypeToJsonValue resultType =
         , ( "error", (typeToJsonValue resultType.error) )
         ]
 
-{-| LanguageのJSONへのエンコーダ 
--}
-languageToJsonValue : Language -> Je.Value
-languageToJsonValue language =
-    case language of
-        LanguageJapanese ->
-            Je.string "Japanese"
-        LanguageEnglish ->
-            Je.string "English"
-        LanguageEsperanto ->
-            Je.string "Esperanto"
-
 {-| UrlDataのJSONへのエンコーダ 
 -}
 urlDataToJsonValue : UrlData -> Je.Value
@@ -183,6 +183,18 @@ locationToJsonValue location =
         LocationProject parameter ->
             Je.object [ ( "_", Je.string "Project"), ( "projectId", (projectIdToJsonValue parameter))]
 
+{-| LanguageのJSONへのエンコーダ 
+-}
+languageToJsonValue : Language -> Je.Value
+languageToJsonValue language =
+    case language of
+        LanguageJapanese ->
+            Je.string "Japanese"
+        LanguageEnglish ->
+            Je.string "English"
+        LanguageEsperanto ->
+            Je.string "Esperanto"
+
 {-| ProjectのJSONへのエンコーダ 
 -}
 projectToJsonValue : Project -> Je.Value
@@ -192,6 +204,27 @@ projectToJsonValue project =
         , ( "icon", (fileHashToJsonValue project.icon) )
         , ( "image", (fileHashToJsonValue project.image) )
         ]
+
+{-| ResponseWithIdのJSONへのエンコーダ 
+-}
+responseWithIdToJsonValue : ResponseWithId -> Je.Value
+responseWithIdToJsonValue responseWithId =
+    Je.object
+        [ ( "id", (@narumincho/type parameter encode function?? responseWithId.id) )
+        , ( "response", (responseToJsonValue responseWithId.response) )
+        ]
+
+{-| ResponseのJSONへのエンコーダ 
+-}
+responseToJsonValue : Response -> Je.Value
+responseToJsonValue response =
+    case response of
+        ResponseConnectionError ->
+            Je.object [ ( "_", Je.string "ConnectionError") ]
+        ResponseNotFound ->
+            Je.object [ ( "_", Je.string "NotFound") ]
+        ResponseFound parameter ->
+            Je.object [ ( "_", Je.string "Found"), ( "data", (@narumincho/type parameter encode function?? parameter))]
 
 
 maybeJsonDecoder : Jd.Decoder a -> Jd.Decoder (Maybe a)
@@ -290,24 +323,6 @@ resultTypeJsonDecoder =
         |> Jdp.required "ok" customTypeDecoder……
         |> Jdp.required "error" customTypeDecoder……
 
-{-| LanguageのJSON Decoder 
--}
-languageJsonDecoder : Jd.Decoder Language
-languageJsonDecoder =
-    Jd.string
-        |> Jd.andThen
-            (\tag ->
-                case tag of
-                    "Japanese" ->
-                        Jd.succeed LanguageJapanese
-                    "English" ->
-                        Jd.succeed LanguageEnglish
-                    "Esperanto" ->
-                        Jd.succeed LanguageEsperanto
-                    _ ->
-                        Jd.fail ("Languageで不明なタグを受けたとった tag=" ++ tag)
-            )
-
 {-| UrlDataのJSON Decoder 
 -}
 urlDataJsonDecoder : Jd.Decoder UrlData
@@ -361,6 +376,24 @@ locationJsonDecoder =
                         Jd.fail ("Locationで不明なタグを受けたとった tag=" ++ tag)
             )
 
+{-| LanguageのJSON Decoder 
+-}
+languageJsonDecoder : Jd.Decoder Language
+languageJsonDecoder =
+    Jd.string
+        |> Jd.andThen
+            (\tag ->
+                case tag of
+                    "Japanese" ->
+                        Jd.succeed LanguageJapanese
+                    "English" ->
+                        Jd.succeed LanguageEnglish
+                    "Esperanto" ->
+                        Jd.succeed LanguageEsperanto
+                    _ ->
+                        Jd.fail ("Languageで不明なタグを受けたとった tag=" ++ tag)
+            )
+
 {-| ProjectのJSON Decoder 
 -}
 projectJsonDecoder : Jd.Decoder Project
@@ -375,3 +408,34 @@ projectJsonDecoder =
         |> Jdp.required "name" Jd.string
         |> Jdp.required "icon" fileHashJsonDecoder
         |> Jdp.required "image" fileHashJsonDecoder
+
+{-| ResponseWithIdのJSON Decoder 
+-}
+responseWithIdJsonDecoder : Jd.Decoder ResponseWithId
+responseWithIdJsonDecoder =
+    Jd.succeed
+        (\id response ->
+            { id = id
+            , response = response
+            }
+        )
+        |> Jdp.required "id" id
+        |> Jdp.required "response" customTypeDecoder……
+
+{-| ResponseのJSON Decoder 
+-}
+responseJsonDecoder : Jd.Decoder Response
+responseJsonDecoder =
+    Jd.field "_" Jd.string
+        |> Jd.andThen
+            (\tag ->
+                case tag of
+                    "ConnectionError" ->
+                        Jd.succeed ResponseConnectionError
+                    "NotFound" ->
+                        Jd.succeed ResponseNotFound
+                    "Found" ->
+                        Jd.field "data" data |> Jd.map ResponseFound
+                    _ ->
+                        Jd.fail ("Responseで不明なタグを受けたとった tag=" ++ tag)
+            )
