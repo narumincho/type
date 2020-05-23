@@ -7,11 +7,19 @@ import * as typeDef from "./typeDefinition";
 export const generate = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>
 ): ReadonlyArray<ts.Definition> => {
-  return [
-    ...customTypeDefinitionToTagFunction(typeDef.maybeCustomTypeDefinition),
-    ...customTypeDefinitionToTagFunction(typeDef.resultCustomTypeDefinition),
-    ...[...customTypeList.map(customTypeDefinitionToTagFunction)][0],
+  const customTypeAndDefaultTypeList: ReadonlyArray<type.CustomTypeDefinition> = [
+    typeDef.maybeCustomTypeDefinition,
+    typeDef.resultCustomTypeDefinition,
+    ...customTypeList,
   ];
+  const result: Array<ts.Definition> = [];
+  for (const customType of customTypeAndDefaultTypeList) {
+    const definition = customTypeDefinitionToTagFunction(customType);
+    if (definition !== undefined) {
+      result.push(definition);
+    }
+  }
+  return result;
 };
 
 /* ========================================
@@ -64,7 +72,7 @@ export const customTypeVar = (
 
 const customTypeDefinitionToTagFunction = (
   customType: type.CustomTypeDefinition
-): ReadonlyArray<ts.Definition> => {
+): ts.Definition | undefined => {
   switch (customType.body._) {
     case "Sum": {
       if (
@@ -72,72 +80,126 @@ const customTypeDefinitionToTagFunction = (
           customType.body.tagNameAndParameterList
         )
       ) {
-        return [];
+        return undefined;
       }
-      const definitionList = productTypeToTagList(
-        customType.name,
-        customType.typeParameterList,
-        customType.body.tagNameAndParameterList
+      return ts.definitionVariable(
+        productTypeToTagList(
+          customType.name,
+          customType.description,
+          customType.typeParameterList,
+          customType.body.tagNameAndParameterList
+        )
       );
-      return definitionList;
     }
     case "Product":
-      return [];
+      return undefined;
   }
 };
 
 const productTypeToTagList = (
-  customTypeName: string,
+  typeName: string,
+  description: string,
   typeParameterList: ReadonlyArray<string>,
   tagNameAndParameterList: ReadonlyArray<type.TagNameAndParameter>
-): ReadonlyArray<ts.Definition> => {
-  return tagNameAndParameterList.map((tagNameAndParameter) =>
-    tagNameAndParameterToTag(
-      customTypeName,
-      typeParameterList,
-      tagNameAndParameter
-    )
-  );
+): ts.Variable => {
+  return {
+    name: identifer.fromString(typeName),
+    document: description,
+    type_: ts.typeObject(
+      new Map(
+        tagNameAndParameterList.map((tagNameAndParameter) => [
+          tagNameAndParameter.name,
+          {
+            type_: tagNameAndParameterToTagExprType(
+              typeName,
+              typeParameterList,
+              tagNameAndParameter
+            ),
+            document: tagNameAndParameter.description,
+          },
+        ])
+      )
+    ),
+    expr: ts.objectLiteral(
+      tagNameAndParameterList.map((tagNameAndParameter) =>
+        ts.memberKeyValue(
+          tagNameAndParameter.name,
+          tagNameAndParameterToTagExpr(
+            typeName,
+            typeParameterList,
+            tagNameAndParameter
+          )
+        )
+      )
+    ),
+  };
 };
 
-const tagNameAndParameterToTag = (
-  customTypeName: string,
+const tagNameAndParameterToTagExprType = (
+  typeName: string,
   typeParameterList: ReadonlyArray<string>,
   tagNameAndParameter: type.TagNameAndParameter
-): ts.Definition => {
+) => {
+  const typeParameterIdentiferList = typeParameterList.map(
+    identifer.fromString
+  );
+  const returnType = ts.typeWithParameter(
+    ts.typeScopeInFile(identifer.fromString(typeName)),
+    typeParameterIdentiferList.map((typeParameterIdentifer) =>
+      ts.typeScopeInFile(typeParameterIdentifer)
+    )
+  );
+
+  switch (tagNameAndParameter.parameter._) {
+    case "Just":
+      return ts.typeFunction(
+        typeParameterIdentiferList,
+        [util.typeToTypeScriptType(tagNameAndParameter.parameter.value)],
+        returnType
+      );
+
+    case "Nothing":
+      {
+        if (typeParameterList.length === 0) {
+          return returnType;
+        }
+      }
+      return ts.typeFunction(typeParameterIdentiferList, [], returnType);
+  }
+};
+
+const tagNameAndParameterToTagExpr = (
+  typeName: string,
+  typeParameterList: ReadonlyArray<string>,
+  tagNameAndParameter: type.TagNameAndParameter
+): ts.Expr => {
   const tagField: ts.Member = ts.memberKeyValue(
     "_",
     ts.stringLiteral(tagNameAndParameter.name)
   );
-  const returnType =
-    typeParameterList.length === 0
-      ? ts.typeScopeInFile(identifer.fromString(customTypeName))
-      : ts.typeWithParameter(
-          ts.typeScopeInFile(identifer.fromString(customTypeName)),
-          typeParameterList.map((typeParameter) =>
-            ts.typeScopeInFile(identifer.fromString(typeParameter))
-          )
-        );
+  const returnType = ts.typeWithParameter(
+    ts.typeScopeInFile(identifer.fromString(typeName)),
+    typeParameterList.map((typeParameter) =>
+      ts.typeScopeInFile(identifer.fromString(typeParameter))
+    )
+  );
 
   switch (tagNameAndParameter.parameter._) {
     case "Just":
-      return ts.definitionFunction({
-        name: customTypeNameIdentifer(customTypeName, tagNameAndParameter.name),
-        document: tagNameAndParameter.description,
-        typeParameterList: typeParameterList.map(identifer.fromString),
-        parameterList: [
+      return ts.lambda(
+        [
           {
             name: util.typeToMemberOrParameterName(
               tagNameAndParameter.parameter.value
             ),
-            document: "",
             type_: util.typeToTypeScriptType(
               tagNameAndParameter.parameter.value
             ),
           },
         ],
-        returnType: returnType,
-        statementList: [
+        typeParameterList.map(identifer.fromString),
+        returnType,
+        [
           ts.statementReturn(
             ts.objectLiteral([
               tagField,
@@ -153,33 +215,18 @@ const tagNameAndParameterToTag = (
               ),
             ])
           ),
-        ],
-      });
+        ]
+      );
 
     case "Nothing":
-      {
-        if (typeParameterList.length === 0) {
-          return ts.definitionVariable({
-            name: identifer.fromString(
-              c.firstLowerCase(customTypeName) +
-                c.firstUpperCase(tagNameAndParameter.name)
-            ),
-            document: tagNameAndParameter.description,
-            type_: returnType,
-            expr: ts.objectLiteral([tagField]),
-          });
-        }
+      if (typeParameterList.length === 0) {
+        return ts.objectLiteral([tagField]);
       }
-      return ts.definitionFunction({
-        name: identifer.fromString(
-          c.firstLowerCase(customTypeName) +
-            c.firstUpperCase(tagNameAndParameter.name)
-        ),
-        document: tagNameAndParameter.description,
-        typeParameterList: typeParameterList.map(identifer.fromString),
-        parameterList: [],
-        returnType: returnType,
-        statementList: [ts.statementReturn(ts.objectLiteral([tagField]))],
-      });
+      return ts.lambda(
+        [],
+        typeParameterList.map(identifer.fromString),
+        returnType,
+        [ts.statementReturn(ts.objectLiteral([tagField]))]
+      );
   }
 };

@@ -136,95 +136,162 @@ export type ProjectId = string & { readonly _projectId: never };
 export type FileHash = string & { readonly _fileHash: never };
 
 /**
- * 値があるということ
+ * Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
  */
-export const maybeJust = <value>(value: value): Maybe<value> => ({
-  _: "Just",
-  value: value,
-});
+export const Maybe: {
+  /**
+   * 値があるということ
+   */
+  readonly Just: <value>(a: value) => Maybe<value>;
+  /**
+   * 値がないということ
+   */
+  readonly Nothing: <value>() => Maybe<value>;
+} = {
+  Just: <value>(value: value): Maybe<value> => ({ _: "Just", value: value }),
+  Nothing: <value>(): Maybe<value> => ({ _: "Nothing" }),
+};
 
 /**
- * 値がないということ
+ * 成功と失敗を表す型. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
  */
-export const maybeNothing = <value>(): Maybe<value> => ({ _: "Nothing" });
+export const Result: {
+  /**
+   * 成功
+   */
+  readonly Ok: <ok, error>(a: ok) => Result<ok, error>;
+  /**
+   * 失敗
+   */
+  readonly Error: <ok, error>(a: error) => Result<ok, error>;
+} = {
+  Ok: <ok, error>(ok: ok): Result<ok, error> => ({ _: "Ok", ok: ok }),
+  Error: <ok, error>(error: error): Result<ok, error> => ({
+    _: "Error",
+    error: error,
+  }),
+};
 
 /**
- * 成功
+ * 型
  */
-export const resultOk = <ok, error>(ok: ok): Result<ok, error> => ({
-  _: "Ok",
-  ok: ok,
-});
+export const Type: {
+  /**
+   * -9007199254740991～9007199254740991 JavaScriptのNumberで正確に表現できる整数の範囲
+   */
+  readonly Int: Type;
+  /**
+   * 文字列
+   */
+  readonly String: Type;
+  /**
+   * 真偽値
+   */
+  readonly Bool: Type;
+  /**
+   * リスト
+   */
+  readonly List: (a: Type) => Type;
+  /**
+   * Maybe
+   */
+  readonly Maybe: (a: Type) => Type;
+  /**
+   * Result
+   */
+  readonly Result: (a: ResultType) => Type;
+  /**
+   * データを識別するためのもの. カスタムの型名を指定する. 16byte. 16進数文字列で32文字
+   */
+  readonly Id: (a: string) => Type;
+  /**
+   * データを識別するため. カスタムの型名を指定する. 32byte. 16進数文字列で64文字
+   */
+  readonly Token: (a: string) => Type;
+  /**
+   * 用意されていないアプリ特有の型
+   */
+  readonly Custom: (a: string) => Type;
+  /**
+   * 型パラメーター
+   */
+  readonly Parameter: (a: string) => Type;
+} = {
+  Int: { _: "Int" },
+  String: { _: "String" },
+  Bool: { _: "Bool" },
+  List: (type_: Type): Type => ({ _: "List", type_: type_ }),
+  Maybe: (type_: Type): Type => ({ _: "Maybe", type_: type_ }),
+  Result: (resultType: ResultType): Type => ({
+    _: "Result",
+    resultType: resultType,
+  }),
+  Id: (string_: string): Type => ({ _: "Id", string_: string_ }),
+  Token: (string_: string): Type => ({ _: "Token", string_: string_ }),
+  Custom: (string_: string): Type => ({ _: "Custom", string_: string_ }),
+  Parameter: (string_: string): Type => ({ _: "Parameter", string_: string_ }),
+};
 
 /**
- * 失敗
+ * デバッグの状態と, デバッグ時ならアクセスしているポート番号
  */
-export const resultError = <ok, error>(error: error): Result<ok, error> => ({
-  _: "Error",
-  error: error,
-});
+export const ClientMode: {
+  /**
+   * デバッグモード. ポート番号を保持する. オリジンは http://[::1]:2520 のようなもの
+   */
+  readonly DebugMode: (a: number) => ClientMode;
+  /**
+   * リリースモード. https://definy.app
+   */
+  readonly Release: ClientMode;
+} = {
+  DebugMode: (int32: number): ClientMode => ({ _: "DebugMode", int32: int32 }),
+  Release: { _: "Release" },
+};
 
 /**
- * -9007199254740991～9007199254740991 JavaScriptのNumberで正確に表現できる整数の範囲
+ * DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる
  */
-export const typeInt: Type = { _: "Int" };
+export const Location: {
+  /**
+   * 最初のページ
+   */
+  readonly Home: Location;
+  /**
+   * ユーザーの詳細ページ
+   */
+  readonly User: (a: UserId) => Location;
+  /**
+   * プロジェクトの詳細ページ
+   */
+  readonly Project: (a: ProjectId) => Location;
+} = {
+  Home: { _: "Home" },
+  User: (userId: UserId): Location => ({ _: "User", userId: userId }),
+  Project: (projectId: ProjectId): Location => ({
+    _: "Project",
+    projectId: projectId,
+  }),
+};
 
 /**
- * 文字列
+ * リソースをリクエストしたあとのレスポンス
  */
-export const typeString: Type = { _: "String" };
-
-/**
- * 真偽値
- */
-export const typeBool: Type = { _: "Bool" };
-
-/**
- * リスト
- */
-export const typeList = (type_: Type): Type => ({ _: "List", type_: type_ });
-
-/**
- * Maybe
- */
-export const typeMaybe = (type_: Type): Type => ({ _: "Maybe", type_: type_ });
-
-/**
- * Result
- */
-export const typeResult = (resultType: ResultType): Type => ({
-  _: "Result",
-  resultType: resultType,
-});
-
-/**
- * データを識別するためのもの. カスタムの型名を指定する. 16byte. 16進数文字列で32文字
- */
-export const typeId = (string_: string): Type => ({
-  _: "Id",
-  string_: string_,
-});
-
-/**
- * データを識別するため. カスタムの型名を指定する. 32byte. 16進数文字列で64文字
- */
-export const typeToken = (string_: string): Type => ({
-  _: "Token",
-  string_: string_,
-});
-
-/**
- * 用意されていないアプリ特有の型
- */
-export const typeCustom = (string_: string): Type => ({
-  _: "Custom",
-  string_: string_,
-});
-
-/**
- * 型パラメーター
- */
-export const typeParameter = (string_: string): Type => ({
-  _: "Parameter",
-  string_: string_,
-});
+export const Response: {
+  /**
+   * オフラインかサーバー上でエラーが発生しました
+   */
+  readonly ConnectionError: <data>() => Response<data>;
+  /**
+   * リソースが存在しない
+   */
+  readonly NotFound: <data>() => Response<data>;
+  /**
+   * 取得に成功した
+   */
+  readonly Found: <data>(a: data) => Response<data>;
+} = {
+  ConnectionError: <data>(): Response<data> => ({ _: "ConnectionError" }),
+  NotFound: <data>(): Response<data> => ({ _: "NotFound" }),
+  Found: <data>(data: data): Response<data> => ({ _: "Found", data: data }),
+};
