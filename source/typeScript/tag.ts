@@ -1,4 +1,4 @@
-import { data as ts, identifer } from "js-ts-code-generator";
+import { data as ts, identifer, data } from "js-ts-code-generator";
 import * as type from "../type";
 import * as util from "./util";
 import * as c from "../case";
@@ -75,15 +75,8 @@ const customTypeDefinitionToTagFunction = (
 ): ts.Definition | undefined => {
   switch (customType.body._) {
     case "Sum": {
-      if (
-        type.isProductTypeAllNoParameter(
-          customType.body.tagNameAndParameterList
-        )
-      ) {
-        return undefined;
-      }
       return ts.definitionVariable(
-        productTypeToTagList(
+        sumTypeToTagVariableDefinition(
           customType.name,
           customType.description,
           customType.typeParameterList,
@@ -96,7 +89,7 @@ const customTypeDefinitionToTagFunction = (
   }
 };
 
-const productTypeToTagList = (
+const sumTypeToTagVariableDefinition = (
   typeName: string,
   description: string,
   typeParameterList: ReadonlyArray<string>,
@@ -124,11 +117,13 @@ const productTypeToTagList = (
       tagNameAndParameterList.map((tagNameAndParameter) =>
         ts.memberKeyValue(
           tagNameAndParameter.name,
-          tagNameAndParameterToTagExpr(
-            typeName,
-            typeParameterList,
-            tagNameAndParameter
-          )
+          type.isProductTypeAllNoParameter(tagNameAndParameterList)
+            ? ts.stringLiteral(tagNameAndParameter.name)
+            : tagNameAndParameterToTagExpr(
+                typeName,
+                typeParameterList,
+                tagNameAndParameter
+              )
         )
       )
     ),

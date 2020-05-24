@@ -275,6 +275,24 @@ export const Location: {
 };
 
 /**
+ * 英語,日本語,エスペラント語などの言語
+ */
+export const Language: {
+  /**
+   * 日本語
+   */
+  readonly Japanese: Language;
+  /**
+   * 英語
+   */
+  readonly English: Language;
+  /**
+   * エスペラント語
+   */
+  readonly Esperanto: Language;
+} = { Japanese: "Japanese", English: "English", Esperanto: "Esperanto" };
+
+/**
  * リソースをリクエストしたあとのレスポンス
  */
 export const Response: {
