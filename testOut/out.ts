@@ -150,7 +150,9 @@ export const Maybe: {
   /**
    * Maybeを@narumincho/typeのバイナリ形式にエンコードする
    */
-  readonly encode: (a: Maybe) => ReadonlyArray<number>;
+  readonly encode: <value>(
+    a: (a: value) => ReadonlyArray<number>
+  ) => (a: Maybe<value>) => ReadonlyArray<number>;
   /**
    * @narumincho/typeのバイナリ形式からMaybeにデコードする
    */
@@ -178,7 +180,10 @@ export const Result: {
   /**
    * Resultを@narumincho/typeのバイナリ形式にエンコードする
    */
-  readonly encode: (a: Result) => ReadonlyArray<number>;
+  readonly encode: <ok, error>(
+    a: (a: ok) => ReadonlyArray<number>,
+    b: (a: error) => ReadonlyArray<number>
+  ) => (a: Result<ok, error>) => ReadonlyArray<number>;
   /**
    * @narumincho/typeのバイナリ形式からResultにデコードする
    */
@@ -416,7 +421,10 @@ export const ResponseWithId: {
   /**
    * ResponseWithIdを@narumincho/typeのバイナリ形式にエンコードする
    */
-  readonly encode: (a: ResponseWithId) => ReadonlyArray<number>;
+  readonly encode: <id, data>(
+    a: (a: id) => ReadonlyArray<number>,
+    b: (a: data) => ReadonlyArray<number>
+  ) => (a: ResponseWithId<id, data>) => ReadonlyArray<number>;
   /**
    * @narumincho/typeのバイナリ形式からResponseWithIdにデコードする
    */
@@ -445,7 +453,9 @@ export const Response: {
   /**
    * Responseを@narumincho/typeのバイナリ形式にエンコードする
    */
-  readonly encode: (a: Response) => ReadonlyArray<number>;
+  readonly encode: <data>(
+    a: (a: data) => ReadonlyArray<number>
+  ) => (a: Response<data>) => ReadonlyArray<number>;
   /**
    * @narumincho/typeのバイナリ形式からResponseにデコードする
    */

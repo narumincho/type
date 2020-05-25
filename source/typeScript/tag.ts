@@ -238,15 +238,41 @@ const encodeAndDecodeType = (
     }
   ]
 > => {
+  const typeParameterAdIdentiferList = customType.typeParameterList.map(
+    identifer.fromString
+  );
+
   return [
     [
       "encode",
       {
-        type_: ts.typeFunction(
-          [],
-          [ts.typeScopeInFile(identifer.fromString(customType.name))],
-          ts.readonlyArrayType(ts.typeNumber)
-        ),
+        type_:
+          typeParameterAdIdentiferList.length === 0
+            ? ts.typeFunction(
+                [],
+                [ts.typeScopeInFile(identifer.fromString(customType.name))],
+                ts.readonlyArrayType(ts.typeNumber)
+              )
+            : ts.typeFunction(
+                typeParameterAdIdentiferList,
+                typeParameterAdIdentiferList.map((typeParameterAdIdentifer) =>
+                  ts.typeFunction(
+                    [],
+                    [ts.typeScopeInFile(typeParameterAdIdentifer)],
+                    ts.readonlyArrayType(ts.typeNumber)
+                  )
+                ),
+                ts.typeFunction(
+                  [],
+                  [
+                    ts.typeWithParameter(
+                      ts.typeScopeInFile(identifer.fromString(customType.name)),
+                      typeParameterAdIdentiferList.map(ts.typeScopeInFile)
+                    ),
+                  ],
+                  ts.readonlyArrayType(ts.typeNumber)
+                )
+              ),
         document:
           customType.name + "を@narumincho/typeのバイナリ形式にエンコードする",
       },
