@@ -251,7 +251,7 @@ const customTypeSumToToJsonValueCodeBody = (
   parameterName: string
 ): string => {
   const caseHeader = indentString + "case " + parameterName + " of\n";
-  if (type.isProductTypeAllNoParameter(tagNameAndParameterArray)) {
+  if (type.isTagTypeAllNoParameter(tagNameAndParameterArray)) {
     return (
       caseHeader +
       tagNameAndParameterArray
@@ -486,7 +486,7 @@ const customTypeSumToJsonDecoderCodeBody = (
     "\n" +
     indentString.repeat(3) +
     ")";
-  if (type.isProductTypeAllNoParameter(tagNameAndParameterArray)) {
+  if (type.isTagTypeAllNoParameter(tagNameAndParameterArray)) {
     return indentString + "Jd.string\n" + tagToDecoderLambda;
   }
   return indentString + 'Jd.field "_" Jd.string\n' + tagToDecoderLambda;

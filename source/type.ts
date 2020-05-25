@@ -205,7 +205,7 @@ export const toTypeName = (type_: Type): string => {
   }
 };
 
-export const isProductTypeAllNoParameter = (
+export const isTagTypeAllNoParameter = (
   tagNameAndParameterArray: ReadonlyArray<TagNameAndParameter>
 ): boolean =>
   tagNameAndParameterArray.every(

@@ -712,7 +712,7 @@ const customSumCode = (
   const patternIndexAndNextIndexName = identifer.fromString("patternIndex");
   const patternIndexAndNextIndexVar = ts.variable(patternIndexAndNextIndexName);
 
-  const isProductTypeAllNoParameter = type.isProductTypeAllNoParameter(
+  const isProductTypeAllNoParameter = type.isTagTypeAllNoParameter(
     tagNameAndParameterList
   );
   return [

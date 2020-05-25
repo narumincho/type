@@ -1,4 +1,4 @@
-import { data as ts, identifer, data } from "js-ts-code-generator";
+import { data as ts, identifer } from "js-ts-code-generator";
 import * as type from "../type";
 import * as util from "./util";
 import * as c from "../case";
@@ -12,14 +12,7 @@ export const generate = (
     typeDef.resultCustomTypeDefinition,
     ...customTypeList,
   ];
-  const result: Array<ts.Definition> = [];
-  for (const customType of customTypeAndDefaultTypeList) {
-    const definition = customTypeDefinitionToTagFunction(customType);
-    if (definition !== undefined) {
-      result.push(definition);
-    }
-  }
-  return result;
+  return customTypeAndDefaultTypeList.map(customTypeDefinitionToTagVariable);
 };
 
 /* ========================================
@@ -70,68 +63,76 @@ export const customTypeVar = (
   tagName: string
 ): ts.Expr => ts.variable(customTypeNameIdentifer(customTypeName, tagName));
 
-const customTypeDefinitionToTagFunction = (
+const customTypeDefinitionToTagVariable = (
   customType: type.CustomTypeDefinition
-): ts.Definition | undefined => {
+): ts.Definition => {
+  return ts.definitionVariable({
+    name: identifer.fromString(customType.name),
+    document: customType.description,
+    type_: customTypeDefinitionToType(customType),
+    expr: customTypeDefinitionToExpr(customType),
+  });
+};
+
+const customTypeDefinitionToType = (
+  customType: type.CustomTypeDefinition
+): ts.Type => {
   switch (customType.body._) {
-    case "Sum": {
-      return ts.definitionVariable(
-        sumTypeToTagVariableDefinition(
-          customType.name,
-          customType.description,
-          customType.typeParameterList,
+    case "Product":
+      return ts.typeObject(new Map(encodeAndDecodeType(customType)));
+    case "Sum":
+      return ts.typeObject(
+        new Map(
           customType.body.tagNameAndParameterList
+            .map(
+              (tagNameAndParameter) =>
+                [
+                  tagNameAndParameter.name,
+                  {
+                    type_: tagNameAndParameterToTagExprType(
+                      identifer.fromString(customType.name),
+                      customType.typeParameterList,
+                      tagNameAndParameter
+                    ),
+                    document: tagNameAndParameter.description,
+                  },
+                ] as const
+            )
+            .concat(encodeAndDecodeType(customType))
         )
       );
-    }
-    case "Product":
-      return undefined;
   }
 };
 
-const sumTypeToTagVariableDefinition = (
-  typeName: string,
-  description: string,
-  typeParameterList: ReadonlyArray<string>,
-  tagNameAndParameterList: ReadonlyArray<type.TagNameAndParameter>
-): ts.Variable => {
-  return {
-    name: identifer.fromString(typeName),
-    document: description,
-    type_: ts.typeObject(
-      new Map(
-        tagNameAndParameterList.map((tagNameAndParameter) => [
-          tagNameAndParameter.name,
-          {
-            type_: tagNameAndParameterToTagExprType(
-              typeName,
-              typeParameterList,
-              tagNameAndParameter
-            ),
-            document: tagNameAndParameter.description,
-          },
-        ])
-      )
-    ),
-    expr: ts.objectLiteral(
-      tagNameAndParameterList.map((tagNameAndParameter) =>
-        ts.memberKeyValue(
-          tagNameAndParameter.name,
-          type.isProductTypeAllNoParameter(tagNameAndParameterList)
-            ? ts.stringLiteral(tagNameAndParameter.name)
-            : tagNameAndParameterToTagExpr(
-                typeName,
-                typeParameterList,
-                tagNameAndParameter
-              )
+const customTypeDefinitionToExpr = (
+  customType: type.CustomTypeDefinition
+): ts.Expr => {
+  switch (customType.body._) {
+    case "Product":
+      return ts.objectLiteral([]);
+
+    case "Sum": {
+      const tagNameAndParameterList = customType.body.tagNameAndParameterList;
+      return ts.objectLiteral(
+        tagNameAndParameterList.map((tagNameAndParameter) =>
+          ts.memberKeyValue(
+            tagNameAndParameter.name,
+            type.isTagTypeAllNoParameter(tagNameAndParameterList)
+              ? ts.stringLiteral(tagNameAndParameter.name)
+              : tagNameAndParameterToTagExpr(
+                  identifer.fromString(customType.name),
+                  customType.typeParameterList,
+                  tagNameAndParameter
+                )
+          )
         )
-      )
-    ),
-  };
+      );
+    }
+  }
 };
 
 const tagNameAndParameterToTagExprType = (
-  typeName: string,
+  typeName: identifer.Identifer,
   typeParameterList: ReadonlyArray<string>,
   tagNameAndParameter: type.TagNameAndParameter
 ) => {
@@ -139,7 +140,7 @@ const tagNameAndParameterToTagExprType = (
     identifer.fromString
   );
   const returnType = ts.typeWithParameter(
-    ts.typeScopeInFile(identifer.fromString(typeName)),
+    ts.typeScopeInFile(typeName),
     typeParameterIdentiferList.map((typeParameterIdentifer) =>
       ts.typeScopeInFile(typeParameterIdentifer)
     )
@@ -164,7 +165,7 @@ const tagNameAndParameterToTagExprType = (
 };
 
 const tagNameAndParameterToTagExpr = (
-  typeName: string,
+  typeName: identifer.Identifer,
   typeParameterList: ReadonlyArray<string>,
   tagNameAndParameter: type.TagNameAndParameter
 ): ts.Expr => {
@@ -173,7 +174,7 @@ const tagNameAndParameterToTagExpr = (
     ts.stringLiteral(tagNameAndParameter.name)
   );
   const returnType = ts.typeWithParameter(
-    ts.typeScopeInFile(identifer.fromString(typeName)),
+    ts.typeScopeInFile(typeName),
     typeParameterList.map((typeParameter) =>
       ts.typeScopeInFile(identifer.fromString(typeParameter))
     )
@@ -224,4 +225,58 @@ const tagNameAndParameterToTagExpr = (
         [ts.statementReturn(ts.objectLiteral([tagField]))]
       );
   }
+};
+
+const encodeAndDecodeType = (
+  customType: type.CustomTypeDefinition
+): ReadonlyArray<
+  [
+    string,
+    {
+      type_: ts.Type;
+      document: string;
+    }
+  ]
+> => {
+  return [
+    [
+      "encode",
+      {
+        type_: ts.typeFunction(
+          [],
+          [ts.typeScopeInFile(identifer.fromString(customType.name))],
+          ts.readonlyArrayType(ts.typeNumber)
+        ),
+        document:
+          customType.name + "を@narumincho/typeのバイナリ形式にエンコードする",
+      },
+    ],
+    [
+      "decode",
+      {
+        type_: ts.typeFunction(
+          [],
+          [ts.typeNumber, ts.uint8ArrayType],
+          ts.typeObject(
+            new Map([
+              [
+                "result",
+                {
+                  type_: ts.typeScopeInFile(
+                    identifer.fromString(customType.name)
+                  ),
+                  document: "",
+                },
+              ],
+              ["nextIndex", { type_: ts.typeNumber, document: "" }],
+            ])
+          )
+        ),
+        document:
+          "@narumincho/typeのバイナリ形式から" +
+          customType.name +
+          "にデコードする",
+      },
+    ],
+  ];
 };

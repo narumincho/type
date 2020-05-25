@@ -113,7 +113,7 @@ const customTypeDefinitionBodyToTsType = (
 ): ts.Type => {
   switch (body._) {
     case "Sum":
-      if (type.isProductTypeAllNoParameter(body.tagNameAndParameterList)) {
+      if (type.isTagTypeAllNoParameter(body.tagNameAndParameterList)) {
         return ts.typeUnion(
           body.tagNameAndParameterList.map((tagNameAndParameter) =>
             ts.typeStringLiteral(tagNameAndParameter.name)
