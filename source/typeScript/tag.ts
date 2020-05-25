@@ -248,29 +248,21 @@ const encodeAndDecodeType = (
       {
         type_:
           typeParameterAdIdentiferList.length === 0
-            ? ts.typeFunction(
-                [],
-                [ts.typeScopeInFile(identifer.fromString(customType.name))],
-                ts.readonlyArrayType(ts.typeNumber)
+            ? encodeFunctionType(
+                ts.typeScopeInFile(identifer.fromString(customType.name))
               )
             : ts.typeFunction(
                 typeParameterAdIdentiferList,
                 typeParameterAdIdentiferList.map((typeParameterAdIdentifer) =>
-                  ts.typeFunction(
-                    [],
-                    [ts.typeScopeInFile(typeParameterAdIdentifer)],
-                    ts.readonlyArrayType(ts.typeNumber)
+                  encodeFunctionType(
+                    ts.typeScopeInFile(typeParameterAdIdentifer)
                   )
                 ),
-                ts.typeFunction(
-                  [],
-                  [
-                    ts.typeWithParameter(
-                      ts.typeScopeInFile(identifer.fromString(customType.name)),
-                      typeParameterAdIdentiferList.map(ts.typeScopeInFile)
-                    ),
-                  ],
-                  ts.readonlyArrayType(ts.typeNumber)
+                encodeFunctionType(
+                  ts.typeWithParameter(
+                    ts.typeScopeInFile(identifer.fromString(customType.name)),
+                    typeParameterAdIdentiferList.map(ts.typeScopeInFile)
+                  )
                 )
               ),
         document:
@@ -280,24 +272,25 @@ const encodeAndDecodeType = (
     [
       "decode",
       {
-        type_: ts.typeFunction(
-          [],
-          [ts.typeNumber, ts.uint8ArrayType],
-          ts.typeObject(
-            new Map([
-              [
-                "result",
-                {
-                  type_: ts.typeScopeInFile(
-                    identifer.fromString(customType.name)
-                  ),
-                  document: "",
-                },
-              ],
-              ["nextIndex", { type_: ts.typeNumber, document: "" }],
-            ])
-          )
-        ),
+        type_:
+          typeParameterAdIdentiferList.length === 0
+            ? decodeFunctionType(
+                ts.typeScopeInFile(identifer.fromString(customType.name))
+              )
+            : ts.typeFunction(
+                typeParameterAdIdentiferList,
+                typeParameterAdIdentiferList.map((typeParameterAdIdentifer) =>
+                  decodeFunctionType(
+                    ts.typeScopeInFile(typeParameterAdIdentifer)
+                  )
+                ),
+                decodeFunctionType(
+                  ts.typeWithParameter(
+                    ts.typeScopeInFile(identifer.fromString(customType.name)),
+                    typeParameterAdIdentiferList.map(ts.typeScopeInFile)
+                  )
+                )
+              ),
         document:
           "@narumincho/typeのバイナリ形式から" +
           customType.name +
@@ -306,3 +299,24 @@ const encodeAndDecodeType = (
     ],
   ];
 };
+
+const encodeFunctionType = (type_: ts.Type): ts.Type =>
+  ts.typeFunction([], [type_], ts.readonlyArrayType(ts.typeNumber));
+
+const decodeFunctionType = (type_: ts.Type): ts.Type =>
+  ts.typeFunction(
+    [],
+    [ts.typeNumber, ts.uint8ArrayType],
+    ts.typeObject(
+      new Map([
+        [
+          "result",
+          {
+            type_: type_,
+            document: "",
+          },
+        ],
+        ["nextIndex", { type_: ts.typeNumber, document: "" }],
+      ])
+    )
+  );

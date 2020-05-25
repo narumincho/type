@@ -156,10 +156,15 @@ export const Maybe: {
   /**
    * @narumincho/typeのバイナリ形式からMaybeにデコードする
    */
-  readonly decode: (
+  readonly decode: <value>(
+    a: (
+      a: number,
+      b: Uint8Array
+    ) => { readonly result: value; readonly nextIndex: number }
+  ) => (
     a: number,
     b: Uint8Array
-  ) => { readonly result: Maybe; readonly nextIndex: number };
+  ) => { readonly result: Maybe<value>; readonly nextIndex: number };
 } = {
   Just: <value>(value: value): Maybe<value> => ({ _: "Just", value: value }),
   Nothing: <value>(): Maybe<value> => ({ _: "Nothing" }),
@@ -187,10 +192,19 @@ export const Result: {
   /**
    * @narumincho/typeのバイナリ形式からResultにデコードする
    */
-  readonly decode: (
+  readonly decode: <ok, error>(
+    a: (
+      a: number,
+      b: Uint8Array
+    ) => { readonly result: ok; readonly nextIndex: number },
+    b: (
+      a: number,
+      b: Uint8Array
+    ) => { readonly result: error; readonly nextIndex: number }
+  ) => (
     a: number,
     b: Uint8Array
-  ) => { readonly result: Result; readonly nextIndex: number };
+  ) => { readonly result: Result<ok, error>; readonly nextIndex: number };
 } = {
   Ok: <ok, error>(ok: ok): Result<ok, error> => ({ _: "Ok", ok: ok }),
   Error: <ok, error>(error: error): Result<ok, error> => ({
@@ -428,10 +442,22 @@ export const ResponseWithId: {
   /**
    * @narumincho/typeのバイナリ形式からResponseWithIdにデコードする
    */
-  readonly decode: (
+  readonly decode: <id, data>(
+    a: (
+      a: number,
+      b: Uint8Array
+    ) => { readonly result: id; readonly nextIndex: number },
+    b: (
+      a: number,
+      b: Uint8Array
+    ) => { readonly result: data; readonly nextIndex: number }
+  ) => (
     a: number,
     b: Uint8Array
-  ) => { readonly result: ResponseWithId; readonly nextIndex: number };
+  ) => {
+    readonly result: ResponseWithId<id, data>;
+    readonly nextIndex: number;
+  };
 } = {};
 
 /**
@@ -459,10 +485,15 @@ export const Response: {
   /**
    * @narumincho/typeのバイナリ形式からResponseにデコードする
    */
-  readonly decode: (
+  readonly decode: <data>(
+    a: (
+      a: number,
+      b: Uint8Array
+    ) => { readonly result: data; readonly nextIndex: number }
+  ) => (
     a: number,
     b: Uint8Array
-  ) => { readonly result: Response; readonly nextIndex: number };
+  ) => { readonly result: Response<data>; readonly nextIndex: number };
 } = {
   ConnectionError: <data>(): Response<data> => ({ _: "ConnectionError" }),
   NotFound: <data>(): Response<data> => ({ _: "NotFound" }),
