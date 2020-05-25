@@ -16,36 +16,6 @@ export const generate = (
 };
 
 /* ========================================
-                  Maybe
-   ========================================
-*/
-
-const maybeJustName = identifer.fromString("maybeJust");
-
-export const maybeJustVarEval = (expr: ts.Expr): ts.Expr =>
-  ts.call(ts.variable(maybeJustName), [expr]);
-
-const maybeNothingName = identifer.fromString("maybeNothing");
-export const maybeNothingVarEval: ts.Expr = ts.call(
-  ts.variable(maybeNothingName),
-  []
-);
-
-/* ========================================
-                  Result
-   ========================================
-*/
-const resultOkName = identifer.fromString("resultOk");
-
-export const resultOkVarEval = (okExpr: ts.Expr): ts.Expr =>
-  ts.call(ts.variable(resultOkName), [okExpr]);
-
-const resultErrorName = identifer.fromString("resultError");
-
-export const resultErrorVarEval = (errorExpr: ts.Expr): ts.Expr =>
-  ts.call(ts.variable(resultErrorName), [errorExpr]);
-
-/* ========================================
                   Custom
    ========================================
 */
@@ -79,7 +49,9 @@ const customTypeDefinitionToType = (
 ): ts.Type => {
   switch (customType.body._) {
     case "Product":
-      return ts.typeObject(new Map(encodeAndDecodeType(customType)));
+      return ts.typeObject(
+        new Map(customTypeToEncodeAndDecodeType(customType))
+      );
     case "Sum":
       return ts.typeObject(
         new Map(
@@ -98,7 +70,7 @@ const customTypeDefinitionToType = (
                   },
                 ] as const
             )
-            .concat(encodeAndDecodeType(customType))
+            .concat(customTypeToEncodeAndDecodeType(customType))
         )
       );
   }
@@ -109,23 +81,25 @@ const customTypeDefinitionToExpr = (
 ): ts.Expr => {
   switch (customType.body._) {
     case "Product":
-      return ts.objectLiteral([]);
+      return ts.objectLiteral(customTypeToEncodeAndDecodeExpr(customType));
 
     case "Sum": {
       const tagNameAndParameterList = customType.body.tagNameAndParameterList;
       return ts.objectLiteral(
-        tagNameAndParameterList.map((tagNameAndParameter) =>
-          ts.memberKeyValue(
-            tagNameAndParameter.name,
-            type.isTagTypeAllNoParameter(tagNameAndParameterList)
-              ? ts.stringLiteral(tagNameAndParameter.name)
-              : tagNameAndParameterToTagExpr(
-                  identifer.fromString(customType.name),
-                  customType.typeParameterList,
-                  tagNameAndParameter
-                )
+        tagNameAndParameterList
+          .map((tagNameAndParameter) =>
+            ts.memberKeyValue(
+              tagNameAndParameter.name,
+              type.isTagTypeAllNoParameter(tagNameAndParameterList)
+                ? ts.stringLiteral(tagNameAndParameter.name)
+                : tagNameAndParameterToTagExpr(
+                    identifer.fromString(customType.name),
+                    customType.typeParameterList,
+                    tagNameAndParameter
+                  )
+            )
           )
-        )
+          .concat(customTypeToEncodeAndDecodeExpr(customType))
       );
     }
   }
@@ -227,7 +201,7 @@ const tagNameAndParameterToTagExpr = (
   }
 };
 
-const encodeAndDecodeType = (
+const customTypeToEncodeAndDecodeType = (
   customType: type.CustomTypeDefinition
 ): ReadonlyArray<
   [
@@ -320,3 +294,110 @@ const decodeFunctionType = (type_: ts.Type): ts.Type =>
       ])
     )
   );
+
+const customTypeToEncodeAndDecodeExpr = (
+  customType: type.CustomTypeDefinition
+): ReadonlyArray<ts.Member> => {
+  return [
+    ts.memberKeyValue("encode", encodeFunction(customType)),
+    ts.memberKeyValue("decode", decodeFunction(customType)),
+  ];
+};
+
+const encodeFunction = (
+  customTypeDefinition: type.CustomTypeDefinition
+): ts.Expr => {
+  switch (customTypeDefinition.body._) {
+    case "Product": {
+      const inputParameterName = identifer.fromString("value");
+      return ts.lambda(
+        [
+          {
+            name: inputParameterName,
+            type_: ts.typeScopeInFile(
+              identifer.fromString(customTypeDefinition.name)
+            ),
+          },
+        ],
+        [],
+        ts.readonlyArrayType(ts.typeNumber),
+        productEncodeExpr(
+          customTypeDefinition.body.memberNameAndTypeList,
+          ts.variable(inputParameterName)
+        )
+      );
+    }
+    case "Sum":
+      return ts.lambda([], [], ts.typeObject(new Map()), []);
+  }
+};
+
+const productEncodeExpr = (
+  memberNameAndTypeArray: ReadonlyArray<type.MemberNameAndType>,
+  parameter: ts.Expr
+): ReadonlyArray<ts.Statement> => {
+  if (memberNameAndTypeArray.length === 0) {
+    return [ts.statementReturn(ts.arrayLiteral([]))];
+  }
+  let e = ts.call(encodeExpr(memberNameAndTypeArray[0].memberType), [
+    ts.get(parameter, memberNameAndTypeArray[0].name),
+  ]);
+  for (const memberNameAndType of memberNameAndTypeArray.slice(1)) {
+    e = ts.callMethod(e, "concat", [
+      ts.call(encodeExpr(memberNameAndType.memberType), [
+        ts.get(parameter, memberNameAndType.name),
+      ]),
+    ]);
+  }
+  return [ts.statementReturn(e)];
+};
+
+const encodeExpr = (type_: type.Type): ts.Expr => {
+  switch (type_._) {
+    case "Int32":
+      return ts.stringLiteral("Int32をエンコードする関数");
+    case "String":
+      return ts.stringLiteral("Stringをエンコードする関数");
+    case "Bool":
+      return ts.stringLiteral("Boolをエンコードする関数");
+    case "Binary":
+      return ts.stringLiteral("binaryをエンコードする関数");
+    case "List":
+      return ts.call(
+        ts.get(ts.variable(identifer.fromString("List")), "encode"),
+        [encodeExpr(type_.type_)]
+      );
+    case "Maybe":
+      return ts.call(
+        ts.get(ts.variable(identifer.fromString("Maybe")), "encode"),
+        [encodeExpr(type_.type_)]
+      );
+    case "Result":
+      return ts.call(
+        ts.get(ts.variable(identifer.fromString("Result")), "encode"),
+        [encodeExpr(type_.resultType.ok), encodeExpr(type_.resultType.error)]
+      );
+    case "Id":
+      return ts.get(ts.variable(identifer.fromString(type_.string_)), "encode");
+    case "Token":
+      return ts.get(ts.variable(identifer.fromString(type_.string_)), "encode");
+    case "Custom":
+      return ts.get(
+        ts.variable(identifer.fromString(type_.customType.name)),
+        "encode"
+      );
+    case "Parameter":
+      return ts.stringLiteral("parameterどうすれば良いのだろう?");
+  }
+};
+
+const decodeFunction = (
+  customTypeDefinition: type.CustomTypeDefinition
+): ts.Expr => {
+  return ts.lambda(
+    [],
+    [],
+    ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
+    []
+  );
+};

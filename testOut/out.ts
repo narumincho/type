@@ -168,6 +168,8 @@ export const Maybe: {
 } = {
   Just: <value>(value: value): Maybe<value> => ({ _: "Just", value: value }),
   Nothing: <value>(): Maybe<value> => ({ _: "Nothing" }),
+  encode: "エンコードのコード",
+  decode: "デコードのコード",
 };
 
 /**
@@ -211,6 +213,8 @@ export const Result: {
     _: "Error",
     error: error,
   }),
+  encode: "エンコードのコード",
+  decode: "デコードのコード",
 };
 
 /**
@@ -282,6 +286,8 @@ export const Type: {
   Token: (string_: string): Type => ({ _: "Token", string_: string_ }),
   Custom: (string_: string): Type => ({ _: "Custom", string_: string_ }),
   Parameter: (string_: string): Type => ({ _: "Parameter", string_: string_ }),
+  encode: "エンコードのコード",
+  decode: "デコードのコード",
 };
 
 /**
@@ -299,7 +305,7 @@ export const ResultType: {
     a: number,
     b: Uint8Array
   ) => { readonly result: ResultType; readonly nextIndex: number };
-} = {};
+} = { encode: "エンコードのコード", decode: "デコードのコード" };
 
 /**
  * デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( https://support.google.com/webmasters/answer/182192?hl=ja )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は http://[::1] になる
@@ -316,7 +322,7 @@ export const UrlData: {
     a: number,
     b: Uint8Array
   ) => { readonly result: UrlData; readonly nextIndex: number };
-} = {};
+} = { encode: "エンコードのコード", decode: "デコードのコード" };
 
 /**
  * デバッグの状態と, デバッグ時ならアクセスしているポート番号
@@ -344,6 +350,8 @@ export const ClientMode: {
 } = {
   DebugMode: (int32: number): ClientMode => ({ _: "DebugMode", int32: int32 }),
   Release: { _: "Release" },
+  encode: "エンコードのコード",
+  decode: "デコードのコード",
 };
 
 /**
@@ -380,6 +388,8 @@ export const Location: {
     _: "Project",
     projectId: projectId,
   }),
+  encode: "エンコードのコード",
+  decode: "デコードのコード",
 };
 
 /**
@@ -409,7 +419,13 @@ export const Language: {
     a: number,
     b: Uint8Array
   ) => { readonly result: Language; readonly nextIndex: number };
-} = { Japanese: "Japanese", English: "English", Esperanto: "Esperanto" };
+} = {
+  Japanese: "Japanese",
+  English: "English",
+  Esperanto: "Esperanto",
+  encode: "エンコードのコード",
+  decode: "デコードのコード",
+};
 
 /**
  * プロジェクト
@@ -426,7 +442,7 @@ export const Project: {
     a: number,
     b: Uint8Array
   ) => { readonly result: Project; readonly nextIndex: number };
-} = {};
+} = { encode: "エンコードのコード", decode: "デコードのコード" };
 
 /**
  * Elmで扱えるように何のリソースのレスポンスかが含まれたレスポンス
@@ -458,7 +474,7 @@ export const ResponseWithId: {
     readonly result: ResponseWithId<id, data>;
     readonly nextIndex: number;
   };
-} = {};
+} = { encode: "エンコードのコード", decode: "デコードのコード" };
 
 /**
  * リソースをリクエストしたあとのレスポンス
@@ -498,4 +514,6 @@ export const Response: {
   ConnectionError: <data>(): Response<data> => ({ _: "ConnectionError" }),
   NotFound: <data>(): Response<data> => ({ _: "NotFound" }),
   Found: <data>(data: data): Response<data> => ({ _: "Found", data: data }),
+  encode: "エンコードのコード",
+  decode: "デコードのコード",
 };

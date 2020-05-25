@@ -8,6 +8,7 @@ export const generateTypeDefinition = (
   idOrTokenTypeNameSet: Set<string>
 ): ReadonlyArray<ts.TypeAlias> => {
   return [
+    codecTypeDefinition(),
     customTypeToDefinition(maybeCustomTypeDefinition),
     customTypeToDefinition(resultCustomTypeDefinition),
     ...customTypeList.map(customTypeToDefinition),
@@ -172,4 +173,54 @@ const tagNameAndParameterToObjectType = (
     case "Nothing":
       return ts.typeObject(new Map([tagField]));
   }
+};
+
+const codecName = identifer.fromString("_Codec");
+const codecType = (type_: ts.Type) =>
+  ts.typeWithParameter(ts.typeScopeInFile(codecName), [type_]);
+
+const codecTypeDefinition = (): ts.TypeAlias => {
+  const typeParameterIdentifer = identifer.fromString("T");
+  return {
+    name: codecName,
+    document: "バイナリと相互変換するための関数",
+    parameterList: [typeParameterIdentifer],
+    type_: ts.typeObject(
+      new Map([
+        [
+          "encode",
+          {
+            type_: ts.typeFunction(
+              [],
+              [ts.typeScopeInFile(typeParameterIdentifer)],
+              ts.readonlyArrayType(ts.typeNumber)
+            ),
+            document: "",
+          },
+        ],
+        [
+          "decode",
+          {
+            type_: ts.typeFunction(
+              [],
+              [ts.typeNumber, ts.uint8ArrayType],
+              ts.typeObject(
+                new Map([
+                  [
+                    "result",
+                    {
+                      type_: ts.typeScopeInFile(typeParameterIdentifer),
+                      document: "",
+                    },
+                  ],
+                  ["nextIndex", { type_: ts.typeNumber, document: "" }],
+                ])
+              )
+            ),
+            document: "",
+          },
+        ],
+      ])
+    ),
+  };
 };
