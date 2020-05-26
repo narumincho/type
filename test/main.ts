@@ -276,11 +276,9 @@ const typeDefinitionTypeScriptCode = generator.generateCodeAsString(
   t.generateTypeScriptCode(customTypeList),
   "TypeScript"
 );
-const elmCodeAsString: string = t.generateElmCode("Data", customTypeList);
 
 const testOutFolderName = "testOut";
 const typeScriptPath = testOutFolderName + "/out.ts";
-const elmPath = testOutFolderName + "/out.elm";
 
 fileSystem.mkdir(testOutFolderName, () => {
   fileSystem.promises
@@ -306,10 +304,4 @@ fileSystem.mkdir(testOutFolderName, () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("../../testOutJs/main.js");
     });
-  fileSystem.promises.writeFile(elmPath, elmCodeAsString).then(() => {
-    console.log("elm output code");
-    childProcess.exec("elm-format --yes " + elmPath, () => {
-      console.log("elm formatted");
-    });
-  });
 });

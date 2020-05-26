@@ -249,26 +249,27 @@ const elmReservedList = [
   "alias",
 ];
 
+export type IdAndTokenNameSet = {
+  id: ReadonlySet<string>;
+  token: ReadonlySet<string>;
+};
+
 export const collectIdOrTokenTypeNameSet = (
   customTypeList: ReadonlyArray<CustomTypeDefinition>
-): Set<string> => {
-  let idAndTokenTypeNameSet: Set<string> = new Set();
-  for (const customType of customTypeList) {
-    idAndTokenTypeNameSet = new Set([
-      ...idAndTokenTypeNameSet,
-      ...collectIdOrTokenTypeNameSetInCustomType(customType),
-    ]);
-  }
-  return idAndTokenTypeNameSet;
-};
+): IdAndTokenNameSet =>
+  flatIdAndTokenNameSetList(
+    customTypeList.map(collectIdOrTokenTypeNameSetInCustomType)
+  );
 
 const collectIdOrTokenTypeNameSetInCustomType = (
   customType: CustomTypeDefinition
-): Set<string> => {
+): IdAndTokenNameSet => {
   switch (customType.body._) {
     case "Product":
-      return collectIdOrTokenTypeNameSetInProduct(
-        customType.body.memberNameAndTypeList
+      return flatIdAndTokenNameSetList(
+        customType.body.memberNameAndTypeList.map((memberNameAndType) =>
+          getIdAndTokenTypeNameInType(memberNameAndType.memberType)
+        )
       );
     case "Sum":
       return collectIdOrTokenTypeNameSetInSum(
@@ -277,57 +278,76 @@ const collectIdOrTokenTypeNameSetInCustomType = (
   }
 };
 
-const collectIdOrTokenTypeNameSetInProduct = (
-  memberNameAndTypeList: ReadonlyArray<MemberNameAndType>
-): Set<string> => {
-  let idAndTokenTypeNameSet: Set<string> = new Set();
-  for (const memberNameAndType of memberNameAndTypeList) {
-    idAndTokenTypeNameSet = new Set([
-      ...idAndTokenTypeNameSet,
-      ...getIdOrTokenTypeNameInType(memberNameAndType.memberType),
-    ]);
-  }
-  return idAndTokenTypeNameSet;
-};
-
 const collectIdOrTokenTypeNameSetInSum = (
   tagNameAndParameterList: ReadonlyArray<TagNameAndParameter>
-): Set<string> => {
-  let idAndTokenTypeNameSet: Set<string> = new Set();
+): IdAndTokenNameSet => {
+  const idSet: Set<string> = new Set();
+  const tokenSet: Set<string> = new Set();
   for (const memberNameAndType of tagNameAndParameterList) {
     switch (memberNameAndType.parameter._) {
       case "Just": {
-        idAndTokenTypeNameSet = new Set([
-          ...idAndTokenTypeNameSet,
-          ...getIdOrTokenTypeNameInType(memberNameAndType.parameter.value),
-        ]);
+        const idAndTokenNameSet = getIdAndTokenTypeNameInType(
+          memberNameAndType.parameter.value
+        );
+        for (const id of idAndTokenNameSet.id) {
+          idSet.add(id);
+        }
+        for (const token of idAndTokenNameSet.token) {
+          tokenSet.add(token);
+        }
       }
     }
   }
-  return idAndTokenTypeNameSet;
+  return {
+    id: idSet,
+    token: tokenSet,
+  };
 };
 
-const getIdOrTokenTypeNameInType = (type_: Type): Set<string> => {
+const getIdAndTokenTypeNameInType = (type_: Type): IdAndTokenNameSet => {
   switch (type_._) {
     case "Int32":
     case "String":
     case "Bool":
     case "Binary":
-    case "Custom":
     case "Parameter":
-      return new Set();
+      return { id: new Set(), token: new Set() };
     case "Id":
+      return { id: new Set([type_.string_]), token: new Set() };
     case "Token":
-      return new Set([type_.string_]);
+      return { id: new Set(), token: new Set([type_.string_]) };
     case "List":
     case "Maybe":
-      return getIdOrTokenTypeNameInType(type_.type_);
+      return getIdAndTokenTypeNameInType(type_.type_);
     case "Result":
-      return new Set([
-        ...getIdOrTokenTypeNameInType(type_.resultType.ok),
-        ...getIdOrTokenTypeNameInType(type_.resultType.error),
+      return flatIdAndTokenNameSetList([
+        getIdAndTokenTypeNameInType(type_.resultType.ok),
+        getIdAndTokenTypeNameInType(type_.resultType.error),
       ]);
+    case "Custom":
+      return flatIdAndTokenNameSetList(
+        type_.customType.parameterList.map(getIdAndTokenTypeNameInType)
+      );
   }
+};
+
+const flatIdAndTokenNameSetList = (
+  list: ReadonlyArray<IdAndTokenNameSet>
+): IdAndTokenNameSet => {
+  const idSet: Set<string> = new Set();
+  const tokenSet: Set<string> = new Set();
+  for (const idAndToken of list) {
+    for (const id of idAndToken.id) {
+      idSet.add(id);
+    }
+    for (const name of idAndToken.token) {
+      tokenSet.add(name);
+    }
+  }
+  return {
+    id: idSet,
+    token: tokenSet,
+  };
 };
 
 export const isIncludeBinaryType = (

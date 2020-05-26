@@ -5,14 +5,78 @@ import * as c from "../case";
 import * as typeDef from "./typeDefinition";
 
 export const generate = (
-  customTypeList: ReadonlyArray<type.CustomTypeDefinition>
-): ReadonlyArray<ts.Definition> => {
+  customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
+  idAndTokenNameSet: type.IdAndTokenNameSet
+): ReadonlyArray<ts.Variable> => {
   const customTypeAndDefaultTypeList: ReadonlyArray<type.CustomTypeDefinition> = [
     typeDef.maybeCustomTypeDefinition,
     typeDef.resultCustomTypeDefinition,
     ...customTypeList,
   ];
-  return customTypeAndDefaultTypeList.map(customTypeDefinitionToTagVariable);
+  return [
+    int32(),
+    string(),
+    binary(),
+    list(),
+    ...[...idAndTokenNameSet.id].map(idVariable),
+    ...[...idAndTokenNameSet.token].map(tokenVariable),
+    ...customTypeAndDefaultTypeList.map(customTypeDefinitionToTagVariable),
+  ];
+};
+
+const int32 = (): ts.Variable => {
+  return {
+    name: identifer.fromString("Int32"),
+    document:
+      "-2 147 483 648 ～ 2 147 483 647. 32bit 符号付き整数. JavaScriptのnumberで扱う",
+    type_: ts.typeObject(new Map()),
+    expr: ts.objectLiteral([]),
+  };
+};
+
+const string = (): ts.Variable => {
+  return {
+    name: identifer.fromString("String"),
+    document: "文字列. JavaScriptのstringで扱う",
+    type_: ts.typeObject(new Map()),
+    expr: ts.objectLiteral([]),
+  };
+};
+
+const binary = (): ts.Variable => {
+  return {
+    name: identifer.fromString("Binary"),
+    document: "バイナリ. JavaScriptのUint8Arrayで扱う",
+    type_: ts.typeObject(new Map()),
+    expr: ts.objectLiteral([]),
+  };
+};
+
+const list = (): ts.Variable => {
+  return {
+    name: identifer.fromString("List"),
+    document: "リスト. JavaScriptのArrayで扱う",
+    type_: ts.typeObject(new Map()),
+    expr: ts.objectLiteral([]),
+  };
+};
+
+const idVariable = (name: string): ts.Variable => {
+  return {
+    name: identifer.fromString(name),
+    document: name + ". ものを識別するのに使う",
+    type_: ts.typeObject(new Map()),
+    expr: ts.objectLiteral([]),
+  };
+};
+
+const tokenVariable = (name: string): ts.Variable => {
+  return {
+    name: identifer.fromString(name),
+    document: name + ". ものを識別したり,あるものであるのを証明したりする",
+    type_: ts.typeObject(new Map()),
+    expr: ts.objectLiteral([]),
+  };
 };
 
 /* ========================================
@@ -35,13 +99,13 @@ export const customTypeVar = (
 
 const customTypeDefinitionToTagVariable = (
   customType: type.CustomTypeDefinition
-): ts.Definition => {
-  return ts.definitionVariable({
+): ts.Variable => {
+  return {
     name: identifer.fromString(customType.name),
     document: customType.description,
     type_: customTypeDefinitionToType(customType),
     expr: customTypeDefinitionToExpr(customType),
-  });
+  };
 };
 
 const customTypeDefinitionToType = (

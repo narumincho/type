@@ -1,4 +1,15 @@
 /**
+ * バイナリと相互変換するための関数
+ */
+export type _Codec<T> = {
+  readonly encode: (a: T) => ReadonlyArray<number>;
+  readonly decode: (
+    a: number,
+    b: Uint8Array
+  ) => { readonly result: T; readonly nextIndex: number };
+};
+
+/**
  * Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
  */
 export type Maybe<value> =
@@ -127,13 +138,53 @@ export type Response<data> =
   | { readonly _: "NotFound" }
   | { readonly _: "Found"; readonly data: data };
 
-export type AccessToken = string & { readonly _accessToken: never };
-
 export type UserId = string & { readonly _userId: never };
 
 export type ProjectId = string & { readonly _projectId: never };
 
+export type AccessToken = string & { readonly _accessToken: never };
+
 export type FileHash = string & { readonly _fileHash: never };
+
+/**
+ * -2 147 483 648 ～ 2 147 483 647. 32bit 符号付き整数. JavaScriptのnumberで扱う
+ */
+export const Int32: {} = {};
+
+/**
+ * 文字列. JavaScriptのstringで扱う
+ */
+export const String: {} = {};
+
+/**
+ * バイナリ. JavaScriptのUint8Arrayで扱う
+ */
+export const Binary: {} = {};
+
+/**
+ * リスト. JavaScriptのArrayで扱う
+ */
+export const List: {} = {};
+
+/**
+ * UserId. ものを識別するのに使う
+ */
+export const UserId: {} = {};
+
+/**
+ * ProjectId. ものを識別するのに使う
+ */
+export const ProjectId: {} = {};
+
+/**
+ * AccessToken. ものを識別したり,あるものであるのを証明したりする
+ */
+export const AccessToken: {} = {};
+
+/**
+ * FileHash. ものを識別したり,あるものであるのを証明したりする
+ */
+export const FileHash: {} = {};
 
 /**
  * Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
@@ -168,8 +219,8 @@ export const Maybe: {
 } = {
   Just: <value>(value: value): Maybe<value> => ({ _: "Just", value: value }),
   Nothing: <value>(): Maybe<value> => ({ _: "Nothing" }),
-  encode: "エンコードのコード",
-  decode: "デコードのコード",
+  encode: (): {} => {},
+  decode: (): Maybe => {},
 };
 
 /**
@@ -213,8 +264,8 @@ export const Result: {
     _: "Error",
     error: error,
   }),
-  encode: "エンコードのコード",
-  decode: "デコードのコード",
+  encode: (): {} => {},
+  decode: (): Result => {},
 };
 
 /**
@@ -286,8 +337,8 @@ export const Type: {
   Token: (string_: string): Type => ({ _: "Token", string_: string_ }),
   Custom: (string_: string): Type => ({ _: "Custom", string_: string_ }),
   Parameter: (string_: string): Type => ({ _: "Parameter", string_: string_ }),
-  encode: "エンコードのコード",
-  decode: "デコードのコード",
+  encode: (): {} => {},
+  decode: (): Type => {},
 };
 
 /**
@@ -305,7 +356,11 @@ export const ResultType: {
     a: number,
     b: Uint8Array
   ) => { readonly result: ResultType; readonly nextIndex: number };
-} = { encode: "エンコードのコード", decode: "デコードのコード" };
+} = {
+  encode: (value: ResultType): ReadonlyArray<number> =>
+    Type.encode(value.ok).concat(Type.encode(value.error)),
+  decode: (): ResultType => {},
+};
 
 /**
  * デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( https://support.google.com/webmasters/answer/182192?hl=ja )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は http://[::1] になる
@@ -322,7 +377,15 @@ export const UrlData: {
     a: number,
     b: Uint8Array
   ) => { readonly result: UrlData; readonly nextIndex: number };
-} = { encode: "エンコードのコード", decode: "デコードのコード" };
+} = {
+  encode: (value: UrlData): ReadonlyArray<number> =>
+    ClientMode.encode(value.clientMode)
+      .concat(Location.encode(value.location))
+      .concat(Language.encode(value.language))
+      .concat(Maybe.encode(AccessToken.encode)(value.accessToken))
+      .concat("Boolをエンコードする関数"(value["if"])),
+  decode: (): UrlData => {},
+};
 
 /**
  * デバッグの状態と, デバッグ時ならアクセスしているポート番号
@@ -350,8 +413,8 @@ export const ClientMode: {
 } = {
   DebugMode: (int32: number): ClientMode => ({ _: "DebugMode", int32: int32 }),
   Release: { _: "Release" },
-  encode: "エンコードのコード",
-  decode: "デコードのコード",
+  encode: (): {} => {},
+  decode: (): ClientMode => {},
 };
 
 /**
@@ -388,8 +451,8 @@ export const Location: {
     _: "Project",
     projectId: projectId,
   }),
-  encode: "エンコードのコード",
-  decode: "デコードのコード",
+  encode: (): {} => {},
+  decode: (): Location => {},
 };
 
 /**
@@ -423,8 +486,8 @@ export const Language: {
   Japanese: "Japanese",
   English: "English",
   Esperanto: "Esperanto",
-  encode: "エンコードのコード",
-  decode: "デコードのコード",
+  encode: (): {} => {},
+  decode: (): Language => {},
 };
 
 /**
@@ -442,7 +505,13 @@ export const Project: {
     a: number,
     b: Uint8Array
   ) => { readonly result: Project; readonly nextIndex: number };
-} = { encode: "エンコードのコード", decode: "デコードのコード" };
+} = {
+  encode: (value: Project): ReadonlyArray<number> =>
+    "Stringをエンコードする関数"(value.name)
+      .concat(FileHash.encode(value.icon))
+      .concat(FileHash.encode(value.image)),
+  decode: (): Project => {},
+};
 
 /**
  * Elmで扱えるように何のリソースのレスポンスかが含まれたレスポンス
@@ -474,7 +543,13 @@ export const ResponseWithId: {
     readonly result: ResponseWithId<id, data>;
     readonly nextIndex: number;
   };
-} = { encode: "エンコードのコード", decode: "デコードのコード" };
+} = {
+  encode: (value: ResponseWithId): ReadonlyArray<number> =>
+    "parameterどうすれば良いのだろう?"(value.id).concat(
+      Response.encode(value.response)
+    ),
+  decode: (): ResponseWithId => {},
+};
 
 /**
  * リソースをリクエストしたあとのレスポンス
@@ -514,6 +589,6 @@ export const Response: {
   ConnectionError: <data>(): Response<data> => ({ _: "ConnectionError" }),
   NotFound: <data>(): Response<data> => ({ _: "NotFound" }),
   Found: <data>(data: data): Response<data> => ({ _: "Found", data: data }),
-  encode: "エンコードのコード",
-  decode: "デコードのコード",
+  encode: (): {} => {},
+  decode: (): Response => {},
 };

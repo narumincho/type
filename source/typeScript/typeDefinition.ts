@@ -5,14 +5,16 @@ import * as c from "../case";
 
 export const generateTypeDefinition = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
-  idOrTokenTypeNameSet: Set<string>
+  idOrTokenTypeNameSet: type.IdAndTokenNameSet
 ): ReadonlyArray<ts.TypeAlias> => {
   return [
     codecTypeDefinition(),
     customTypeToDefinition(maybeCustomTypeDefinition),
     customTypeToDefinition(resultCustomTypeDefinition),
     ...customTypeList.map(customTypeToDefinition),
-    ...[...idOrTokenTypeNameSet].map(idOrTokenDefinition),
+    ...[...idOrTokenTypeNameSet.id, ...idOrTokenTypeNameSet.token].map(
+      idOrTokenDefinition
+    ),
   ];
 };
 
