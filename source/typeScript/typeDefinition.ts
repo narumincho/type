@@ -178,7 +178,9 @@ const tagNameAndParameterToObjectType = (
 };
 
 const codecName = identifer.fromString("_Codec");
-const codecType = (type_: ts.Type) =>
+
+/** _Codec<type_> の型を表す */
+export const codecType = (type_: ts.Type): ts.Type =>
   ts.typeWithParameter(ts.typeScopeInFile(codecName), [type_]);
 
 const codecTypeDefinition = (): ts.TypeAlias => {
@@ -192,10 +194,8 @@ const codecTypeDefinition = (): ts.TypeAlias => {
         [
           "encode",
           {
-            type_: ts.typeFunction(
-              [],
-              [ts.typeScopeInFile(typeParameterIdentifer)],
-              ts.readonlyArrayType(ts.typeNumber)
+            type_: encodeFunctionType(
+              ts.typeScopeInFile(typeParameterIdentifer)
             ),
             document: "",
           },
@@ -203,21 +203,8 @@ const codecTypeDefinition = (): ts.TypeAlias => {
         [
           "decode",
           {
-            type_: ts.typeFunction(
-              [],
-              [ts.typeNumber, ts.uint8ArrayType],
-              ts.typeObject(
-                new Map([
-                  [
-                    "result",
-                    {
-                      type_: ts.typeScopeInFile(typeParameterIdentifer),
-                      document: "",
-                    },
-                  ],
-                  ["nextIndex", { type_: ts.typeNumber, document: "" }],
-                ])
-              )
+            type_: decodeFunctionType(
+              ts.typeScopeInFile(typeParameterIdentifer)
             ),
             document: "",
           },
@@ -226,3 +213,34 @@ const codecTypeDefinition = (): ts.TypeAlias => {
     ),
   };
 };
+
+/**
+ * ```ts
+ * (a: type_) => Readonly<number>
+ * ```
+ */
+export const encodeFunctionType = (type_: ts.Type): ts.Type =>
+  ts.typeFunction([], [type_], ts.readonlyArrayType(ts.typeNumber));
+
+/**
+ * ```ts
+ * (a: number, b: Uint8Array) => { readonly result: type_, readonly nextIndex: number }
+ * ```
+ */
+export const decodeFunctionType = (type_: ts.Type): ts.Type =>
+  ts.typeFunction(
+    [],
+    [ts.typeNumber, ts.uint8ArrayType],
+    ts.typeObject(
+      new Map([
+        [
+          "result",
+          {
+            type_: type_,
+            document: "",
+          },
+        ],
+        ["nextIndex", { type_: ts.typeNumber, document: "" }],
+      ])
+    )
+  );

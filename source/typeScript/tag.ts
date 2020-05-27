@@ -16,6 +16,7 @@ export const generate = (
   return [
     int32(),
     string(),
+    bool(),
     binary(),
     list(),
     ...[...idAndTokenNameSet.id].map(idVariable),
@@ -38,6 +39,15 @@ const string = (): ts.Variable => {
   return {
     name: identifer.fromString("String"),
     document: "文字列. JavaScriptのstringで扱う",
+    type_: ts.typeObject(new Map()),
+    expr: ts.objectLiteral([]),
+  };
+};
+
+const bool = (): ts.Variable => {
+  return {
+    name: identifer.fromString("Bool"),
+    document: "Bool. 真か偽. JavaScriptのbooleanで扱う",
     type_: ts.typeObject(new Map()),
     expr: ts.objectLiteral([]),
   };
@@ -114,7 +124,15 @@ const customTypeDefinitionToType = (
   switch (customType.body._) {
     case "Product":
       return ts.typeObject(
-        new Map(customTypeToEncodeAndDecodeType(customType))
+        new Map([
+          [
+            codecPropertyName,
+            {
+              type_: codecType(customType),
+              document: "",
+            },
+          ],
+        ])
       );
     case "Sum":
       return ts.typeObject(
@@ -134,7 +152,12 @@ const customTypeDefinitionToType = (
                   },
                 ] as const
             )
-            .concat(customTypeToEncodeAndDecodeType(customType))
+            .concat([
+              [
+                codecPropertyName,
+                { type_: codecType(customType), document: "" },
+              ] as const,
+            ])
         )
       );
   }
@@ -145,7 +168,7 @@ const customTypeDefinitionToExpr = (
 ): ts.Expr => {
   switch (customType.body._) {
     case "Product":
-      return ts.objectLiteral(customTypeToEncodeAndDecodeExpr(customType));
+      return ts.objectLiteral(customTypeToCodecExpr(customType));
 
     case "Sum": {
       const tagNameAndParameterList = customType.body.tagNameAndParameterList;
@@ -163,7 +186,7 @@ const customTypeDefinitionToExpr = (
                   )
             )
           )
-          .concat(customTypeToEncodeAndDecodeExpr(customType))
+          .concat(customTypeToCodecExpr(customType))
       );
     }
   }
@@ -265,130 +288,89 @@ const tagNameAndParameterToTagExpr = (
   }
 };
 
-const customTypeToEncodeAndDecodeType = (
-  customType: type.CustomTypeDefinition
-): ReadonlyArray<
-  [
-    string,
-    {
-      type_: ts.Type;
-      document: string;
-    }
-  ]
-> => {
-  const typeParameterAdIdentiferList = customType.typeParameterList.map(
-    identifer.fromString
-  );
-
-  return [
-    [
-      "encode",
-      {
-        type_:
-          typeParameterAdIdentiferList.length === 0
-            ? encodeFunctionType(
-                ts.typeScopeInFile(identifer.fromString(customType.name))
-              )
-            : ts.typeFunction(
-                typeParameterAdIdentiferList,
-                typeParameterAdIdentiferList.map((typeParameterAdIdentifer) =>
-                  encodeFunctionType(
-                    ts.typeScopeInFile(typeParameterAdIdentifer)
-                  )
-                ),
-                encodeFunctionType(
-                  ts.typeWithParameter(
-                    ts.typeScopeInFile(identifer.fromString(customType.name)),
-                    typeParameterAdIdentiferList.map(ts.typeScopeInFile)
-                  )
-                )
-              ),
-        document:
-          customType.name + "を@narumincho/typeのバイナリ形式にエンコードする",
-      },
-    ],
-    [
-      "decode",
-      {
-        type_:
-          typeParameterAdIdentiferList.length === 0
-            ? decodeFunctionType(
-                ts.typeScopeInFile(identifer.fromString(customType.name))
-              )
-            : ts.typeFunction(
-                typeParameterAdIdentiferList,
-                typeParameterAdIdentiferList.map((typeParameterAdIdentifer) =>
-                  decodeFunctionType(
-                    ts.typeScopeInFile(typeParameterAdIdentifer)
-                  )
-                ),
-                decodeFunctionType(
-                  ts.typeWithParameter(
-                    ts.typeScopeInFile(identifer.fromString(customType.name)),
-                    typeParameterAdIdentiferList.map(ts.typeScopeInFile)
-                  )
-                )
-              ),
-        document:
-          "@narumincho/typeのバイナリ形式から" +
-          customType.name +
-          "にデコードする",
-      },
-    ],
-  ];
+const codecType = (customType: type.CustomTypeDefinition): ts.Type => {
+  return customType.typeParameterList.length === 0
+    ? typeDef.codecType(
+        ts.typeScopeInFile(identifer.fromString(customType.name))
+      )
+    : ts.typeFunction(
+        customType.typeParameterList.map(identifer.fromString),
+        customType.typeParameterList.map((typeParameter) =>
+          typeDef.codecType(
+            ts.typeScopeInFile(identifer.fromString(typeParameter))
+          )
+        ),
+        typeDef.codecType(
+          ts.typeWithParameter(
+            ts.typeScopeInFile(identifer.fromString(customType.name)),
+            customType.typeParameterList.map((typeParameter) =>
+              ts.typeScopeInFile(identifer.fromString(typeParameter))
+            )
+          )
+        )
+      );
 };
 
-const encodeFunctionType = (type_: ts.Type): ts.Type =>
-  ts.typeFunction([], [type_], ts.readonlyArrayType(ts.typeNumber));
+const codecPropertyName = "codec";
+const encodePropertyName = "encode";
+const decodePropertyName = "decode";
 
-const decodeFunctionType = (type_: ts.Type): ts.Type =>
-  ts.typeFunction(
-    [],
-    [ts.typeNumber, ts.uint8ArrayType],
-    ts.typeObject(
-      new Map([
-        [
-          "result",
-          {
-            type_: type_,
-            document: "",
-          },
-        ],
-        ["nextIndex", { type_: ts.typeNumber, document: "" }],
-      ])
-    )
-  );
-
-const customTypeToEncodeAndDecodeExpr = (
+const customTypeToCodecExpr = (
   customType: type.CustomTypeDefinition
 ): ReadonlyArray<ts.Member> => {
-  return [
-    ts.memberKeyValue("encode", encodeFunction(customType)),
-    ts.memberKeyValue("decode", decodeFunction(customType)),
-  ];
+  return [ts.memberKeyValue(codecPropertyName, codecExpr(customType))];
 };
 
-const encodeFunction = (
+const codecParameterName = (name: string): identifer.Identifer =>
+  identifer.fromString(name + "Codec");
+
+const codecExpr = (
   customTypeDefinition: type.CustomTypeDefinition
 ): ts.Expr => {
   switch (customTypeDefinition.body._) {
     case "Product": {
-      const inputParameterName = identifer.fromString("value");
+      if (customTypeDefinition.typeParameterList.length === 0) {
+        return ts.objectLiteral([
+          ts.memberKeyValue(
+            encodePropertyName,
+            encodeExpr(customTypeDefinition.name)
+          ),
+          ts.memberKeyValue(
+            decodePropertyName,
+            decodeExpr(customTypeDefinition.name)
+          ),
+        ]);
+      }
       return ts.lambda(
+        customTypeDefinition.typeParameterList.map((typeParameter) => ({
+          name: codecParameterName(typeParameter),
+          type_: typeDef.codecType(
+            ts.typeScopeInFile(identifer.fromString(typeParameter))
+          ),
+        })),
+        customTypeDefinition.typeParameterList.map(identifer.fromString),
+        typeDef.codecType(
+          ts.typeWithParameter(
+            ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
+            customTypeDefinition.typeParameterList.map((typeParameter) =>
+              ts.typeScopeInFile(identifer.fromString(typeParameter))
+            )
+          )
+        ),
         [
-          {
-            name: inputParameterName,
-            type_: ts.typeScopeInFile(
-              identifer.fromString(customTypeDefinition.name)
-            ),
-          },
-        ],
-        [],
-        ts.readonlyArrayType(ts.typeNumber),
-        productEncodeExpr(
-          customTypeDefinition.body.memberNameAndTypeList,
-          ts.variable(inputParameterName)
-        )
+          ts.statementReturn(
+            ts.objectLiteral([
+              ts.memberKeyValue(
+                encodePropertyName,
+                encodeExpr(customTypeDefinition.name)
+              ),
+              ts.memberKeyValue(
+                decodePropertyName,
+                decodeExpr(customTypeDefinition.name)
+              ),
+            ])
+          ),
+        ]
       );
     }
     case "Sum":
@@ -396,19 +378,62 @@ const encodeFunction = (
   }
 };
 
-const productEncodeExpr = (
+const encodeExpr = (typeName: string): ts.Expr => {
+  return ts.lambda(
+    [
+      {
+        name: identifer.fromString(typeName),
+        type_: ts.typeScopeInFile(identifer.fromString(typeName)),
+      },
+    ],
+    [],
+    ts.readonlyArrayType(ts.typeNumber),
+    []
+  );
+};
+
+const decodeExpr = (typeName: string): ts.Expr => {
+  return ts.lambda(
+    [
+      {
+        name: identifer.fromString("index"),
+        type_: ts.typeNumber,
+      },
+      {
+        name: identifer.fromString("binary"),
+        type_: ts.uint8ArrayType,
+      },
+    ],
+    [],
+    ts.typeObject(
+      new Map([
+        [
+          "result",
+          {
+            document: "",
+            type_: ts.typeScopeInFile(identifer.fromString(typeName)),
+          },
+        ],
+        ["nextIndex", { document: "", type_: ts.typeNumber }],
+      ])
+    ),
+    []
+  );
+};
+
+const productCodecExpr = (
   memberNameAndTypeArray: ReadonlyArray<type.MemberNameAndType>,
   parameter: ts.Expr
 ): ReadonlyArray<ts.Statement> => {
   if (memberNameAndTypeArray.length === 0) {
     return [ts.statementReturn(ts.arrayLiteral([]))];
   }
-  let e = ts.call(encodeExpr(memberNameAndTypeArray[0].memberType), [
+  let e = ts.call(codecExprUse(memberNameAndTypeArray[0].memberType), [
     ts.get(parameter, memberNameAndTypeArray[0].name),
   ]);
   for (const memberNameAndType of memberNameAndTypeArray.slice(1)) {
     e = ts.callMethod(e, "concat", [
-      ts.call(encodeExpr(memberNameAndType.memberType), [
+      ts.call(codecExprUse(memberNameAndType.memberType), [
         ts.get(parameter, memberNameAndType.name),
       ]),
     ]);
@@ -416,52 +441,62 @@ const productEncodeExpr = (
   return [ts.statementReturn(e)];
 };
 
-const encodeExpr = (type_: type.Type): ts.Expr => {
+const codecExprUse = (type_: type.Type): ts.Expr => {
   switch (type_._) {
     case "Int32":
-      return ts.stringLiteral("Int32をエンコードする関数");
+      return ts.get(
+        ts.variable(identifer.fromString("Int32")),
+        codecPropertyName
+      );
     case "String":
-      return ts.stringLiteral("Stringをエンコードする関数");
+      return ts.get(
+        ts.variable(identifer.fromString("String")),
+        codecPropertyName
+      );
     case "Bool":
-      return ts.stringLiteral("Boolをエンコードする関数");
+      return ts.get(
+        ts.variable(identifer.fromString("Bool")),
+        codecPropertyName
+      );
     case "Binary":
-      return ts.stringLiteral("binaryをエンコードする関数");
+      return ts.get(
+        ts.variable(identifer.fromString("Binary")),
+        codecPropertyName
+      );
     case "List":
       return ts.call(
-        ts.get(ts.variable(identifer.fromString("List")), "encode"),
-        [encodeExpr(type_.type_)]
+        ts.get(ts.variable(identifer.fromString("List")), codecPropertyName),
+        [codecExprUse(type_.type_)]
       );
     case "Maybe":
       return ts.call(
-        ts.get(ts.variable(identifer.fromString("Maybe")), "encode"),
-        [encodeExpr(type_.type_)]
+        ts.get(ts.variable(identifer.fromString("Maybe")), codecPropertyName),
+        [codecExprUse(type_.type_)]
       );
     case "Result":
       return ts.call(
-        ts.get(ts.variable(identifer.fromString("Result")), "encode"),
-        [encodeExpr(type_.resultType.ok), encodeExpr(type_.resultType.error)]
+        ts.get(ts.variable(identifer.fromString("Result")), codecPropertyName),
+        [
+          codecExprUse(type_.resultType.ok),
+          codecExprUse(type_.resultType.error),
+        ]
       );
     case "Id":
-      return ts.get(ts.variable(identifer.fromString(type_.string_)), "encode");
+      return ts.get(
+        ts.variable(identifer.fromString(type_.string_)),
+        codecPropertyName
+      );
     case "Token":
-      return ts.get(ts.variable(identifer.fromString(type_.string_)), "encode");
+      return ts.get(
+        ts.variable(identifer.fromString(type_.string_)),
+        codecPropertyName
+      );
     case "Custom":
       return ts.get(
         ts.variable(identifer.fromString(type_.customType.name)),
         "encode"
       );
     case "Parameter":
-      return ts.stringLiteral("parameterどうすれば良いのだろう?");
+      return ts.variable(codecParameterName(type_.string_));
   }
-};
-
-const decodeFunction = (
-  customTypeDefinition: type.CustomTypeDefinition
-): ts.Expr => {
-  return ts.lambda(
-    [],
-    [],
-    ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
-    []
-  );
 };

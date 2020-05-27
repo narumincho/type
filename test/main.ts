@@ -3,7 +3,6 @@ import { type } from "../source/main";
 import * as generator from "js-ts-code-generator";
 import * as fileSystem from "fs";
 import * as ts from "typescript";
-import * as childProcess from "child_process";
 import * as prettier from "prettier";
 
 const fileHash = type.typeToken("FileHash");

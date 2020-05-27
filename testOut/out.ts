@@ -157,6 +157,11 @@ export const Int32: {} = {};
 export const String: {} = {};
 
 /**
+ * Bool. 真か偽. JavaScriptのbooleanで扱う
+ */
+export const Bool: {} = {};
+
+/**
  * バイナリ. JavaScriptのUint8Arrayで扱う
  */
 export const Binary: {} = {};
@@ -198,29 +203,11 @@ export const Maybe: {
    * 値がないということ
    */
   readonly Nothing: <value>() => Maybe<value>;
-  /**
-   * Maybeを@narumincho/typeのバイナリ形式にエンコードする
-   */
-  readonly encode: <value>(
-    a: (a: value) => ReadonlyArray<number>
-  ) => (a: Maybe<value>) => ReadonlyArray<number>;
-  /**
-   * @narumincho/typeのバイナリ形式からMaybeにデコードする
-   */
-  readonly decode: <value>(
-    a: (
-      a: number,
-      b: Uint8Array
-    ) => { readonly result: value; readonly nextIndex: number }
-  ) => (
-    a: number,
-    b: Uint8Array
-  ) => { readonly result: Maybe<value>; readonly nextIndex: number };
+  readonly codec: <value>(a: _Codec<value>) => Maybe<value>;
 } = {
   Just: <value>(value: value): Maybe<value> => ({ _: "Just", value: value }),
   Nothing: <value>(): Maybe<value> => ({ _: "Nothing" }),
-  encode: (): {} => {},
-  decode: (): Maybe => {},
+  codec: (): {} => {},
 };
 
 /**
@@ -235,37 +222,17 @@ export const Result: {
    * 失敗
    */
   readonly Error: <ok, error>(a: error) => Result<ok, error>;
-  /**
-   * Resultを@narumincho/typeのバイナリ形式にエンコードする
-   */
-  readonly encode: <ok, error>(
-    a: (a: ok) => ReadonlyArray<number>,
-    b: (a: error) => ReadonlyArray<number>
-  ) => (a: Result<ok, error>) => ReadonlyArray<number>;
-  /**
-   * @narumincho/typeのバイナリ形式からResultにデコードする
-   */
-  readonly decode: <ok, error>(
-    a: (
-      a: number,
-      b: Uint8Array
-    ) => { readonly result: ok; readonly nextIndex: number },
-    b: (
-      a: number,
-      b: Uint8Array
-    ) => { readonly result: error; readonly nextIndex: number }
-  ) => (
-    a: number,
-    b: Uint8Array
-  ) => { readonly result: Result<ok, error>; readonly nextIndex: number };
+  readonly codec: <ok, error>(
+    a: _Codec<ok>,
+    b: _Codec<error>
+  ) => Result<ok, error>;
 } = {
   Ok: <ok, error>(ok: ok): Result<ok, error> => ({ _: "Ok", ok: ok }),
   Error: <ok, error>(error: error): Result<ok, error> => ({
     _: "Error",
     error: error,
   }),
-  encode: (): {} => {},
-  decode: (): Result => {},
+  codec: (): {} => {},
 };
 
 /**
@@ -312,17 +279,7 @@ export const Type: {
    * 型パラメーター
    */
   readonly Parameter: (a: string) => Type;
-  /**
-   * Typeを@narumincho/typeのバイナリ形式にエンコードする
-   */
-  readonly encode: (a: Type) => ReadonlyArray<number>;
-  /**
-   * @narumincho/typeのバイナリ形式からTypeにデコードする
-   */
-  readonly decode: (
-    a: number,
-    b: Uint8Array
-  ) => { readonly result: Type; readonly nextIndex: number };
+  readonly codec: _Codec<Type>;
 } = {
   Int: { _: "Int" },
   String: { _: "String" },
@@ -337,54 +294,33 @@ export const Type: {
   Token: (string_: string): Type => ({ _: "Token", string_: string_ }),
   Custom: (string_: string): Type => ({ _: "Custom", string_: string_ }),
   Parameter: (string_: string): Type => ({ _: "Parameter", string_: string_ }),
-  encode: (): {} => {},
-  decode: (): Type => {},
+  codec: (): {} => {},
 };
 
 /**
  * 正常値と異常値
  */
-export const ResultType: {
-  /**
-   * ResultTypeを@narumincho/typeのバイナリ形式にエンコードする
-   */
-  readonly encode: (a: ResultType) => ReadonlyArray<number>;
-  /**
-   * @narumincho/typeのバイナリ形式からResultTypeにデコードする
-   */
-  readonly decode: (
-    a: number,
-    b: Uint8Array
-  ) => { readonly result: ResultType; readonly nextIndex: number };
-} = {
-  encode: (value: ResultType): ReadonlyArray<number> =>
-    Type.encode(value.ok).concat(Type.encode(value.error)),
-  decode: (): ResultType => {},
+export const ResultType: { readonly codec: _Codec<ResultType> } = {
+  codec: {
+    encode: (ResultType: ResultType): ReadonlyArray<number> => {},
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: ResultType; readonly nextIndex: number } => {},
+  },
 };
 
 /**
  * デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( https://support.google.com/webmasters/answer/182192?hl=ja )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は http://[::1] になる
  */
-export const UrlData: {
-  /**
-   * UrlDataを@narumincho/typeのバイナリ形式にエンコードする
-   */
-  readonly encode: (a: UrlData) => ReadonlyArray<number>;
-  /**
-   * @narumincho/typeのバイナリ形式からUrlDataにデコードする
-   */
-  readonly decode: (
-    a: number,
-    b: Uint8Array
-  ) => { readonly result: UrlData; readonly nextIndex: number };
-} = {
-  encode: (value: UrlData): ReadonlyArray<number> =>
-    ClientMode.encode(value.clientMode)
-      .concat(Location.encode(value.location))
-      .concat(Language.encode(value.language))
-      .concat(Maybe.encode(AccessToken.encode)(value.accessToken))
-      .concat("Boolをエンコードする関数"(value["if"])),
-  decode: (): UrlData => {},
+export const UrlData: { readonly codec: _Codec<UrlData> } = {
+  codec: {
+    encode: (UrlData: UrlData): ReadonlyArray<number> => {},
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: UrlData; readonly nextIndex: number } => {},
+  },
 };
 
 /**
@@ -399,22 +335,11 @@ export const ClientMode: {
    * リリースモード. https://definy.app
    */
   readonly Release: ClientMode;
-  /**
-   * ClientModeを@narumincho/typeのバイナリ形式にエンコードする
-   */
-  readonly encode: (a: ClientMode) => ReadonlyArray<number>;
-  /**
-   * @narumincho/typeのバイナリ形式からClientModeにデコードする
-   */
-  readonly decode: (
-    a: number,
-    b: Uint8Array
-  ) => { readonly result: ClientMode; readonly nextIndex: number };
+  readonly codec: _Codec<ClientMode>;
 } = {
   DebugMode: (int32: number): ClientMode => ({ _: "DebugMode", int32: int32 }),
   Release: { _: "Release" },
-  encode: (): {} => {},
-  decode: (): ClientMode => {},
+  codec: (): {} => {},
 };
 
 /**
@@ -433,17 +358,7 @@ export const Location: {
    * プロジェクトの詳細ページ
    */
   readonly Project: (a: ProjectId) => Location;
-  /**
-   * Locationを@narumincho/typeのバイナリ形式にエンコードする
-   */
-  readonly encode: (a: Location) => ReadonlyArray<number>;
-  /**
-   * @narumincho/typeのバイナリ形式からLocationにデコードする
-   */
-  readonly decode: (
-    a: number,
-    b: Uint8Array
-  ) => { readonly result: Location; readonly nextIndex: number };
+  readonly codec: _Codec<Location>;
 } = {
   Home: { _: "Home" },
   User: (userId: UserId): Location => ({ _: "User", userId: userId }),
@@ -451,8 +366,7 @@ export const Location: {
     _: "Project",
     projectId: projectId,
   }),
-  encode: (): {} => {},
-  decode: (): Location => {},
+  codec: (): {} => {},
 };
 
 /**
@@ -471,84 +385,46 @@ export const Language: {
    * エスペラント語
    */
   readonly Esperanto: Language;
-  /**
-   * Languageを@narumincho/typeのバイナリ形式にエンコードする
-   */
-  readonly encode: (a: Language) => ReadonlyArray<number>;
-  /**
-   * @narumincho/typeのバイナリ形式からLanguageにデコードする
-   */
-  readonly decode: (
-    a: number,
-    b: Uint8Array
-  ) => { readonly result: Language; readonly nextIndex: number };
+  readonly codec: _Codec<Language>;
 } = {
   Japanese: "Japanese",
   English: "English",
   Esperanto: "Esperanto",
-  encode: (): {} => {},
-  decode: (): Language => {},
+  codec: (): {} => {},
 };
 
 /**
  * プロジェクト
  */
-export const Project: {
-  /**
-   * Projectを@narumincho/typeのバイナリ形式にエンコードする
-   */
-  readonly encode: (a: Project) => ReadonlyArray<number>;
-  /**
-   * @narumincho/typeのバイナリ形式からProjectにデコードする
-   */
-  readonly decode: (
-    a: number,
-    b: Uint8Array
-  ) => { readonly result: Project; readonly nextIndex: number };
-} = {
-  encode: (value: Project): ReadonlyArray<number> =>
-    "Stringをエンコードする関数"(value.name)
-      .concat(FileHash.encode(value.icon))
-      .concat(FileHash.encode(value.image)),
-  decode: (): Project => {},
+export const Project: { readonly codec: _Codec<Project> } = {
+  codec: {
+    encode: (Project: Project): ReadonlyArray<number> => {},
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Project; readonly nextIndex: number } => {},
+  },
 };
 
 /**
  * Elmで扱えるように何のリソースのレスポンスかが含まれたレスポンス
  */
 export const ResponseWithId: {
-  /**
-   * ResponseWithIdを@narumincho/typeのバイナリ形式にエンコードする
-   */
-  readonly encode: <id, data>(
-    a: (a: id) => ReadonlyArray<number>,
-    b: (a: data) => ReadonlyArray<number>
-  ) => (a: ResponseWithId<id, data>) => ReadonlyArray<number>;
-  /**
-   * @narumincho/typeのバイナリ形式からResponseWithIdにデコードする
-   */
-  readonly decode: <id, data>(
-    a: (
-      a: number,
-      b: Uint8Array
-    ) => { readonly result: id; readonly nextIndex: number },
-    b: (
-      a: number,
-      b: Uint8Array
-    ) => { readonly result: data; readonly nextIndex: number }
-  ) => (
-    a: number,
-    b: Uint8Array
-  ) => {
-    readonly result: ResponseWithId<id, data>;
-    readonly nextIndex: number;
-  };
+  readonly codec: <id, data>(
+    a: _Codec<id>,
+    b: _Codec<data>
+  ) => ResponseWithId<id, data>;
 } = {
-  encode: (value: ResponseWithId): ReadonlyArray<number> =>
-    "parameterどうすれば良いのだろう?"(value.id).concat(
-      Response.encode(value.response)
-    ),
-  decode: (): ResponseWithId => {},
+  codec: <id, data>(
+    idCodec: _Codec<id>,
+    dataCodec: _Codec<data>
+  ): _Codec<ResponseWithId<id, data>> => ({
+    encode: (ResponseWithId: ResponseWithId): ReadonlyArray<number> => {},
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: ResponseWithId; readonly nextIndex: number } => {},
+  }),
 };
 
 /**
@@ -567,28 +443,10 @@ export const Response: {
    * 取得に成功した
    */
   readonly Found: <data>(a: data) => Response<data>;
-  /**
-   * Responseを@narumincho/typeのバイナリ形式にエンコードする
-   */
-  readonly encode: <data>(
-    a: (a: data) => ReadonlyArray<number>
-  ) => (a: Response<data>) => ReadonlyArray<number>;
-  /**
-   * @narumincho/typeのバイナリ形式からResponseにデコードする
-   */
-  readonly decode: <data>(
-    a: (
-      a: number,
-      b: Uint8Array
-    ) => { readonly result: data; readonly nextIndex: number }
-  ) => (
-    a: number,
-    b: Uint8Array
-  ) => { readonly result: Response<data>; readonly nextIndex: number };
+  readonly codec: <data>(a: _Codec<data>) => Response<data>;
 } = {
   ConnectionError: <data>(): Response<data> => ({ _: "ConnectionError" }),
   NotFound: <data>(): Response<data> => ({ _: "NotFound" }),
   Found: <data>(data: data): Response<data> => ({ _: "Found", data: data }),
-  encode: (): {} => {},
-  decode: (): Response => {},
+  codec: (): {} => {},
 };
