@@ -28,8 +28,8 @@ export const typeToTypeScriptType = (type_: type.Type): ts.Type => {
       return ts.typeWithParameter(
         ts.typeScopeInGlobal(identifer.fromString("Result")),
         [
-          typeToTypeScriptType(type_.resultType.error),
-          typeToTypeScriptType(type_.resultType.ok),
+          typeToTypeScriptType(type_.okAndErrorType.error),
+          typeToTypeScriptType(type_.okAndErrorType.ok),
         ]
       );
 
@@ -38,12 +38,16 @@ export const typeToTypeScriptType = (type_: type.Type): ts.Type => {
       return ts.typeScopeInFile(identifer.fromString(type_.string_));
 
     case "Custom": {
-      if (type_.customType.parameterList.length === 0) {
-        return ts.typeScopeInFile(identifer.fromString(type_.customType.name));
+      if (type_.nameAndTypeParameterList.parameterList.length === 0) {
+        return ts.typeScopeInFile(
+          identifer.fromString(type_.nameAndTypeParameterList.name)
+        );
       }
       return ts.typeWithParameter(
-        ts.typeScopeInFile(identifer.fromString(type_.customType.name)),
-        type_.customType.parameterList.map(typeToTypeScriptType)
+        ts.typeScopeInFile(
+          identifer.fromString(type_.nameAndTypeParameterList.name)
+        ),
+        type_.nameAndTypeParameterList.parameterList.map(typeToTypeScriptType)
       );
     }
 

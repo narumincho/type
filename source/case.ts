@@ -9,7 +9,7 @@ export const isFirstUpperCaseName = (text: string): boolean => {
     return false;
   }
   if (!"ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(text[0])) {
-    throw false;
+    return false;
   }
   for (const char of text.slice(1)) {
     if (
@@ -28,7 +28,7 @@ export const isFirstLowerCaseName = (text: string): boolean => {
     return false;
   }
   if (!"abcdefghijklmnopqrstuvwxyz".includes(text[0])) {
-    throw false;
+    return false;
   }
   for (const char of text.slice(1)) {
     if (

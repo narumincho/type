@@ -169,12 +169,12 @@ const checkTypeValidation = (
       return;
     case "Result":
       checkTypeValidation(
-        type_.resultType.ok,
+        type_.okAndErrorType.ok,
         customTypeNameAndTypeParameterMap,
         scopedTypeParameterList
       );
       checkTypeValidation(
-        type_.resultType.error,
+        type_.okAndErrorType.error,
         customTypeNameAndTypeParameterMap,
         scopedTypeParameterList
       );
@@ -191,28 +191,30 @@ const checkTypeValidation = (
       return;
     case "Custom": {
       const customTypeTypeParameterList = customTypeNameAndTypeParameterMap.get(
-        type_.customType.name
+        type_.nameAndTypeParameterList.name
       );
       if (customTypeTypeParameterList === undefined) {
         throw new Error(
-          "custom type " + type_.customType.name + " is not defined."
+          "custom type " +
+            type_.nameAndTypeParameterList.name +
+            " is not defined."
         );
       }
       if (
         customTypeTypeParameterList.size !==
-        type_.customType.parameterList.length
+        type_.nameAndTypeParameterList.parameterList.length
       ) {
         throw new Error(
           "type parameter count error. " +
-            type_.customType.name +
+            type_.nameAndTypeParameterList.name +
             " need " +
             customTypeTypeParameterList.size.toString() +
             " parameter(s). but you specified " +
-            type_.customType.parameterList.length.toString() +
+            type_.nameAndTypeParameterList.parameterList.length.toString() +
             " parameter(s)"
         );
       }
-      for (const parameter of type_.customType.parameterList) {
+      for (const parameter of type_.nameAndTypeParameterList.parameterList) {
         checkTypeValidation(
           parameter,
           customTypeNameAndTypeParameterMap,

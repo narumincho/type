@@ -1,5 +1,6 @@
 import { data as ts, identifer } from "js-ts-code-generator";
 import * as type from "../type";
+import { Type, Maybe } from "../type";
 import * as util from "./util";
 import * as c from "../case";
 
@@ -38,12 +39,12 @@ export const maybeCustomTypeDefinition: type.CustomTypeDefinition = {
     {
       name: "Just",
       description: "値があるということ",
-      parameter: type.maybeJust(type.typeParameter("value")),
+      parameter: Maybe.Just(Type.Parameter("value")),
     },
     {
       name: "Nothing",
       description: "値がないということ",
-      parameter: type.maybeNothing(),
+      parameter: Maybe.Nothing(),
     },
   ]),
 };
@@ -69,12 +70,12 @@ export const resultCustomTypeDefinition: type.CustomTypeDefinition = {
     {
       name: "Ok",
       description: "成功",
-      parameter: type.maybeJust(type.typeParameter("ok")),
+      parameter: Maybe.Just(Type.Parameter("ok")),
     },
     {
       name: "Error",
       description: "失敗",
-      parameter: type.maybeJust(type.typeParameter("error")),
+      parameter: Maybe.Just(Type.Parameter("error")),
     },
   ]),
 };

@@ -477,8 +477,8 @@ const codecExprUse = (type_: type.Type): ts.Expr => {
       return ts.call(
         ts.get(ts.variable(identifer.fromString("Result")), codecPropertyName),
         [
-          codecExprUse(type_.resultType.ok),
-          codecExprUse(type_.resultType.error),
+          codecExprUse(type_.okAndErrorType.ok),
+          codecExprUse(type_.okAndErrorType.error),
         ]
       );
     case "Id":
@@ -493,7 +493,7 @@ const codecExprUse = (type_: type.Type): ts.Expr => {
       );
     case "Custom":
       return ts.get(
-        ts.variable(identifer.fromString(type_.customType.name)),
+        ts.variable(identifer.fromString(type_.nameAndTypeParameterList.name)),
         "encode"
       );
     case "Parameter":

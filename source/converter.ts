@@ -1,5 +1,6 @@
 import { TextDecoder, TextEncoder } from "util";
 import * as type from "./type";
+import { Maybe, Result } from "./type";
 
 /*
  * 各データのエンコーダ、デコーダーが書かれている
@@ -233,13 +234,13 @@ export const decodeMaybe = <T>(
         binary
       );
       return {
-        result: type.maybeJust(valueAndNextIndex.result),
+        result: Maybe.Just(valueAndNextIndex.result),
         nextIndex: valueAndNextIndex.nextIndex,
       };
     }
     case 1: {
       return {
-        result: type.maybeNothing(),
+        result: Maybe.Nothing(),
         nextIndex: patternIndexAndNextIndex.nextIndex,
       };
     }
@@ -270,7 +271,7 @@ export const decodeResult = <ok, error>(
         binary
       );
       return {
-        result: type.resultOk(okAndNextIndex.result),
+        result: Result.Ok(okAndNextIndex.result),
         nextIndex: okAndNextIndex.nextIndex,
       };
     }
@@ -280,7 +281,7 @@ export const decodeResult = <ok, error>(
         binary
       );
       return {
-        result: type.resultError(errorAndNextIndex.result),
+        result: Result.Error(errorAndNextIndex.result),
         nextIndex: errorAndNextIndex.nextIndex,
       };
     }

@@ -2,114 +2,170 @@ import * as c from "./case";
 import { identifer } from "js-ts-code-generator";
 
 /**
- * Maybe
+ * Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
  */
-export type Maybe<T> = { _: "Just"; value: T } | { _: "Nothing" };
+export type Maybe<value> =
+  | { readonly _: "Just"; readonly value: value }
+  | { readonly _: "Nothing" };
 
 /**
- * Result
+ * 成功と失敗を表す型. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
  */
 export type Result<ok, error> =
-  | { _: "Ok"; ok: ok }
-  | { _: "Error"; error: error };
+  | { readonly _: "Ok"; readonly ok: ok }
+  | { readonly _: "Error"; readonly error: error };
 
 /**
  * 型
  */
 export type Type =
-  | { _: "Int32" }
-  | { _: "String" }
-  | { _: "Bool" }
-  | { _: "Binary" }
-  | { _: "List"; type_: Type }
-  | { _: "Maybe"; type_: Type }
-  | { _: "Result"; resultType: ResultType }
-  | { _: "Id"; string_: string }
-  | { _: "Token"; string_: string }
-  | { _: "Custom"; customType: CustomType }
-  | { _: "Parameter"; string_: string };
+  | { readonly _: "Int32" }
+  | { readonly _: "String" }
+  | { readonly _: "Bool" }
+  | { readonly _: "Binary" }
+  | { readonly _: "List"; readonly type_: Type }
+  | { readonly _: "Maybe"; readonly type_: Type }
+  | { readonly _: "Result"; readonly okAndErrorType: OkAndErrorType }
+  | { readonly _: "Id"; readonly string_: string }
+  | { readonly _: "Token"; readonly string_: string }
+  | {
+      readonly _: "Custom";
+      readonly nameAndTypeParameterList: NameAndTypeParameterList;
+    }
+  | { readonly _: "Parameter"; readonly string_: string };
 
 /**
  * 正常値と異常値
  */
-export type ResultType = { ok: Type; error: Type };
-
-export type CustomType = { name: string; parameterList: ReadonlyArray<Type> };
-
-/**
- * -2 147 483 648 ～ 2147483647. 32bit 符号付き整数
- */
-export const typeInt32: Type = { _: "Int32" };
-
-/**
- * 文字列
- */
-export const typeString: Type = { _: "String" };
+export type OkAndErrorType = {
+  /**
+   * 正常値
+   */
+  readonly ok: Type;
+  /**
+   * 異常値
+   */
+  readonly error: Type;
+};
 
 /**
- * 真偽値
+ * カスタム型の指定
  */
-export const typeBool: Type = { _: "Bool" };
+export type NameAndTypeParameterList = {
+  /**
+   * カスタム型名
+   */
+  readonly name: string;
+  /**
+   * 型パラメーター
+   */
+  readonly parameterList: ReadonlyArray<Type>;
+};
 
 /**
- * バイナリ
+ * Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
  */
-export const typeBinary: Type = { _: "Binary" };
-/**
- * リスト
- *
- */
-export const typeList = (type_: Type): Type => ({ _: "List", type_: type_ });
+export const Maybe: {
+  /**
+   * 値があるということ
+   */
+  readonly Just: <value>(a: value) => Maybe<value>;
+  /**
+   * 値がないということ
+   */
+  readonly Nothing: <value>() => Maybe<value>;
+} = {
+  Just: <value>(value: value): Maybe<value> => ({ _: "Just", value: value }),
+  Nothing: <value>(): Maybe<value> => ({ _: "Nothing" }),
+};
 
 /**
- * Maybe
- *
+ * 成功と失敗を表す型. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
  */
-export const typeMaybe = (type_: Type): Type => ({ _: "Maybe", type_: type_ });
+export const Result: {
+  /**
+   * 成功
+   */
+  readonly Ok: <ok, error>(a: ok) => Result<ok, error>;
+  /**
+   * 失敗
+   */
+  readonly Error: <ok, error>(a: error) => Result<ok, error>;
+} = {
+  Ok: <ok, error>(ok: ok): Result<ok, error> => ({ _: "Ok", ok: ok }),
+  Error: <ok, error>(error: error): Result<ok, error> => ({
+    _: "Error",
+    error: error,
+  }),
+};
 
 /**
- * Result
- *
+ * 型
  */
-export const typeResult = (resultType: ResultType): Type => ({
-  _: "Result",
-  resultType: resultType,
-});
-
-/**
- * データを識別するためのもの. `UserId`などの型名を指定する. 16byte. 16進数文字列で32文字
- *
- */
-export const typeId = (string_: string): Type => ({
-  _: "Id",
-  string_: string_,
-});
-
-/**
- * データを識別するため. `AccessToken`などの型名を指定する. 32byte. 16進数文字列で64文字
- *
- */
-export const typeToken = (string_: string): Type => ({
-  _: "Token",
-  string_: string_,
-});
-
-/**
- * 用意されていないアプリ特有の型
- *
- */
-export const typeCustom = (customType: CustomType): Type => ({
-  _: "Custom",
-  customType: customType,
-});
-
-/**
- * パラメーター
- */
-export const typeParameter = (string_: string): Type => ({
-  _: "Parameter",
-  string_: string_,
-});
+export const Type: {
+  /**
+   * 32bit 符号付き整数. (-2 147 483 648 ～ 2147483647). JavaScriptのnumberとして扱える
+   */
+  readonly Int32: Type;
+  /**
+   * 文字列. JavaScriptのStringとして扱える
+   */
+  readonly String: Type;
+  /**
+   * 真偽値. JavaScriptのbooleanとして扱える
+   */
+  readonly Bool: Type;
+  /**
+   * バイナリ. JavaScriptのUint8Arrayとして扱える
+   */
+  readonly Binary: Type;
+  /**
+   * リスト. JavaScriptのArrayとして扱える
+   */
+  readonly List: (a: Type) => Type;
+  /**
+   * Maybe. 指定した型の値があるJustと値がないNothingのどちらか
+   */
+  readonly Maybe: (a: Type) => Type;
+  /**
+   * Result. 成功と失敗を表す
+   */
+  readonly Result: (a: OkAndErrorType) => Type;
+  /**
+   * データを識別するためのもの. `UserId`などの型名を指定する. 16byte. 16進数文字列で32文字
+   */
+  readonly Id: (a: string) => Type;
+  /**
+   * データを識別,証明するため. `AccessToken`などの型名を指定する. 32byte. 16進数文字列で64文字
+   */
+  readonly Token: (a: string) => Type;
+  /**
+   * 用意されていないアプリ特有の型
+   */
+  readonly Custom: (a: NameAndTypeParameterList) => Type;
+  /**
+   * カスタム型の定義で使う型変数
+   */
+  readonly Parameter: (a: string) => Type;
+} = {
+  Int32: { _: "Int32" },
+  String: { _: "String" },
+  Bool: { _: "Bool" },
+  Binary: { _: "Binary" },
+  List: (type_: Type): Type => ({ _: "List", type_: type_ }),
+  Maybe: (type_: Type): Type => ({ _: "Maybe", type_: type_ }),
+  Result: (okAndErrorType: OkAndErrorType): Type => ({
+    _: "Result",
+    okAndErrorType: okAndErrorType,
+  }),
+  Id: (string_: string): Type => ({ _: "Id", string_: string_ }),
+  Token: (string_: string): Type => ({ _: "Token", string_: string_ }),
+  Custom: (nameAndTypeParameterList: NameAndTypeParameterList): Type => ({
+    _: "Custom",
+    nameAndTypeParameterList: nameAndTypeParameterList,
+  }),
+  Parameter: (string_: string): Type => ({ _: "Parameter", string_: string_ }),
+};
 
 export type CustomTypeDefinition = {
   name: string;
@@ -156,25 +212,6 @@ export const customTypeBodyProduct = (
   memberNameAndTypeList,
 });
 
-export const maybeJust = <T>(value: T): Maybe<T> => ({
-  _: "Just",
-  value: value,
-});
-
-export const maybeNothing = <T>(): Maybe<T> => ({
-  _: "Nothing",
-});
-
-export const resultOk = <ok, error>(ok: ok): Result<ok, error> => ({
-  _: "Ok",
-  ok: ok,
-});
-
-export const resultError = <ok, error>(error: error): Result<ok, error> => ({
-  _: "Error",
-  error: error,
-});
-
 export const toTypeName = (type_: Type): string => {
   switch (type_._) {
     case "Int32":
@@ -191,15 +228,15 @@ export const toTypeName = (type_: Type): string => {
       return toTypeName(type_.type_) + "Maybe";
     case "Result":
       return (
-        toTypeName(type_.resultType.error) +
-        toTypeName(type_.resultType.ok) +
+        toTypeName(type_.okAndErrorType.error) +
+        toTypeName(type_.okAndErrorType.ok) +
         "Result"
       );
     case "Id":
     case "Token":
       return type_.string_;
     case "Custom":
-      return type_.customType.name;
+      return type_.nameAndTypeParameterList.name;
     case "Parameter":
       return type_.string_;
   }
@@ -321,12 +358,14 @@ const getIdAndTokenTypeNameInType = (type_: Type): IdAndTokenNameSet => {
       return getIdAndTokenTypeNameInType(type_.type_);
     case "Result":
       return flatIdAndTokenNameSetList([
-        getIdAndTokenTypeNameInType(type_.resultType.ok),
-        getIdAndTokenTypeNameInType(type_.resultType.error),
+        getIdAndTokenTypeNameInType(type_.okAndErrorType.ok),
+        getIdAndTokenTypeNameInType(type_.okAndErrorType.error),
       ]);
     case "Custom":
       return flatIdAndTokenNameSetList(
-        type_.customType.parameterList.map(getIdAndTokenTypeNameInType)
+        type_.nameAndTypeParameterList.parameterList.map(
+          getIdAndTokenTypeNameInType
+        )
       );
   }
 };
@@ -404,8 +443,8 @@ const isIncludeBinaryTypeInType = (type_: Type): boolean => {
       return isIncludeBinaryTypeInType(type_.type_);
     case "Result":
       return (
-        isIncludeBinaryTypeInType(type_.resultType.ok) ||
-        isIncludeBinaryTypeInType(type_.resultType.error)
+        isIncludeBinaryTypeInType(type_.okAndErrorType.ok) ||
+        isIncludeBinaryTypeInType(type_.okAndErrorType.error)
       );
     case "Parameter":
       return false;
