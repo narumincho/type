@@ -81,21 +81,21 @@ const checkCustomTypeListValidation = (
 };
 
 const checkCustomTypeBodyValidation = (
-  customTypeBody: type.CustomTypeBody,
+  customTypeBody: type.CustomTypeDefinitionBody,
   customTypeNameAndTypeParameterListMap: Map<string, Set<string>>,
   scopedTypeParameterList: Set<string>
 ): void => {
   switch (customTypeBody._) {
     case "Product":
       checkProductTypeValidation(
-        customTypeBody.memberNameAndTypeList,
+        customTypeBody.memberList,
         customTypeNameAndTypeParameterListMap,
         scopedTypeParameterList
       );
       return;
     case "Sum":
       checkSumTypeValidation(
-        customTypeBody.tagNameAndParameterList,
+        customTypeBody.patternList,
         customTypeNameAndTypeParameterListMap,
         scopedTypeParameterList
       );
@@ -104,24 +104,22 @@ const checkCustomTypeBodyValidation = (
 };
 
 const checkProductTypeValidation = (
-  memberNameAndTypeList: ReadonlyArray<type.MemberNameAndType>,
+  memberList: ReadonlyArray<type.Member>,
   customTypeNameAndTypeParameterListMap: Map<string, Set<string>>,
   scopedTypeParameterList: Set<string>
 ): void => {
   const memberNameSet: Set<string> = new Set();
-  for (const memberNameAndType of memberNameAndTypeList) {
-    if (memberNameSet.has(memberNameAndType.name)) {
-      throw new Error("duplicate member name. name =" + memberNameAndType.name);
+  for (const member of memberList) {
+    if (memberNameSet.has(member.name)) {
+      throw new Error("duplicate member name. name =" + member.name);
     }
-    memberNameSet.add(memberNameAndType.name);
+    memberNameSet.add(member.name);
 
-    if (!c.isFirstLowerCaseName(memberNameAndType.name)) {
-      throw new Error(
-        "member name is invalid. name =" + memberNameAndType.name
-      );
+    if (!c.isFirstLowerCaseName(member.name)) {
+      throw new Error("member name is invalid. name =" + member.name);
     }
     checkTypeValidation(
-      memberNameAndType.memberType,
+      member.type,
       customTypeNameAndTypeParameterListMap,
       scopedTypeParameterList
     );
@@ -129,23 +127,23 @@ const checkProductTypeValidation = (
 };
 
 const checkSumTypeValidation = (
-  tagNameAndParameterList: ReadonlyArray<type.TagNameAndParameter>,
+  patternList: ReadonlyArray<type.Pattern>,
   customTypeNameAndTypeParameterListMap: Map<string, Set<string>>,
   scopedTypeParameterList: Set<string>
 ): void => {
   const tagNameSet: Set<string> = new Set();
-  for (const tagNameAndParameter of tagNameAndParameterList) {
-    if (tagNameSet.has(tagNameAndParameter.name)) {
-      throw new Error("duplicate tag name. name =" + tagNameAndParameter.name);
+  for (const pattern of patternList) {
+    if (tagNameSet.has(pattern.name)) {
+      throw new Error("duplicate tag name. name =" + pattern.name);
     }
-    tagNameSet.add(tagNameAndParameter.name);
+    tagNameSet.add(pattern.name);
 
-    if (!c.isFirstUpperCaseName(tagNameAndParameter.name)) {
-      throw new Error("tag name is invalid. name =" + tagNameAndParameter.name);
+    if (!c.isFirstUpperCaseName(pattern.name)) {
+      throw new Error("tag name is invalid. name =" + pattern.name);
     }
-    if (tagNameAndParameter.parameter._ === "Just") {
+    if (pattern.parameter._ === "Just") {
       checkTypeValidation(
-        tagNameAndParameter.parameter.value,
+        pattern.parameter.value,
         customTypeNameAndTypeParameterListMap,
         scopedTypeParameterList
       );

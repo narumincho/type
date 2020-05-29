@@ -137,18 +137,18 @@ const customTypeDefinitionToType = (
     case "Sum":
       return ts.typeObject(
         new Map(
-          customType.body.tagNameAndParameterList
+          customType.body.patternList
             .map(
-              (tagNameAndParameter) =>
+              (pattern) =>
                 [
-                  tagNameAndParameter.name,
+                  pattern.name,
                   {
                     type_: tagNameAndParameterToTagExprType(
                       identifer.fromString(customType.name),
                       customType.typeParameterList,
-                      tagNameAndParameter
+                      pattern
                     ),
-                    document: tagNameAndParameter.description,
+                    document: pattern.description,
                   },
                 ] as const
             )
@@ -171,18 +171,18 @@ const customTypeDefinitionToExpr = (
       return ts.objectLiteral(customTypeToCodecExpr(customType));
 
     case "Sum": {
-      const tagNameAndParameterList = customType.body.tagNameAndParameterList;
+      const patternList = customType.body.patternList;
       return ts.objectLiteral(
-        tagNameAndParameterList
-          .map((tagNameAndParameter) =>
+        patternList
+          .map((pattern) =>
             ts.memberKeyValue(
-              tagNameAndParameter.name,
-              type.isTagTypeAllNoParameter(tagNameAndParameterList)
-                ? ts.stringLiteral(tagNameAndParameter.name)
+              pattern.name,
+              type.isTagTypeAllNoParameter(patternList)
+                ? ts.stringLiteral(pattern.name)
                 : tagNameAndParameterToTagExpr(
                     identifer.fromString(customType.name),
                     customType.typeParameterList,
-                    tagNameAndParameter
+                    pattern
                   )
             )
           )
@@ -195,7 +195,7 @@ const customTypeDefinitionToExpr = (
 const tagNameAndParameterToTagExprType = (
   typeName: identifer.Identifer,
   typeParameterList: ReadonlyArray<string>,
-  tagNameAndParameter: type.TagNameAndParameter
+  pattern: type.Pattern
 ) => {
   const typeParameterIdentiferList = typeParameterList.map(
     identifer.fromString
@@ -207,11 +207,11 @@ const tagNameAndParameterToTagExprType = (
     )
   );
 
-  switch (tagNameAndParameter.parameter._) {
+  switch (pattern.parameter._) {
     case "Just":
       return ts.typeFunction(
         typeParameterIdentiferList,
-        [util.typeToTypeScriptType(tagNameAndParameter.parameter.value)],
+        [util.typeToTypeScriptType(pattern.parameter.value)],
         returnType
       );
 
@@ -228,11 +228,11 @@ const tagNameAndParameterToTagExprType = (
 const tagNameAndParameterToTagExpr = (
   typeName: identifer.Identifer,
   typeParameterList: ReadonlyArray<string>,
-  tagNameAndParameter: type.TagNameAndParameter
+  pattern: type.Pattern
 ): ts.Expr => {
   const tagField: ts.Member = ts.memberKeyValue(
     "_",
-    ts.stringLiteral(tagNameAndParameter.name)
+    ts.stringLiteral(pattern.name)
   );
   const returnType = ts.typeWithParameter(
     ts.typeScopeInFile(typeName),
@@ -241,17 +241,13 @@ const tagNameAndParameterToTagExpr = (
     )
   );
 
-  switch (tagNameAndParameter.parameter._) {
+  switch (pattern.parameter._) {
     case "Just":
       return ts.lambda(
         [
           {
-            name: util.typeToMemberOrParameterName(
-              tagNameAndParameter.parameter.value
-            ),
-            type_: util.typeToTypeScriptType(
-              tagNameAndParameter.parameter.value
-            ),
+            name: util.typeToMemberOrParameterName(pattern.parameter.value),
+            type_: util.typeToTypeScriptType(pattern.parameter.value),
           },
         ],
         typeParameterList.map(identifer.fromString),
@@ -261,13 +257,9 @@ const tagNameAndParameterToTagExpr = (
             ts.objectLiteral([
               tagField,
               ts.memberKeyValue(
-                util.typeToMemberOrParameterName(
-                  tagNameAndParameter.parameter.value
-                ),
+                util.typeToMemberOrParameterName(pattern.parameter.value),
                 ts.variable(
-                  util.typeToMemberOrParameterName(
-                    tagNameAndParameter.parameter.value
-                  )
+                  util.typeToMemberOrParameterName(pattern.parameter.value)
                 )
               ),
             ])
@@ -422,18 +414,18 @@ const decodeExpr = (typeName: string): ts.Expr => {
 };
 
 const productCodecExpr = (
-  memberNameAndTypeArray: ReadonlyArray<type.MemberNameAndType>,
+  memberList: ReadonlyArray<type.Member>,
   parameter: ts.Expr
 ): ReadonlyArray<ts.Statement> => {
-  if (memberNameAndTypeArray.length === 0) {
+  if (memberList.length === 0) {
     return [ts.statementReturn(ts.arrayLiteral([]))];
   }
-  let e = ts.call(codecExprUse(memberNameAndTypeArray[0].memberType), [
-    ts.get(parameter, memberNameAndTypeArray[0].name),
+  let e = ts.call(codecExprUse(memberList[0].type), [
+    ts.get(parameter, memberList[0].name),
   ]);
-  for (const memberNameAndType of memberNameAndTypeArray.slice(1)) {
+  for (const memberNameAndType of memberList.slice(1)) {
     e = ts.callMethod(e, "concat", [
-      ts.call(codecExprUse(memberNameAndType.memberType), [
+      ts.call(codecExprUse(memberNameAndType.type), [
         ts.get(parameter, memberNameAndType.name),
       ]),
     ]);

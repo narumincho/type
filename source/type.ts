@@ -173,44 +173,74 @@ export type CustomTypeDefinition = {
    */
   typeParameterList: ReadonlyArray<string>;
   description: string;
-  body: CustomTypeBody;
+  body: CustomTypeDefinitionBody;
 };
 
-export type CustomTypeBody =
-  | {
-      _: "Product";
-      memberNameAndTypeList: ReadonlyArray<MemberNameAndType>;
-    }
-  | {
-      _: "Sum";
-      tagNameAndParameterList: ReadonlyArray<TagNameAndParameter>;
-    };
+/**
+ * カスタム型の定義の本体
+ */
+export type CustomTypeDefinitionBody =
+  | { readonly _: "Product"; readonly memberList: ReadonlyArray<Member> }
+  | { readonly _: "Sum"; readonly patternList: ReadonlyArray<Pattern> };
 
-export type TagNameAndParameter = {
-  name: string;
-  description: string;
-  parameter: Maybe<Type>;
+/**
+ * 直積型の構成要素. 名前と型を持つ
+ */
+export type Member = {
+  /**
+   * メンバー名
+   */
+  readonly name: string;
+  /**
+   * メンバーの説明
+   */
+  readonly description: string;
+  /**
+   * 型
+   */
+  readonly type: Type;
 };
 
-export type MemberNameAndType = {
-  name: string;
-  description: string;
-  memberType: Type;
+/**
+ * 直和型の構成要素. タグと,パラメーターの型がついている
+ */
+export type Pattern = {
+  /**
+   * タグ名
+   */
+  readonly name: string;
+  /**
+   * パターンの説明
+   */
+  readonly description: string;
+  /**
+   * そのパターンにある型
+   */
+  readonly parameter: Maybe<Type>;
 };
 
-export const customTypeBodySum = (
-  tagNameAndParameterList: ReadonlyArray<TagNameAndParameter>
-): CustomTypeBody => ({
-  _: "Sum",
-  tagNameAndParameterList,
-});
-
-export const customTypeBodyProduct = (
-  memberNameAndTypeList: ReadonlyArray<MemberNameAndType>
-): CustomTypeBody => ({
-  _: "Product",
-  memberNameAndTypeList,
-});
+/**
+ * カスタム型の定義の本体
+ */
+export const CustomTypeDefinitionBody: {
+  /**
+   * 直積型. AとBとC
+   */
+  readonly Product: (a: ReadonlyArray<Member>) => CustomTypeDefinitionBody;
+  /**
+   * 直和型. AかBかC
+   */
+  readonly Sum: (a: ReadonlyArray<Pattern>) => CustomTypeDefinitionBody;
+} = {
+  Product: (memberList: ReadonlyArray<Member>): CustomTypeDefinitionBody => ({
+    _: "Product",
+    memberList: memberList,
+  }),
+  Sum: (patternList: ReadonlyArray<Pattern>): CustomTypeDefinitionBody => ({
+    _: "Sum",
+    patternList: patternList,
+  }),
+};
 
 export const toTypeName = (type_: Type): string => {
   switch (type_._) {
@@ -243,7 +273,7 @@ export const toTypeName = (type_: Type): string => {
 };
 
 export const isTagTypeAllNoParameter = (
-  tagNameAndParameterArray: ReadonlyArray<TagNameAndParameter>
+  tagNameAndParameterArray: ReadonlyArray<Pattern>
 ): boolean =>
   tagNameAndParameterArray.every(
     (tagNameAndParameter) => tagNameAndParameter.parameter._ === "Nothing"
@@ -304,19 +334,17 @@ const collectIdOrTokenTypeNameSetInCustomType = (
   switch (customType.body._) {
     case "Product":
       return flatIdAndTokenNameSetList(
-        customType.body.memberNameAndTypeList.map((memberNameAndType) =>
-          getIdAndTokenTypeNameInType(memberNameAndType.memberType)
+        customType.body.memberList.map((memberNameAndType) =>
+          getIdAndTokenTypeNameInType(memberNameAndType.type)
         )
       );
     case "Sum":
-      return collectIdOrTokenTypeNameSetInSum(
-        customType.body.tagNameAndParameterList
-      );
+      return collectIdOrTokenTypeNameSetInSum(customType.body.patternList);
   }
 };
 
 const collectIdOrTokenTypeNameSetInSum = (
-  tagNameAndParameterList: ReadonlyArray<TagNameAndParameter>
+  tagNameAndParameterList: ReadonlyArray<Pattern>
 ): IdAndTokenNameSet => {
   const idSet: Set<string> = new Set();
   const tokenSet: Set<string> = new Set();
@@ -394,19 +422,17 @@ export const isIncludeBinaryType = (
 ): boolean => {
   switch (customType.body._) {
     case "Product":
-      return isIncludeBinaryTypeInProduct(
-        customType.body.memberNameAndTypeList
-      );
+      return isIncludeBinaryTypeInProduct(customType.body.memberList);
     case "Sum":
-      return isIncludeBinaryTypeInSum(customType.body.tagNameAndParameterList);
+      return isIncludeBinaryTypeInSum(customType.body.patternList);
   }
 };
 
 const isIncludeBinaryTypeInProduct = (
-  memberNameAndTypeList: ReadonlyArray<MemberNameAndType>
+  memberList: ReadonlyArray<Member>
 ): boolean => {
-  for (const memberNameAndType of memberNameAndTypeList) {
-    if (isIncludeBinaryTypeInType(memberNameAndType.memberType)) {
+  for (const member of memberList) {
+    if (isIncludeBinaryTypeInType(member.type)) {
       return true;
     }
   }
@@ -414,12 +440,12 @@ const isIncludeBinaryTypeInProduct = (
 };
 
 const isIncludeBinaryTypeInSum = (
-  tagNameAndParameterList: ReadonlyArray<TagNameAndParameter>
+  patternList: ReadonlyArray<Pattern>
 ): boolean => {
-  for (const tagNameAndParameter of tagNameAndParameterList) {
-    switch (tagNameAndParameter.parameter._) {
+  for (const pattern of patternList) {
+    switch (pattern.parameter._) {
       case "Just":
-        if (isIncludeBinaryTypeInType(tagNameAndParameter.parameter.value)) {
+        if (isIncludeBinaryTypeInType(pattern.parameter.value)) {
           return true;
         }
     }

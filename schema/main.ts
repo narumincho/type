@@ -1,6 +1,6 @@
 import * as nType from "../source/main";
 import { type as data } from "../source/main";
-import { Type, Maybe } from "../source/type";
+import { Type, Maybe, CustomTypeDefinitionBody } from "../source/type";
 import * as jsTsCodeGenerator from "js-ts-code-generator";
 import { promises as fileSystem } from "fs";
 import * as prettier from "prettier";
@@ -8,6 +8,9 @@ import * as prettier from "prettier";
 const typeName = "Type";
 const okAndErrorTypeName = "OkAndErrorType";
 const nameAndTypeParameterListName = "NameAndTypeParameterList";
+const customTypeDefinitionBodyName = "CustomTypeDefinitionBody";
+const memberName = "Member";
+const patternName = "Pattern";
 
 const typeType = Type.Custom({ name: typeName, parameterList: [] });
 const okAndErrorTypeType = Type.Custom({
@@ -18,13 +21,25 @@ const nameAndTypeParameterListType = Type.Custom({
   name: nameAndTypeParameterListName,
   parameterList: [],
 });
+const customTypeDefinitionType = Type.Custom({
+  name: customTypeDefinitionBodyName,
+  parameterList: [],
+});
+const memberType = Type.Custom({
+  name: memberName,
+  parameterList: [],
+});
+const patternType = Type.Custom({
+  name: patternName,
+  parameterList: [],
+});
 
 const customTypeDefinitionList: ReadonlyArray<nType.type.CustomTypeDefinition> = [
   {
     name: typeName,
     description: "型",
     typeParameterList: [],
-    body: data.customTypeBodySum([
+    body: CustomTypeDefinitionBody.Sum([
       {
         name: "Int32",
         description:
@@ -90,16 +105,16 @@ const customTypeDefinitionList: ReadonlyArray<nType.type.CustomTypeDefinition> =
     name: okAndErrorTypeName,
     description: "正常値と異常値",
     typeParameterList: [],
-    body: data.customTypeBodyProduct([
+    body: CustomTypeDefinitionBody.Product([
       {
         name: "ok",
         description: "正常値",
-        memberType: typeType,
+        type: typeType,
       },
       {
         name: "error",
         description: "異常値",
-        memberType: typeType,
+        type: typeType,
       },
     ]),
   },
@@ -107,16 +122,77 @@ const customTypeDefinitionList: ReadonlyArray<nType.type.CustomTypeDefinition> =
     name: nameAndTypeParameterListName,
     description: "カスタム型の指定",
     typeParameterList: [],
-    body: data.customTypeBodyProduct([
+    body: CustomTypeDefinitionBody.Product([
       {
         name: "name",
         description: "カスタム型名",
-        memberType: Type.String,
+        type: Type.String,
       },
       {
         name: "parameterList",
         description: "型パラメーター",
-        memberType: Type.List(typeType),
+        type: Type.List(typeType),
+      },
+    ]),
+  },
+  {
+    name: customTypeDefinitionBodyName,
+    description: "カスタム型の定義の本体",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Sum([
+      {
+        name: "Product",
+        description: "直積型. AとBとC",
+        parameter: Maybe.Just(Type.List(memberType)),
+      },
+      {
+        name: "Sum",
+        description: "直和型. AかBかC",
+        parameter: Maybe.Just(Type.List(patternType)),
+      },
+    ]),
+  },
+  {
+    name: memberName,
+    description: "直積型の構成要素. 名前と型を持つ",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "name",
+        description: "メンバー名",
+        type: Type.String,
+      },
+      {
+        name: "description",
+        description: "メンバーの説明",
+        type: Type.String,
+      },
+      {
+        name: "type",
+        description: "型",
+        type: typeType,
+      },
+    ]),
+  },
+  {
+    name: patternName,
+    description: "直和型の構成要素. タグと,パラメーターの型がついている",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "name",
+        description: "タグ名",
+        type: Type.String,
+      },
+      {
+        name: "description",
+        description: "パターンの説明",
+        type: Type.String,
+      },
+      {
+        name: "parameter",
+        description: "そのパターンにある型",
+        type: Type.Maybe(typeType),
       },
     ]),
   },

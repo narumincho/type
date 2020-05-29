@@ -1,6 +1,6 @@
 import { data as ts, identifer } from "js-ts-code-generator";
 import * as type from "../type";
-import { Type, Maybe } from "../type";
+import { Type, Maybe, CustomTypeDefinitionBody } from "../type";
 import * as util from "./util";
 import * as c from "../case";
 
@@ -35,7 +35,7 @@ export const maybeCustomTypeDefinition: type.CustomTypeDefinition = {
   typeParameterList: ["value"],
   description:
     "Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した",
-  body: type.customTypeBodySum([
+  body: CustomTypeDefinitionBody.Sum([
     {
       name: "Just",
       description: "値があるということ",
@@ -66,7 +66,7 @@ export const resultCustomTypeDefinition: type.CustomTypeDefinition = {
   description:
     "成功と失敗を表す型. Elmに標準で定義されているものに変換をするためにデフォルトで用意した",
   typeParameterList: ["ok", "error"],
-  body: type.customTypeBodySum([
+  body: CustomTypeDefinitionBody.Sum([
     {
       name: "Ok",
       description: "成功",
@@ -113,30 +113,26 @@ export const customTypeToDefinition = (
 });
 
 const customTypeDefinitionBodyToTsType = (
-  body: type.CustomTypeBody
+  body: type.CustomTypeDefinitionBody
 ): ts.Type => {
   switch (body._) {
     case "Sum":
-      if (type.isTagTypeAllNoParameter(body.tagNameAndParameterList)) {
+      if (type.isTagTypeAllNoParameter(body.patternList)) {
         return ts.typeUnion(
-          body.tagNameAndParameterList.map((tagNameAndParameter) =>
-            ts.typeStringLiteral(tagNameAndParameter.name)
-          )
+          body.patternList.map((pattern) => ts.typeStringLiteral(pattern.name))
         );
       }
       return ts.typeUnion(
-        body.tagNameAndParameterList.map((tagNameAndParameter) =>
-          tagNameAndParameterToObjectType(tagNameAndParameter)
-        )
+        body.patternList.map((pattern) => patternListToObjectType(pattern))
       );
     case "Product":
       return ts.typeObject(
         new Map(
-          body.memberNameAndTypeList.map((memberNameAndType) => [
-            memberNameAndType.name,
+          body.memberList.map((member) => [
+            member.name,
             {
-              type_: util.typeToTypeScriptType(memberNameAndType.memberType),
-              document: memberNameAndType.description,
+              type_: util.typeToTypeScriptType(member.type),
+              document: member.description,
             },
           ])
         )
@@ -144,31 +140,25 @@ const customTypeDefinitionBodyToTsType = (
   }
 };
 
-const tagNameAndParameterToObjectType = (
-  tagNameAndParameter: type.TagNameAndParameter
-): ts.Type => {
+const patternListToObjectType = (patternList: type.Pattern): ts.Type => {
   const tagField: [string, { type_: ts.Type; document: string }] = [
     "_",
     {
       document: "",
-      type_: ts.typeStringLiteral(tagNameAndParameter.name),
+      type_: ts.typeStringLiteral(patternList.name),
     },
   ];
 
-  switch (tagNameAndParameter.parameter._) {
+  switch (patternList.parameter._) {
     case "Just":
       return ts.typeObject(
         new Map([
           tagField,
           [
-            util.typeToMemberOrParameterName(
-              tagNameAndParameter.parameter.value
-            ),
+            util.typeToMemberOrParameterName(patternList.parameter.value),
             {
               document: "",
-              type_: util.typeToTypeScriptType(
-                tagNameAndParameter.parameter.value
-              ),
+              type_: util.typeToTypeScriptType(patternList.parameter.value),
             },
           ],
         ])
