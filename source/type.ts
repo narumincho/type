@@ -233,6 +233,23 @@ export type Pattern = {
 };
 
 /**
+ * バイナリと相互変換するための関数
+ */
+export type Codec<T> = {
+  /**
+   * バイナリへの変換
+   */
+  readonly encode: (a: T) => ReadonlyArray<number>;
+  /**
+   * バイナリからの変換
+   */
+  readonly decode: (
+    index: number,
+    binary: Uint8Array
+  ) => { readonly result: T; readonly nextIndex: number };
+};
+
+/**
  * カスタム型の定義の本体
  */
 export const CustomTypeDefinitionBody: {
@@ -292,42 +309,8 @@ export const isTagTypeAllNoParameter = (
     (tagNameAndParameter) => tagNameAndParameter.parameter._ === "Nothing"
   );
 
-export const typeToMemberOrParameterName = (
-  type_: Type
-): identifer.Identifer => {
-  const safeInTypeScript = identifer.fromString(
-    c.firstLowerCase(toTypeName(type_))
-  );
-  if (elmReservedList.includes(safeInTypeScript)) {
-    return ((safeInTypeScript as string) + "_") as identifer.Identifer;
-  }
-  return safeInTypeScript;
-};
-
-export const elmIdentiferFromString = (text: string): string => {
-  if (elmReservedList.includes(text)) {
-    return text + "_";
-  }
-  return text;
-};
-
-const elmReservedList = [
-  "if",
-  "then",
-  "else",
-  "case",
-  "of",
-  "let",
-  "in",
-  "type",
-  "module",
-  "where",
-  "import",
-  "port",
-  "exposing",
-  "as",
-  "alias",
-];
+export const typeToMemberOrParameterName = (type_: Type): identifer.Identifer =>
+  identifer.fromString(c.firstLowerCase(toTypeName(type_)));
 
 export type IdAndTokenNameSet = {
   id: ReadonlySet<string>;

@@ -62,3 +62,5 @@ export const typeToMemberOrParameterName = (
   console.log(type_);
   return identifer.fromString(c.firstLowerCase(type.toTypeName(type_)));
 };
+
+export const moduleName = "@narumincho/type";

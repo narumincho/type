@@ -282,17 +282,17 @@ const tagNameAndParameterToTagExpr = (
 
 const codecType = (customType: type.CustomTypeDefinition): ts.Type => {
   return customType.typeParameterList.length === 0
-    ? typeDef.codecType(
+    ? typeDef.codecTypeImported(
         ts.typeScopeInFile(identifer.fromString(customType.name))
       )
     : ts.typeFunction(
         customType.typeParameterList.map(identifer.fromString),
         customType.typeParameterList.map((typeParameter) =>
-          typeDef.codecType(
+          typeDef.codecTypeImported(
             ts.typeScopeInFile(identifer.fromString(typeParameter))
           )
         ),
-        typeDef.codecType(
+        typeDef.codecTypeImported(
           ts.typeWithParameter(
             ts.typeScopeInFile(identifer.fromString(customType.name)),
             customType.typeParameterList.map((typeParameter) =>
@@ -336,12 +336,12 @@ const codecExpr = (
       return ts.lambda(
         customTypeDefinition.typeParameterList.map((typeParameter) => ({
           name: codecParameterName(typeParameter),
-          type_: typeDef.codecType(
+          type_: typeDef.codecTypeImported(
             ts.typeScopeInFile(identifer.fromString(typeParameter))
           ),
         })),
         customTypeDefinition.typeParameterList.map(identifer.fromString),
-        typeDef.codecType(
+        typeDef.codecTypeImported(
           ts.typeWithParameter(
             ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
             customTypeDefinition.typeParameterList.map((typeParameter) =>

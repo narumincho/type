@@ -7,14 +7,19 @@ import * as c from "./case";
 export { type };
 
 export const generateTypeScriptCode = (
-  customTypeList: ReadonlyArray<type.CustomTypeDefinition>
+  customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
+  withKernel: boolean
 ): data.Code => {
   checkCustomTypeListValidation(customTypeList);
   const idOrTokenTypeNameSet = type.collectIdOrTokenTypeNameSet(customTypeList);
   return {
     exportDefinitionList: [
       ...typeDefinition
-        .generateTypeDefinition(customTypeList, idOrTokenTypeNameSet)
+        .generateTypeDefinition(
+          customTypeList,
+          idOrTokenTypeNameSet,
+          withKernel
+        )
         .map(data.definitionTypeAlias),
       ...tag
         .generate(customTypeList, idOrTokenTypeNameSet)

@@ -6,12 +6,21 @@ import * as c from "../case";
 
 export const generateTypeDefinition = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
-  idOrTokenTypeNameSet: type.IdAndTokenNameSet
+  idOrTokenTypeNameSet: type.IdAndTokenNameSet,
+  widthKernel: boolean
 ): ReadonlyArray<ts.TypeAlias> => {
+  if (widthKernel) {
+    return [
+      codecTypeDefinition(),
+      customTypeToDefinition(maybeCustomTypeDefinition),
+      customTypeToDefinition(resultCustomTypeDefinition),
+      ...customTypeList.map(customTypeToDefinition),
+      ...[...idOrTokenTypeNameSet.id, ...idOrTokenTypeNameSet.token].map(
+        idOrTokenDefinition
+      ),
+    ];
+  }
   return [
-    codecTypeDefinition(),
-    customTypeToDefinition(maybeCustomTypeDefinition),
-    customTypeToDefinition(resultCustomTypeDefinition),
     ...customTypeList.map(customTypeToDefinition),
     ...[...idOrTokenTypeNameSet.id, ...idOrTokenTypeNameSet.token].map(
       idOrTokenDefinition
@@ -25,10 +34,19 @@ export const generateTypeDefinition = (
 */
 
 const maybeName = "Maybe";
-export const maybeTsType = (elementType: ts.Type): ts.Type =>
-  ts.typeWithParameter(ts.typeScopeInFile(identifer.fromString(maybeName)), [
-    elementType,
-  ]);
+export const maybeTsType = (
+  elementType: ts.Type,
+  widthKernel: boolean
+): ts.Type =>
+  widthKernel
+    ? ts.typeWithParameter(
+        ts.typeScopeInFile(identifer.fromString(maybeName)),
+        [elementType]
+      )
+    : ts.typeWithParameter(
+        ts.typeImported(util.moduleName, identifer.fromString(maybeName)),
+        [elementType]
+      );
 
 export const maybeCustomTypeDefinition: type.CustomTypeDefinition = {
   name: maybeName,
@@ -55,11 +73,20 @@ export const maybeCustomTypeDefinition: type.CustomTypeDefinition = {
 */
 
 const resultName = "Result";
-export const resultTsType = (okType: ts.Type, errorType: ts.Type): ts.Type =>
-  ts.typeWithParameter(ts.typeScopeInFile(identifer.fromString(resultName)), [
-    okType,
-    errorType,
-  ]);
+export const resultTsType = (
+  okType: ts.Type,
+  errorType: ts.Type,
+  withKernel: boolean
+): ts.Type =>
+  withKernel
+    ? ts.typeWithParameter(
+        ts.typeScopeInFile(identifer.fromString(resultName)),
+        [okType, errorType]
+      )
+    : ts.typeWithParameter(
+        ts.typeImported(util.moduleName, identifer.fromString(resultName)),
+        [okType, errorType]
+      );
 
 export const resultCustomTypeDefinition: type.CustomTypeDefinition = {
   name: resultName,
@@ -168,9 +195,16 @@ const patternListToObjectType = (patternList: type.Pattern): ts.Type => {
   }
 };
 
-const codecName = identifer.fromString("_Codec");
+/** `@narumincho/type`の型`Codec<type_>` を表す */
+export const codecTypeImported = (type_: ts.Type): ts.Type =>
+  ts.typeWithParameter(
+    ts.typeImported("@narumincho/type", identifer.fromString("Codec")),
+    [type_]
+  );
 
-/** _Codec<type_> の型を表す */
+const codecName = identifer.fromString("Codec");
+
+/** Codec<type_> の型を表す */
 export const codecType = (type_: ts.Type): ts.Type =>
   ts.typeWithParameter(ts.typeScopeInFile(codecName), [type_]);
 

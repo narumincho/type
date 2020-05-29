@@ -1,5 +1,6 @@
 import * as out from "./out";
 import * as cliColor from "cli-color";
+import { Codec } from "../source/type";
 
 const objectEqual = <T>(a: T, b: T): boolean => {
   if (a === b) {
@@ -34,20 +35,15 @@ const isPrimitive = (value: unknown): boolean => {
   );
 };
 
-const test = <T>(
-  title: string,
-  jsValue: T,
-  encodeFunction: (a: T) => ReadonlyArray<number>,
-  decodeFunction: (a: number, b: Uint8Array) => { result: T; nextIndex: number }
-): void => {
+const test = <T>(title: string, jsValue: T, codec: Codec<T>): void => {
   console.group(title);
   console.log("js value        :", jsValue);
-  const binary = encodeFunction(jsValue);
+  const binary = codec.encode(jsValue);
   console.log(
     "binary          :",
     binary.map((e) => e.toString(16).padStart(2, "0"))
   );
-  const decodedJsValue = decodeFunction(0, new Uint8Array(binary)).result;
+  const decodedJsValue = codec.decode(0, new Uint8Array(binary)).result;
   console.log("decoded js value:", decodedJsValue);
   if (objectEqual(jsValue, decodedJsValue)) {
     console.log(cliColor.green("ok"));
