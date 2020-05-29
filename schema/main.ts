@@ -8,6 +8,7 @@ import * as prettier from "prettier";
 const typeName = "Type";
 const okAndErrorTypeName = "OkAndErrorType";
 const nameAndTypeParameterListName = "NameAndTypeParameterList";
+const customTypeDefinitionName = "CustomTypeDefinition";
 const customTypeDefinitionBodyName = "CustomTypeDefinitionBody";
 const memberName = "Member";
 const patternName = "Pattern";
@@ -22,6 +23,10 @@ const nameAndTypeParameterListType = Type.Custom({
   parameterList: [],
 });
 const customTypeDefinitionType = Type.Custom({
+  name: customTypeDefinitionName,
+  parameterList: [],
+});
+const customTypeDefinitionBodyType = Type.Custom({
   name: customTypeDefinitionBodyName,
   parameterList: [],
 });
@@ -132,6 +137,34 @@ const customTypeDefinitionList: ReadonlyArray<nType.type.CustomTypeDefinition> =
         name: "parameterList",
         description: "型パラメーター",
         type: Type.List(typeType),
+      },
+    ]),
+  },
+  {
+    name: customTypeDefinitionName,
+    description: "カスタム型の定義",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "name",
+        description: "型の名前. [A-Z][a-zA-Z0-9]* の正規表現を満たせばOK",
+        type: Type.String,
+      },
+      {
+        name: "description",
+        description: "型の説明. DOCコメントそしてコードに出力される",
+        type: Type.String,
+      },
+      {
+        name: "typeParameterList",
+        description:
+          "型パラメーターは小文字で始めなければならない. Elmでの出力と外部の型を隠さないようにするため",
+        type: Type.List(Type.String),
+      },
+      {
+        name: "body",
+        description: "型の定義の本体",
+        type: customTypeDefinitionBodyType,
       },
     ]),
   },

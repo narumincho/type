@@ -167,13 +167,26 @@ export const Type: {
   Parameter: (string_: string): Type => ({ _: "Parameter", string_: string_ }),
 };
 
+/**
+ * カスタム型の定義
+ */
 export type CustomTypeDefinition = {
-  name: string;
-  /** 型パラメーターは小文字で始めなければならない. Elmでの出力と外部の型を隠さないようにするため
+  /**
+   * 型の名前. [A-Z][a-zA-Z0-9]* の正規表現を満たせばOK
    */
-  typeParameterList: ReadonlyArray<string>;
-  description: string;
-  body: CustomTypeDefinitionBody;
+  readonly name: string;
+  /**
+   * 型の説明. DOCコメントそしてコードに出力される
+   */
+  readonly description: string;
+  /**
+   * 型パラメーターは小文字で始めなければならない. Elmでの出力と外部の型を隠さないようにするため
+   */
+  readonly typeParameterList: ReadonlyArray<string>;
+  /**
+   * 型の定義の本体
+   */
+  readonly body: CustomTypeDefinitionBody;
 };
 
 /**
