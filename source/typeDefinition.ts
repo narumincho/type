@@ -1,8 +1,8 @@
 import { data as ts, identifer } from "js-ts-code-generator";
-import * as type from "../type";
-import { Type, Maybe, CustomTypeDefinitionBody } from "../type";
+import * as type from "./type";
+import { Type, Maybe, CustomTypeDefinitionBody } from "./type";
 import * as util from "./util";
-import * as c from "../case";
+import * as c from "./case";
 
 export const generateTypeDefinition = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>,

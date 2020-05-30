@@ -1,5 +1,5 @@
-import * as typeDefinition from "./typeScript/typeDefinition";
-import * as tag from "./typeScript/tag";
+import * as typeDefinition from "./typeDefinition";
+import * as tag from "./tag";
 import * as type from "./type";
 import { data } from "js-ts-code-generator";
 import * as c from "./case";

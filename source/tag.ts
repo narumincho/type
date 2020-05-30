@@ -1,7 +1,7 @@
 import { data as ts, identifer } from "js-ts-code-generator";
-import * as type from "../type";
+import * as type from "./type";
 import * as util from "./util";
-import * as c from "../case";
+import * as c from "./case";
 import * as typeDef from "./typeDefinition";
 
 export const generate = (
