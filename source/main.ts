@@ -22,7 +22,7 @@ export const generateTypeScriptCode = (
         )
         .map(data.definitionTypeAlias),
       ...tag
-        .generate(customTypeList, idOrTokenTypeNameSet)
+        .generate(customTypeList, idOrTokenTypeNameSet, withKernel)
         .map(data.definitionVariable),
     ],
     statementList: [],

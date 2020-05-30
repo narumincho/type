@@ -195,18 +195,16 @@ const patternListToObjectType = (patternList: type.Pattern): ts.Type => {
   }
 };
 
-/** `@narumincho/type`の型`Codec<type_>` を表す */
-export const codecTypeImported = (type_: ts.Type): ts.Type =>
+/** `@narumincho/type`の型`Codec<type_>`か `Codec<type_>` を表す */
+export const codecType = (type_: ts.Type, withKernel: boolean): ts.Type =>
   ts.typeWithParameter(
-    ts.typeImported("@narumincho/type", identifer.fromString("Codec")),
+    withKernel
+      ? ts.typeScopeInFile(identifer.fromString("Codec"))
+      : ts.typeImported("@narumincho/type", identifer.fromString("Codec")),
     [type_]
   );
 
 const codecName = identifer.fromString("Codec");
-
-/** Codec<type_> の型を表す */
-export const codecType = (type_: ts.Type): ts.Type =>
-  ts.typeWithParameter(ts.typeScopeInFile(codecName), [type_]);
 
 const codecTypeDefinition = (): ts.TypeAlias => {
   const typeParameterIdentifer = identifer.fromString("T");
