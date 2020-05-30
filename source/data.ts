@@ -1,3 +1,5 @@
+import * as a from "util";
+
 /**
  * バイナリと相互変換するための関数
  */
@@ -188,7 +190,46 @@ export const Int32: {
 /**
  * 文字列. JavaScriptのstringで扱う
  */
-export const String: {} = {};
+export const String: {
+  /**
+   * stringをUTF-8のバイナリに変換する
+   */
+  readonly codec: Codec<string>;
+} = {
+  codec: {
+    encode: (text: string): ReadonlyArray<number> => {
+      const result: ReadonlyArray<number> = [
+        ...new (process === undefined || process.title === "browser"
+          ? TextEncoder
+          : a.TextEncoder)().encode(text),
+      ];
+      return Int32.codec.encode(result.length).concat(result);
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: string; readonly nextIndex: number } => {
+      const length: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      const nextIndex: number = length.nextIndex + length.result;
+      const textBinary: Uint8Array = binary.slice(length.nextIndex, nextIndex);
+      const isBrowser: boolean =
+        process === undefined || process.title === "browser";
+      if (isBrowser) {
+        return {
+          result: new TextDecoder().decode(textBinary),
+          nextIndex: nextIndex,
+        };
+      }
+      return {
+        result: new a.TextDecoder().decode(textBinary),
+        nextIndex: nextIndex,
+      };
+    },
+  },
+};
 
 /**
  * Bool. 真か偽. JavaScriptのbooleanで扱う

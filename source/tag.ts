@@ -5,6 +5,7 @@ import * as c from "./case";
 import * as typeDef from "./typeDefinition";
 import * as int32 from "./kernel/int32";
 import * as codec from "./kernel/codec";
+import * as kernelString from "./kernel/string";
 
 export const generate = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
@@ -19,7 +20,7 @@ export const generate = (
     ];
     return [
       int32.exprDefinition(),
-      string(),
+      kernelString.exprDefinition(),
       bool(),
       binary(),
       list(),
@@ -37,15 +38,6 @@ export const generate = (
       customTypeDefinitionToTagVariable(customTypeAndDefaultType, false)
     ),
   ];
-};
-
-const string = (): ts.Variable => {
-  return {
-    name: identifer.fromString("String"),
-    document: "文字列. JavaScriptのstringで扱う",
-    type_: ts.typeObject(new Map()),
-    expr: ts.objectLiteral([]),
-  };
 };
 
 const bool = (): ts.Variable => {

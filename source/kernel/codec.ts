@@ -142,3 +142,19 @@ export const returnStatement = (
       ts.memberKeyValue(util.nextIndexProperty, nextIndexExpr),
     ])
   );
+
+/**
+ * ```ts
+ * expr.result
+ * ```
+ */
+export const getResult = (resultAndNextIndexExpr: ts.Expr): ts.Expr =>
+  ts.get(resultAndNextIndexExpr, util.resultProperty);
+
+/**
+ * ```ts
+ * expr.nextIndex
+ * ```
+ */
+export const getNextIndex = (resultAndNextIndexExpr: ts.Expr): ts.Expr =>
+  ts.get(resultAndNextIndexExpr, util.nextIndexProperty);

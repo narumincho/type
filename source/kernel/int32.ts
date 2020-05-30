@@ -15,6 +15,16 @@ export const codec = (withKernel: boolean): ts.Expr =>
     util.codecPropertyName
   );
 
+export const encode = (withKernel: boolean, target: ts.Expr): ts.Expr =>
+  ts.call(ts.get(codec(withKernel), util.encodePropertyName), [target]);
+
+export const decode = (
+  withKernel: boolean,
+  index: ts.Expr,
+  binary: ts.Expr
+): ts.Expr =>
+  ts.call(ts.get(codec(withKernel), util.decodePropertyName), [index, binary]);
+
 export const exprDefinition = (): ts.Variable => ({
   name: name,
   document:
