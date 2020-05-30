@@ -64,3 +64,9 @@ export const typeToMemberOrParameterName = (
 };
 
 export const moduleName = "@narumincho/type";
+
+export const codecPropertyName = "codec";
+export const encodePropertyName = "encode";
+export const decodePropertyName = "decode";
+export const resultProperty = "result";
+export const nextIndexProperty = "nextIndex";

@@ -1,5 +1,4 @@
 import * as nType from "../source/main";
-import { type as data } from "../source/main";
 import { Type, Maybe, CustomTypeDefinitionBody } from "../source/type";
 import * as jsTsCodeGenerator from "js-ts-code-generator";
 import { promises as fileSystem } from "fs";

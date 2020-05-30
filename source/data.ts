@@ -138,7 +138,52 @@ export type Pattern = {
 /**
  * -2 147 483 648 ～ 2 147 483 647. 32bit 符号付き整数. JavaScriptのnumberで扱う
  */
-export const Int32: {} = {};
+export const Int32: {
+  /**
+   * numberの32bit符号あり整数をSigned Leb128のバイナリに変換する
+   */
+  readonly codec: Codec<number>;
+} = {
+  codec: {
+    encode: (value: number): ReadonlyArray<number> => {
+      value |= 0;
+      const result: Array<number> = [];
+      while (true) {
+        const byte: number = value & 127;
+        value >>= 7;
+        if (
+          (value === 0 && (byte & 64) === 0) ||
+          (value === -1 && (byte & 64) !== 0)
+        ) {
+          result.push(byte);
+          return result;
+        }
+        result.push(byte | 128);
+      }
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: number; readonly nextIndex: number } => {
+      let result: number = 0;
+      let offset: number = 0;
+      while (true) {
+        const byte: number = binary[index + offset];
+        result |= (byte & 127) << (offset * 7);
+        offset += 1;
+        if ((128 & byte) === 0) {
+          if (offset * 7 < 32 && (byte & 64) !== 0) {
+            return {
+              result: result | (~0 << (offset * 7)),
+              nextIndex: index + offset,
+            };
+          }
+          return { result: result, nextIndex: index + offset };
+        }
+      }
+    },
+  },
+};
 
 /**
  * 文字列. JavaScriptのstringで扱う

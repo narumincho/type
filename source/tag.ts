@@ -3,6 +3,7 @@ import * as type from "./type";
 import * as util from "./util";
 import * as c from "./case";
 import * as typeDef from "./typeDefinition";
+import * as kernel from "./kernel";
 
 export const generate = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
@@ -16,7 +17,7 @@ export const generate = (
       ...customTypeList,
     ];
     return [
-      int32(),
+      kernel.int32ExprDefinition(),
       string(),
       bool(),
       binary(),
@@ -35,16 +36,6 @@ export const generate = (
       customTypeDefinitionToTagVariable(customTypeAndDefaultType, false)
     ),
   ];
-};
-
-const int32 = (): ts.Variable => {
-  return {
-    name: identifer.fromString("Int32"),
-    document:
-      "-2 147 483 648 ～ 2 147 483 647. 32bit 符号付き整数. JavaScriptのnumberで扱う",
-    type_: ts.typeObject(new Map()),
-    expr: ts.objectLiteral([]),
-  };
 };
 
 const string = (): ts.Variable => {
@@ -140,9 +131,9 @@ const customTypeDefinitionToType = (
       return ts.typeObject(
         new Map([
           [
-            codecPropertyName,
+            util.codecPropertyName,
             {
-              type_: codecType(customType, withKernel),
+              type_: customTypeToCodecType(customType, withKernel),
               document: "",
             },
           ],
@@ -168,8 +159,11 @@ const customTypeDefinitionToType = (
             )
             .concat([
               [
-                codecPropertyName,
-                { type_: codecType(customType, withKernel), document: "" },
+                util.codecPropertyName,
+                {
+                  type_: customTypeToCodecType(customType, withKernel),
+                  document: "",
+                },
               ] as const,
             ])
         )
@@ -295,45 +289,26 @@ const tagNameAndParameterToTagExpr = (
   }
 };
 
-const codecType = (
-  customType: type.CustomTypeDefinition,
+/** カスタム型の式のcodecプロパティの型 */
+const customTypeToCodecType = (
+  customTypeDefinition: type.CustomTypeDefinition,
   withKernel: boolean
-): ts.Type => {
-  return customType.typeParameterList.length === 0
-    ? typeDef.codecType(
-        ts.typeScopeInFile(identifer.fromString(customType.name)),
-        withKernel
-      )
-    : ts.typeFunction(
-        customType.typeParameterList.map(identifer.fromString),
-        customType.typeParameterList.map((typeParameter) =>
-          typeDef.codecType(
-            ts.typeScopeInFile(identifer.fromString(typeParameter)),
-            withKernel
-          )
-        ),
-        typeDef.codecType(
-          ts.typeWithParameter(
-            ts.typeScopeInFile(identifer.fromString(customType.name)),
-            customType.typeParameterList.map((typeParameter) =>
-              ts.typeScopeInFile(identifer.fromString(typeParameter))
-            )
-          ),
-          withKernel
-        )
-      );
-};
-
-const codecPropertyName = "codec";
-const encodePropertyName = "encode";
-const decodePropertyName = "decode";
+): ts.Type =>
+  kernel.codecTypeWithTypeParameter(
+    ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
+    customTypeDefinition.typeParameterList,
+    withKernel
+  );
 
 const customTypeToCodecExpr = (
   customType: type.CustomTypeDefinition,
   withKernel: boolean
 ): ReadonlyArray<ts.Member> => {
   return [
-    ts.memberKeyValue(codecPropertyName, codecExpr(customType, withKernel)),
+    ts.memberKeyValue(
+      util.codecPropertyName,
+      codecExpr(customType, withKernel)
+    ),
   ];
 };
 
@@ -349,11 +324,11 @@ const codecExpr = (
       if (customTypeDefinition.typeParameterList.length === 0) {
         return ts.objectLiteral([
           ts.memberKeyValue(
-            encodePropertyName,
+            util.encodePropertyName,
             encodeExpr(customTypeDefinition, withKernel)
           ),
           ts.memberKeyValue(
-            decodePropertyName,
+            util.decodePropertyName,
             decodeExpr(customTypeDefinition, withKernel)
           ),
         ]);
@@ -361,30 +336,19 @@ const codecExpr = (
       return ts.lambda(
         customTypeDefinition.typeParameterList.map((typeParameter) => ({
           name: codecParameterName(typeParameter),
-          type_: typeDef.codecType(
-            ts.typeScopeInFile(identifer.fromString(typeParameter)),
-            withKernel
-          ),
+          type_: customTypeToCodecType(customTypeDefinition, withKernel),
         })),
         customTypeDefinition.typeParameterList.map(identifer.fromString),
-        typeDef.codecType(
-          ts.typeWithParameter(
-            ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
-            customTypeDefinition.typeParameterList.map((typeParameter) =>
-              ts.typeScopeInFile(identifer.fromString(typeParameter))
-            )
-          ),
-          withKernel
-        ),
+        customTypeToCodecType(customTypeDefinition, withKernel),
         [
           ts.statementReturn(
             ts.objectLiteral([
               ts.memberKeyValue(
-                encodePropertyName,
+                util.encodePropertyName,
                 encodeExpr(customTypeDefinition, withKernel)
               ),
               ts.memberKeyValue(
-                decodePropertyName,
+                util.decodePropertyName,
                 decodeExpr(customTypeDefinition, withKernel)
               ),
             ])
@@ -481,13 +445,16 @@ const productEncodeExpr = (
     return [ts.statementReturn(ts.arrayLiteral([]))];
   }
   let e = ts.call(
-    ts.get(codecExprUse(memberList[0].type, withKernel), encodePropertyName),
+    ts.get(
+      codecExprUse(memberList[0].type, withKernel),
+      util.encodePropertyName
+    ),
     [ts.get(parameter, memberList[0].name)]
   );
   for (const member of memberList.slice(1)) {
     e = ts.callMethod(e, "concat", [
       ts.call(
-        ts.get(codecExprUse(member.type, withKernel), encodePropertyName),
+        ts.get(codecExprUse(member.type, withKernel), util.encodePropertyName),
         [ts.get(parameter, member.name)]
       ),
     ]);
@@ -498,12 +465,7 @@ const productEncodeExpr = (
 const codecExprUse = (type_: type.Type, withKernel: boolean): ts.Expr => {
   switch (type_._) {
     case "Int32":
-      return ts.get(
-        withKernel
-          ? ts.variable(identifer.fromString("Int32"))
-          : ts.importedVariable(util.moduleName, identifer.fromString("Int32")),
-        codecPropertyName
-      );
+      return kernel.int32Codec(withKernel);
     case "String":
       return ts.get(
         withKernel
@@ -512,14 +474,14 @@ const codecExprUse = (type_: type.Type, withKernel: boolean): ts.Expr => {
               util.moduleName,
               identifer.fromString("String")
             ),
-        codecPropertyName
+        util.codecPropertyName
       );
     case "Bool":
       return ts.get(
         withKernel
           ? ts.variable(identifer.fromString("Bool"))
           : ts.importedVariable(util.moduleName, identifer.fromString("Bool")),
-        codecPropertyName
+        util.codecPropertyName
       );
     case "Binary":
       return ts.get(
@@ -529,7 +491,7 @@ const codecExprUse = (type_: type.Type, withKernel: boolean): ts.Expr => {
               util.moduleName,
               identifer.fromString("Binary")
             ),
-        codecPropertyName
+        util.codecPropertyName
       );
     case "List":
       return ts.call(
@@ -540,7 +502,7 @@ const codecExprUse = (type_: type.Type, withKernel: boolean): ts.Expr => {
                 util.moduleName,
                 identifer.fromString("List")
               ),
-          codecPropertyName
+          util.codecPropertyName
         ),
         [codecExprUse(type_.type_, withKernel)]
       );
@@ -553,7 +515,7 @@ const codecExprUse = (type_: type.Type, withKernel: boolean): ts.Expr => {
                 util.moduleName,
                 identifer.fromString("Maybe")
               ),
-          codecPropertyName
+          util.codecPropertyName
         ),
         [codecExprUse(type_.type_, withKernel)]
       );
@@ -566,7 +528,7 @@ const codecExprUse = (type_: type.Type, withKernel: boolean): ts.Expr => {
                 util.moduleName,
                 identifer.fromString("Result")
               ),
-          codecPropertyName
+          util.codecPropertyName
         ),
         [
           codecExprUse(type_.okAndErrorType.ok, withKernel),
@@ -576,17 +538,17 @@ const codecExprUse = (type_: type.Type, withKernel: boolean): ts.Expr => {
     case "Id":
       return ts.get(
         ts.variable(identifer.fromString(type_.string_)),
-        codecPropertyName
+        util.codecPropertyName
       );
     case "Token":
       return ts.get(
         ts.variable(identifer.fromString(type_.string_)),
-        codecPropertyName
+        util.codecPropertyName
       );
     case "Custom":
       return ts.get(
         ts.variable(identifer.fromString(type_.nameAndTypeParameterList.name)),
-        codecPropertyName
+        util.codecPropertyName
       );
     case "Parameter":
       return ts.variable(codecParameterName(type_.string_));

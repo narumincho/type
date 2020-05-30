@@ -3,6 +3,7 @@ import * as type from "./type";
 import { Type, Maybe, CustomTypeDefinitionBody } from "./type";
 import * as util from "./util";
 import * as c from "./case";
+import * as kernel from "./kernel";
 
 export const generateTypeDefinition = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
@@ -11,7 +12,7 @@ export const generateTypeDefinition = (
 ): ReadonlyArray<ts.TypeAlias> => {
   if (widthKernel) {
     return [
-      codecTypeDefinition(),
+      kernel.codecTypeDefinition(),
       customTypeToDefinition(maybeCustomTypeDefinition),
       customTypeToDefinition(resultCustomTypeDefinition),
       ...customTypeList.map(customTypeToDefinition),
@@ -194,76 +195,3 @@ const patternListToObjectType = (patternList: type.Pattern): ts.Type => {
       return ts.typeObject(new Map([tagField]));
   }
 };
-
-/** `@narumincho/type`の型`Codec<type_>`か `Codec<type_>` を表す */
-export const codecType = (type_: ts.Type, withKernel: boolean): ts.Type =>
-  ts.typeWithParameter(
-    withKernel
-      ? ts.typeScopeInFile(identifer.fromString("Codec"))
-      : ts.typeImported("@narumincho/type", identifer.fromString("Codec")),
-    [type_]
-  );
-
-const codecName = identifer.fromString("Codec");
-
-const codecTypeDefinition = (): ts.TypeAlias => {
-  const typeParameterIdentifer = identifer.fromString("T");
-  return {
-    name: codecName,
-    document: "バイナリと相互変換するための関数",
-    parameterList: [typeParameterIdentifer],
-    type_: ts.typeObject(
-      new Map([
-        [
-          "encode",
-          {
-            type_: encodeFunctionType(
-              ts.typeScopeInFile(typeParameterIdentifer)
-            ),
-            document: "",
-          },
-        ],
-        [
-          "decode",
-          {
-            type_: decodeFunctionType(
-              ts.typeScopeInFile(typeParameterIdentifer)
-            ),
-            document: "",
-          },
-        ],
-      ])
-    ),
-  };
-};
-
-/**
- * ```ts
- * (a: type_) => Readonly<number>
- * ```
- */
-export const encodeFunctionType = (type_: ts.Type): ts.Type =>
-  ts.typeFunction([], [type_], ts.readonlyArrayType(ts.typeNumber));
-
-/**
- * ```ts
- * (a: number, b: Uint8Array) => { readonly result: type_, readonly nextIndex: number }
- * ```
- */
-export const decodeFunctionType = (type_: ts.Type): ts.Type =>
-  ts.typeFunction(
-    [],
-    [ts.typeNumber, ts.uint8ArrayType],
-    ts.typeObject(
-      new Map([
-        [
-          "result",
-          {
-            type_: type_,
-            document: "",
-          },
-        ],
-        ["nextIndex", { type_: ts.typeNumber, document: "" }],
-      ])
-    )
-  );
