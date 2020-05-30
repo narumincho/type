@@ -3,7 +3,7 @@ import * as type from "./type";
 import { Type, Maybe, CustomTypeDefinitionBody } from "./type";
 import * as util from "./util";
 import * as c from "./case";
-import * as kernel from "./kernel";
+import * as codec from "./kernel/codec";
 
 export const generateTypeDefinition = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
@@ -12,7 +12,7 @@ export const generateTypeDefinition = (
 ): ReadonlyArray<ts.TypeAlias> => {
   if (widthKernel) {
     return [
-      kernel.codecTypeDefinition(),
+      codec.codecTypeDefinition(),
       customTypeToDefinition(maybeCustomTypeDefinition),
       customTypeToDefinition(resultCustomTypeDefinition),
       ...customTypeList.map(customTypeToDefinition),

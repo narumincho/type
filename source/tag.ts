@@ -3,7 +3,8 @@ import * as type from "./type";
 import * as util from "./util";
 import * as c from "./case";
 import * as typeDef from "./typeDefinition";
-import * as kernel from "./kernel";
+import * as int32 from "./kernel/int32";
+import * as codec from "./kernel/codec";
 
 export const generate = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
@@ -17,7 +18,7 @@ export const generate = (
       ...customTypeList,
     ];
     return [
-      kernel.int32ExprDefinition(),
+      int32.exprDefinition(),
       string(),
       bool(),
       binary(),
@@ -294,7 +295,7 @@ const customTypeToCodecType = (
   customTypeDefinition: type.CustomTypeDefinition,
   withKernel: boolean
 ): ts.Type =>
-  kernel.codecTypeWithTypeParameter(
+  codec.codecTypeWithTypeParameter(
     ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
     customTypeDefinition.typeParameterList,
     withKernel
@@ -465,7 +466,7 @@ const productEncodeExpr = (
 const codecExprUse = (type_: type.Type, withKernel: boolean): ts.Expr => {
   switch (type_._) {
     case "Int32":
-      return kernel.int32Codec(withKernel);
+      return int32.codec(withKernel);
     case "String":
       return ts.get(
         withKernel
