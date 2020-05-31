@@ -4,11 +4,6 @@ import * as c from "./codec";
 
 const name = identifer.fromString("Int32");
 
-export const type = (withKernel: boolean): ts.Type =>
-  withKernel
-    ? ts.typeScopeInFile(name)
-    : ts.typeImported(util.moduleName, name);
-
 export const codec = (withKernel: boolean): ts.Expr =>
   ts.get(
     withKernel ? ts.variable(name) : ts.importedVariable(util.moduleName, name),

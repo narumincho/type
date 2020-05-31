@@ -4,10 +4,7 @@ import * as c from "./codec";
 
 const name = identifer.fromString("Bool");
 
-export const type = (withKernel: boolean): ts.Type =>
-  withKernel
-    ? ts.typeScopeInFile(name)
-    : ts.typeImported(util.moduleName, name);
+export const type: ts.Type = ts.typeBoolean;
 
 export const codec = (withKernel: boolean): ts.Expr =>
   ts.get(
@@ -23,8 +20,8 @@ export const exprDefinition = (): ts.Variable => ({
       [
         util.codecPropertyName,
         {
-          type_: c.codecType(ts.typeBoolean, true),
-          document: "true: 1, false: 0. (1byte)としてバイナリ保存する",
+          type_: c.codecType(type, true),
+          document: "true: 1, false: 0. (1byte)としてバイナリに変換する",
         },
       ],
     ])
@@ -68,18 +65,13 @@ const encodeDefinition = (): ts.Expr => {
 };
 
 const decodeDefinition = (): ts.Expr => {
-  return ts.lambda(
-    c.decodeParameterList,
-    [],
-    c.decodeReturnType(ts.typeBoolean),
-    [
-      c.returnStatement(
-        ts.notEqual(
-          ts.getByExpr(c.parameterBinary, c.parameterIndex),
-          ts.numberLiteral(0)
-        ),
-        ts.addition(c.parameterIndex, ts.numberLiteral(1))
+  return ts.lambda(c.decodeParameterList, [], c.decodeReturnType(type), [
+    c.returnStatement(
+      ts.notEqual(
+        ts.getByExpr(c.parameterBinary, c.parameterIndex),
+        ts.numberLiteral(0)
       ),
-    ]
-  );
+      ts.addition(c.parameterIndex, ts.numberLiteral(1))
+    ),
+  ]);
 };

@@ -2,12 +2,14 @@ import { data as ts, identifer } from "js-ts-code-generator";
 import * as type from "./type";
 import * as util from "./util";
 import * as c from "./case";
-import * as int32 from "./kernel/int32";
 import * as codec from "./kernel/codec";
+import * as int32 from "./kernel/int32";
 import * as kernelString from "./kernel/string";
 import * as bool from "./kernel/bool";
 import * as maybe from "./kernel/maybe";
 import * as result from "./kernel/result";
+import * as binary from "./kernel/binary";
+import * as list from "./kernel/list";
 
 export const generate = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
@@ -24,8 +26,8 @@ export const generate = (
       int32.exprDefinition(),
       kernelString.exprDefinition(),
       bool.exprDefinition(),
-      binary(),
-      list(),
+      binary.exprDefinition(),
+      list.exprDefinition(),
       ...[...idAndTokenNameSet.id].map(idVariable),
       ...[...idAndTokenNameSet.token].map(tokenVariable),
       ...customTypeAndDefaultTypeList.map((customTypeAndDefaultType) =>
@@ -40,24 +42,6 @@ export const generate = (
       customTypeDefinitionToTagVariable(customTypeAndDefaultType, false)
     ),
   ];
-};
-
-const binary = (): ts.Variable => {
-  return {
-    name: identifer.fromString("Binary"),
-    document: "バイナリ. JavaScriptのUint8Arrayで扱う",
-    type_: ts.typeObject(new Map()),
-    expr: ts.objectLiteral([]),
-  };
-};
-
-const list = (): ts.Variable => {
-  return {
-    name: identifer.fromString("List"),
-    document: "リスト. JavaScriptのArrayで扱う",
-    type_: ts.typeObject(new Map()),
-    expr: ts.objectLiteral([]),
-  };
 };
 
 const idVariable = (name: string): ts.Variable => {
@@ -457,15 +441,7 @@ const codecExprUse = (type_: type.Type, withKernel: boolean): ts.Expr => {
     case "Bool":
       return bool.codec(withKernel);
     case "Binary":
-      return ts.get(
-        withKernel
-          ? ts.variable(identifer.fromString("Binary"))
-          : ts.importedVariable(
-              util.moduleName,
-              identifer.fromString("Binary")
-            ),
-        util.codecPropertyName
-      );
+      return binary.codec(withKernel);
     case "List":
       return ts.call(
         ts.get(

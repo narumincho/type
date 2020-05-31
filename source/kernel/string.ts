@@ -3,12 +3,9 @@ import * as util from "../util";
 import * as c from "./codec";
 import * as int32 from "./int32";
 
-const name = identifer.fromString("String");
+export const name = identifer.fromString("String");
 
-export const type = (withKernel: boolean): ts.Type =>
-  withKernel
-    ? ts.typeScopeInFile(name)
-    : ts.typeImported(util.moduleName, name);
+export const type = ts.typeString;
 
 export const codec = (withKernel: boolean): ts.Expr =>
   ts.get(
@@ -24,7 +21,7 @@ export const exprDefinition = (): ts.Variable => ({
       [
         util.codecPropertyName,
         {
-          type_: c.codecType(ts.typeString, true),
+          type_: c.codecType(type, true),
           document: "stringをUTF-8のバイナリに変換する",
         },
       ],
@@ -110,67 +107,59 @@ const decodeDefinition = (): ts.Expr => {
   const textBinaryVar = ts.variable(textBinaryName);
   const isBrowserName = identifer.fromString("isBrowser");
 
-  return ts.lambda(
-    c.decodeParameterList,
-    [],
-    c.decodeReturnType(ts.typeString),
-    [
-      ts.statementVariableDefinition(
-        lengthName,
-        c.decodeReturnType(ts.typeNumber),
-        int32.decode(true, c.parameterIndex, c.parameterBinary)
-      ),
-      ts.statementVariableDefinition(
-        nextIndexName,
-        ts.typeNumber,
-        ts.addition(c.getNextIndex(lengthVar), c.getResult(lengthVar))
-      ),
-      ts.statementVariableDefinition(
-        textBinaryName,
-        ts.uint8ArrayType,
-        ts.callMethod(c.parameterBinary, "slice", [
-          c.getNextIndex(lengthVar),
-          nextIndexVar,
-        ])
-      ),
-      ts.statementVariableDefinition(
-        isBrowserName,
-        ts.typeBoolean,
-        ts.logicalOr(
-          ts.equal(
-            ts.globalObjects(identifer.fromString("process")),
-            ts.undefinedLiteral
-          ),
-          ts.equal(
-            ts.get(ts.globalObjects(identifer.fromString("process")), "title"),
-            ts.stringLiteral("browser")
-          )
-        )
-      ),
-      ts.statementIf(ts.variable(isBrowserName), [
-        c.returnStatement(
-          ts.callMethod(
-            ts.newExpr(
-              ts.globalObjects(identifer.fromString("TextDecoder")),
-              []
-            ),
-            "decode",
-            [textBinaryVar]
-          ),
-          nextIndexVar
+  return ts.lambda(c.decodeParameterList, [], c.decodeReturnType(type), [
+    ts.statementVariableDefinition(
+      lengthName,
+      c.decodeReturnType(ts.typeNumber),
+      int32.decode(true, c.parameterIndex, c.parameterBinary)
+    ),
+    ts.statementVariableDefinition(
+      nextIndexName,
+      ts.typeNumber,
+      ts.addition(c.getNextIndex(lengthVar), c.getResult(lengthVar))
+    ),
+    ts.statementVariableDefinition(
+      textBinaryName,
+      ts.uint8ArrayType,
+      ts.callMethod(c.parameterBinary, "slice", [
+        c.getNextIndex(lengthVar),
+        nextIndexVar,
+      ])
+    ),
+    ts.statementVariableDefinition(
+      isBrowserName,
+      ts.typeBoolean,
+      ts.logicalOr(
+        ts.equal(
+          ts.globalObjects(identifer.fromString("process")),
+          ts.undefinedLiteral
         ),
-      ]),
+        ts.equal(
+          ts.get(ts.globalObjects(identifer.fromString("process")), "title"),
+          ts.stringLiteral("browser")
+        )
+      )
+    ),
+    ts.statementIf(ts.variable(isBrowserName), [
       c.returnStatement(
         ts.callMethod(
-          ts.newExpr(
-            ts.importedVariable("util", identifer.fromString("TextDecoder")),
-            []
-          ),
+          ts.newExpr(ts.globalObjects(identifer.fromString("TextDecoder")), []),
           "decode",
           [textBinaryVar]
         ),
         nextIndexVar
       ),
-    ]
-  );
+    ]),
+    c.returnStatement(
+      ts.callMethod(
+        ts.newExpr(
+          ts.importedVariable("util", identifer.fromString("TextDecoder")),
+          []
+        ),
+        "decode",
+        [textBinaryVar]
+      ),
+      nextIndexVar
+    ),
+  ]);
 };

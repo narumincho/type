@@ -167,8 +167,8 @@ export const Int32: {
       index: number,
       binary: Uint8Array
     ): { readonly result: number; readonly nextIndex: number } => {
-      let result = 0;
-      let offset = 0;
+      let result: number = 0;
+      let offset: number = 0;
       while (true) {
         const byte: number = binary[index + offset];
         result |= (byte & 127) << (offset * 7);
@@ -236,7 +236,7 @@ export const String: {
  */
 export const Bool: {
   /**
-   * true: 1, false: 0. (1byte)としてバイナリ保存する
+   * true: 1, false: 0. (1byte)としてバイナリに変換する
    */
   readonly codec: Codec<boolean>;
 } = {
@@ -255,12 +255,40 @@ export const Bool: {
 /**
  * バイナリ. JavaScriptのUint8Arrayで扱う
  */
-export const Binary: {} = {};
+export const Binary: {
+  /**
+   * 最初にバイト数, その次にバイナリそのまま
+   */
+  readonly codec: Codec<Uint8Array>;
+} = {
+  codec: {
+    encode: (value: Uint8Array): ReadonlyArray<number> =>
+      Int32.codec.encode(value.length).concat([...value]),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Uint8Array; readonly nextIndex: number } => {
+      const length: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      const nextIndex: number = length.nextIndex + length.result;
+      return {
+        result: binary.slice(length.nextIndex, nextIndex),
+        nextIndex: nextIndex,
+      };
+    },
+  },
+};
 
 /**
  * リスト. JavaScriptのArrayで扱う
  */
-export const List: {} = {};
+export const List: {
+  readonly codec: <element>(a: Codec<element>) => Codec<ReadonlyArray<element>>;
+} = <element>(elementCodec: Codec<element>): Codec<ReadonlyArray<element>> => ({
+  codec: { encode: "listのencodeのコード", decode: "listのdecodeのコード" },
+});
 
 /**
  * Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
