@@ -197,7 +197,7 @@ export const String: {
   readonly codec: Codec<string>;
 } = {
   codec: {
-    encode: (value: number): ReadonlyArray<number> => {
+    encode: (value: string): ReadonlyArray<number> => {
       const result: ReadonlyArray<number> = [
         ...new (process === undefined || process.title === "browser"
           ? TextEncoder
@@ -241,7 +241,7 @@ export const Bool: {
   readonly codec: Codec<boolean>;
 } = {
   codec: {
-    encode: (value: number): ReadonlyArray<number> => [value ? 1 : 0],
+    encode: (value: boolean): ReadonlyArray<number> => [value ? 1 : 0],
     decode: (
       index: number,
       binary: Uint8Array
@@ -262,7 +262,7 @@ export const Binary: {
   readonly codec: Codec<Uint8Array>;
 } = {
   codec: {
-    encode: (value: number): ReadonlyArray<number> =>
+    encode: (value: Uint8Array): ReadonlyArray<number> =>
       Int32.codec.encode(value.length).concat([...value]),
     decode: (
       index: number,
@@ -290,7 +290,7 @@ export const List: {
   codec: <element>(
     elementCodec: Codec<element>
   ): Codec<ReadonlyArray<element>> => ({
-    encode: (value: number): ReadonlyArray<number> => {
+    encode: (value: ReadonlyArray<element>): ReadonlyArray<number> => {
       let result: Array<number> = Int32.codec.encode(value.length) as Array<
         number
       >;
@@ -341,10 +341,8 @@ export const Maybe: {
 } = {
   Just: <value>(value: value): Maybe<value> => ({ _: "Just", value: value }),
   Nothing: <value>(): Maybe<value> => ({ _: "Nothing" }),
-  codec: <value>(
-    valueCodec: <value>(a: Codec<value>) => Codec<Maybe<value>>
-  ): (<value>(a: Codec<value>) => Codec<Maybe<value>>) => ({
-    encode: (value: number): ReadonlyArray<number> => {
+  codec: <value>(valueCodec: Codec<value>): Codec<Maybe<value>> => ({
+    encode: (value: Maybe): ReadonlyArray<number> => {
       switch (Maybe._) {
         case "Just": {
           return [0].concat(valueCodec.encode(Maybe.value));
@@ -403,19 +401,10 @@ export const Result: {
     error: error,
   }),
   codec: <ok, error>(
-    okCodec: <ok, error>(
-      a: Codec<ok>,
-      b: Codec<error>
-    ) => Codec<Result<ok, error>>,
-    errorCodec: <ok, error>(
-      a: Codec<ok>,
-      b: Codec<error>
-    ) => Codec<Result<ok, error>>
-  ): (<ok, error>(
-    a: Codec<ok>,
-    b: Codec<error>
-  ) => Codec<Result<ok, error>>) => ({
-    encode: (value: number): ReadonlyArray<number> => {
+    okCodec: Codec<ok>,
+    errorCodec: Codec<error>
+  ): Codec<Result<ok, error>> => ({
+    encode: (value: Result): ReadonlyArray<number> => {
       switch (Result._) {
         case "Ok": {
           return [0].concat(okCodec.encode(Result.ok));
@@ -526,7 +515,7 @@ export const Type: {
   }),
   Parameter: (string_: string): Type => ({ _: "Parameter", string_: string_ }),
   codec: {
-    encode: (value: number): ReadonlyArray<number> => {
+    encode: (value: Type): ReadonlyArray<number> => {
       switch (Type._) {
         case "Int32": {
           return [0];
@@ -665,7 +654,7 @@ export const Type: {
  */
 export const OkAndErrorType: { readonly codec: Codec<OkAndErrorType> } = {
   codec: {
-    encode: (value: number): ReadonlyArray<number> =>
+    encode: (value: OkAndErrorType): ReadonlyArray<number> =>
       Type.codec.encode(value.ok).concat(Type.codec.encode(value.error)),
     decode: (
       index: number,
@@ -694,7 +683,7 @@ export const NameAndTypeParameterList: {
   readonly codec: Codec<NameAndTypeParameterList>;
 } = {
   codec: {
-    encode: (value: number): ReadonlyArray<number> =>
+    encode: (value: NameAndTypeParameterList): ReadonlyArray<number> =>
       String.codec
         .encode(value.name)
         .concat(List.codec(Type.codec).encode(value.parameterList)),
@@ -731,7 +720,7 @@ export const CustomTypeDefinition: {
   readonly codec: Codec<CustomTypeDefinition>;
 } = {
   codec: {
-    encode: (value: number): ReadonlyArray<number> =>
+    encode: (value: CustomTypeDefinition): ReadonlyArray<number> =>
       String.codec
         .encode(value.name)
         .concat(String.codec.encode(value.description))
@@ -802,7 +791,7 @@ export const CustomTypeDefinitionBody: {
     patternList: patternList,
   }),
   codec: {
-    encode: (value: number): ReadonlyArray<number> => {
+    encode: (value: CustomTypeDefinitionBody): ReadonlyArray<number> => {
       switch (CustomTypeDefinitionBody._) {
         case "Product": {
           return [0].concat(
@@ -859,7 +848,7 @@ export const CustomTypeDefinitionBody: {
  */
 export const Member: { readonly codec: Codec<Member> } = {
   codec: {
-    encode: (value: number): ReadonlyArray<number> =>
+    encode: (value: Member): ReadonlyArray<number> =>
       String.codec
         .encode(value.name)
         .concat(String.codec.encode(value.description))
@@ -897,7 +886,7 @@ export const Member: { readonly codec: Codec<Member> } = {
  */
 export const Pattern: { readonly codec: Codec<Pattern> } = {
   codec: {
-    encode: (value: number): ReadonlyArray<number> =>
+    encode: (value: Pattern): ReadonlyArray<number> =>
       String.codec
         .encode(value.name)
         .concat(String.codec.encode(value.description))

@@ -87,7 +87,7 @@ export const encodeLambda = (
     [
       {
         name: valueName,
-        type_: ts.typeNumber,
+        type_: type_,
       },
     ],
     [],

@@ -297,10 +297,21 @@ const codecExprDefinition = (
   return ts.lambda(
     customTypeDefinition.typeParameterList.map((typeParameter) => ({
       name: codecParameterName(typeParameter),
-      type_: customTypeToCodecType(customTypeDefinition, withKernel),
+      type_: codec.codecType(
+        ts.typeScopeInFile(identifer.fromString(typeParameter)),
+        withKernel
+      ),
     })),
     customTypeDefinition.typeParameterList.map(identifer.fromString),
-    customTypeToCodecType(customTypeDefinition, withKernel),
+    codec.codecType(
+      ts.typeWithParameter(
+        ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
+        customTypeDefinition.typeParameterList.map((typeParameter) =>
+          ts.typeScopeInFile(identifer.fromString(typeParameter))
+        )
+      ),
+      withKernel
+    ),
     [
       ts.statementReturn(
         codecDefinitionBodyExpr(customTypeDefinition, withKernel)
@@ -387,13 +398,8 @@ const sumEncodeDefinitionStatementList = (
     return [
       ts.statementSwitch({
         expr: parameter,
-        patternList: patternList.map((tagNameAndParameter, index) =>
-          patternToSwitchPattern(
-            tagNameAndParameter,
-            index,
-            parameter,
-            withKernel
-          )
+        patternList: patternList.map((pattern, index) =>
+          patternToSwitchPattern(pattern, index, parameter, withKernel)
         ),
       }),
     ];
@@ -554,11 +560,11 @@ const sumDecodeDefinitionStatementList = (
       codec.decodeReturnType(ts.typeNumber),
       int32.decode(withKernel, parameterIndex, parameterBinary)
     ),
-    ...patternList.map((tagNameAndParameter, index) =>
+    ...patternList.map((pattern, index) =>
       tagNameAndParameterCode(
         withKernel,
         customTypeName,
-        tagNameAndParameter,
+        pattern,
         index,
         patternIndexAndNextIndexVar,
         parameterBinary
