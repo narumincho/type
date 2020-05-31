@@ -38,40 +38,26 @@ export const exprDefinition = (): ts.Variable => ({
   ]),
 });
 
-const encodeDefinition = (): ts.Expr => {
-  const valueName = identifer.fromString("value");
-  const valueVar = ts.variable(valueName);
-  return ts.lambda(
-    [
-      {
-        name: valueName,
-        type_: type,
-      },
-    ],
-    [],
-    c.encodeReturnType,
-    [
-      ts.statementReturn(
-        ts.callMethod(
-          int32.encode(true, ts.get(valueVar, "length")),
-          "concat",
-          [ts.arrayLiteral([{ expr: valueVar, spread: true }])]
-        )
-      ),
-    ]
-  );
-};
+const encodeDefinition = (): ts.Expr =>
+  c.encodeLambda(type, (valueVar) => [
+    ts.statementReturn(
+      ts.callMethod(int32.encode(true, ts.get(valueVar, "length")), "concat", [
+        ts.arrayLiteral([{ expr: valueVar, spread: true }]),
+      ])
+    ),
+  ]);
+
 const decodeDefinition = (): ts.Expr => {
   const lengthName = identifer.fromString("length");
   const lengthVar = ts.variable(lengthName);
   const nextIndexName = identifer.fromString("nextIndex");
   const nextIndexVar = ts.variable(nextIndexName);
 
-  return ts.lambda(c.decodeParameterList, [], c.decodeReturnType(type), [
+  return c.decodeLambda(type, (parameterIndex, parameterBinary) => [
     ts.statementVariableDefinition(
       lengthName,
       c.decodeReturnType(ts.typeNumber),
-      int32.decode(true, c.parameterIndex, c.parameterBinary)
+      int32.decode(true, parameterIndex, parameterBinary)
     ),
     ts.statementVariableDefinition(
       nextIndexName,
@@ -79,7 +65,7 @@ const decodeDefinition = (): ts.Expr => {
       ts.addition(c.getNextIndex(lengthVar), c.getResult(lengthVar))
     ),
     c.returnStatement(
-      ts.callMethod(c.parameterBinary, "slice", [
+      ts.callMethod(parameterBinary, "slice", [
         c.getNextIndex(lengthVar),
         nextIndexVar,
       ]),

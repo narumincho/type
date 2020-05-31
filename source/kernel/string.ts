@@ -42,60 +42,46 @@ const encodeDefinition = (): ts.Expr => {
   const resultName = identifer.fromString("result");
   const resultVar = ts.variable(resultName);
 
-  const resultExpr: ts.Expr = ts.arrayLiteral([
-    {
-      expr: ts.callMethod(
-        ts.newExpr(
-          ts.conditionalOperator(
-            ts.logicalOr(
-              ts.equal(
-                ts.globalObjects(identifer.fromString("process")),
-                ts.undefinedLiteral
-              ),
-              ts.equal(
-                ts.get(
-                  ts.globalObjects(identifer.fromString("process")),
-                  "title"
+  return c.encodeLambda(type, (valueVar) => [
+    ts.statementVariableDefinition(
+      resultName,
+      ts.readonlyArrayType(ts.typeNumber),
+      ts.arrayLiteral([
+        {
+          expr: ts.callMethod(
+            ts.newExpr(
+              ts.conditionalOperator(
+                ts.logicalOr(
+                  ts.equal(
+                    ts.globalObjects(identifer.fromString("process")),
+                    ts.undefinedLiteral
+                  ),
+                  ts.equal(
+                    ts.get(
+                      ts.globalObjects(identifer.fromString("process")),
+                      "title"
+                    ),
+                    ts.stringLiteral("browser")
+                  )
                 ),
-                ts.stringLiteral("browser")
-              )
+                ts.globalObjects(identifer.fromString("TextEncoder")),
+                ts.importedVariable("util", identifer.fromString("TextEncoder"))
+              ),
+              []
             ),
-            ts.globalObjects(identifer.fromString("TextEncoder")),
-            ts.importedVariable("util", identifer.fromString("TextEncoder"))
+            util.encodePropertyName,
+            [valueVar]
           ),
-          []
-        ),
-        "encode",
-        [ts.variable(identifer.fromString("text"))]
-      ),
-      spread: true,
-    },
+          spread: true,
+        },
+      ])
+    ),
+    ts.statementReturn(
+      ts.callMethod(int32.encode(true, ts.get(resultVar, "length")), "concat", [
+        resultVar,
+      ])
+    ),
   ]);
-
-  return ts.lambda(
-    [
-      {
-        name: identifer.fromString("text"),
-        type_: ts.typeString,
-      },
-    ],
-    [],
-    c.encodeReturnType,
-    [
-      ts.statementVariableDefinition(
-        resultName,
-        ts.readonlyArrayType(ts.typeNumber),
-        resultExpr
-      ),
-      ts.statementReturn(
-        ts.callMethod(
-          int32.encode(true, ts.get(resultVar, "length")),
-          "concat",
-          [resultVar]
-        )
-      ),
-    ]
-  );
 };
 
 const decodeDefinition = (): ts.Expr => {
@@ -107,11 +93,11 @@ const decodeDefinition = (): ts.Expr => {
   const textBinaryVar = ts.variable(textBinaryName);
   const isBrowserName = identifer.fromString("isBrowser");
 
-  return ts.lambda(c.decodeParameterList, [], c.decodeReturnType(type), [
+  return c.decodeLambda(type, (parameterIndex, parameterBinary) => [
     ts.statementVariableDefinition(
       lengthName,
       c.decodeReturnType(ts.typeNumber),
-      int32.decode(true, c.parameterIndex, c.parameterBinary)
+      int32.decode(true, parameterIndex, parameterBinary)
     ),
     ts.statementVariableDefinition(
       nextIndexName,
@@ -121,7 +107,7 @@ const decodeDefinition = (): ts.Expr => {
     ts.statementVariableDefinition(
       textBinaryName,
       ts.uint8ArrayType,
-      ts.callMethod(c.parameterBinary, "slice", [
+      ts.callMethod(parameterBinary, "slice", [
         c.getNextIndex(lengthVar),
         nextIndexVar,
       ])

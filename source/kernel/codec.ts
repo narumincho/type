@@ -78,7 +78,25 @@ export const codecTypeDefinition = (): ts.TypeAlias => {
 export const encodeFunctionType = (type_: ts.Type): ts.Type =>
   ts.typeFunction([], [type_], encodeReturnType);
 
-export const encodeReturnType = ts.readonlyArrayType(ts.typeNumber);
+export const encodeLambda = (
+  type_: ts.Type,
+  statementList: (valueExpr: ts.Expr) => ReadonlyArray<ts.Statement>
+): ts.Expr => {
+  const valueName = identifer.fromString("value");
+  return ts.lambda(
+    [
+      {
+        name: valueName,
+        type_: ts.typeNumber,
+      },
+    ],
+    [],
+    encodeReturnType,
+    statementList(ts.variable(valueName))
+  );
+};
+
+const encodeReturnType = ts.readonlyArrayType(ts.typeNumber);
 /**
  * ```ts
  * (a: number, b: Uint8Array) => { readonly result: type_, readonly nextIndex: number }
@@ -107,13 +125,11 @@ export const decodeReturnType = (type_: ts.Type): ts.Type =>
 
 const indexIdentifer = identifer.fromString("index");
 const binaryIdentifer = identifer.fromString("binary");
-export const parameterIndex = ts.variable(indexIdentifer);
-export const parameterBinary = ts.variable(binaryIdentifer);
 
 /**
  * ( index: number, binary: Uint8Array )
  */
-export const decodeParameterList: ReadonlyArray<ts.ParameterWithDocument> = [
+const decodeParameterList: ReadonlyArray<ts.ParameterWithDocument> = [
   {
     name: indexIdentifer,
     type_: ts.typeNumber,
@@ -142,6 +158,21 @@ export const returnStatement = (
       ts.memberKeyValue(util.nextIndexProperty, nextIndexExpr),
     ])
   );
+
+export const decodeLambda = (
+  type: ts.Type,
+  statementList: (
+    parameterIndex: ts.Expr,
+    parameterBinary: ts.Expr
+  ) => ReadonlyArray<ts.Statement>
+): ts.Expr => {
+  return ts.lambda(
+    decodeParameterList,
+    [],
+    decodeReturnType(type),
+    statementList(ts.variable(indexIdentifer), ts.variable(binaryIdentifer))
+  );
+};
 
 /**
  * ```ts

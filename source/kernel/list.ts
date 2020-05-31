@@ -57,30 +57,21 @@ export const exprDefinition = (): ts.Variable => ({
 });
 
 const encodeDefinition = (): ts.Expr => {
-  const parameterListName = identifer.fromString("list");
-  const parameterListVar = ts.variable(parameterListName);
   const resultName = identifer.fromString("result");
   const elementName = identifer.fromString("element");
 
-  return ts.lambda(
-    [
-      {
-        name: parameterListName,
-        type_: type(ts.typeScopeInFile(elementTypeName)),
-      },
-    ],
-    [],
-    c.encodeReturnType,
-    [
+  return c.encodeLambda(
+    type(ts.typeScopeInFile(elementTypeName)),
+    (valueVar) => [
       ts.statementLetVariableDefinition(
         resultName,
         ts.arrayType(ts.typeNumber),
         ts.typeAssertion(
-          int32.encode(true, ts.get(parameterListVar, "length")),
+          int32.encode(true, ts.get(valueVar, "length")),
           ts.arrayType(ts.typeNumber)
         )
       ),
-      ts.statementForOf(elementName, parameterListVar, [
+      ts.statementForOf(elementName, valueVar, [
         ts.statementSet(
           ts.variable(resultName),
           null,
@@ -105,17 +96,15 @@ const decodeDefinition = (): ts.Expr => {
   const resultAndNextIndexName = identifer.fromString("resultAndNextIndex");
   const resultAndNextIndexVar = ts.variable(resultAndNextIndexName);
 
-  return ts.lambda(
-    c.decodeParameterList,
-    [],
-    c.decodeReturnType(ts.readonlyArrayType(elementTypeVar)),
-    [
+  return c.decodeLambda(
+    ts.readonlyArrayType(elementTypeVar),
+    (parameterIndex, parameterBinary) => [
       ts.statementVariableDefinition(
         lengthResultName,
         c.decodeReturnType(ts.typeNumber),
-        int32.decode(true, c.parameterIndex, c.parameterBinary)
+        int32.decode(true, parameterIndex, parameterBinary)
       ),
-      ts.statementSet(c.parameterIndex, null, c.getNextIndex(lengthResultVar)),
+      ts.statementSet(parameterIndex, null, c.getNextIndex(lengthResultVar)),
       ts.statementVariableDefinition(
         resultName,
         ts.arrayType(elementTypeVar),
@@ -126,20 +115,20 @@ const decodeDefinition = (): ts.Expr => {
           resultAndNextIndexName,
           c.decodeReturnType(elementTypeVar),
           ts.call(ts.get(elementCodecVar, util.decodePropertyName), [
-            c.parameterIndex,
-            c.parameterBinary,
+            parameterIndex,
+            parameterBinary,
           ])
         ),
         ts.statementEvaluateExpr(
           ts.callMethod(resultVar, "push", [c.getResult(resultAndNextIndexVar)])
         ),
         ts.statementSet(
-          c.parameterIndex,
+          parameterIndex,
           null,
           c.getNextIndex(resultAndNextIndexVar)
         ),
       ]),
-      c.returnStatement(resultVar, c.parameterIndex),
+      c.returnStatement(resultVar, parameterIndex),
     ]
   );
 };

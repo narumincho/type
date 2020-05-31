@@ -197,11 +197,11 @@ export const String: {
   readonly codec: Codec<string>;
 } = {
   codec: {
-    encode: (text: string): ReadonlyArray<number> => {
+    encode: (value: number): ReadonlyArray<number> => {
       const result: ReadonlyArray<number> = [
         ...new (process === undefined || process.title === "browser"
           ? TextEncoder
-          : a.TextEncoder)().encode(text),
+          : a.TextEncoder)().encode(value),
       ];
       return Int32.codec.encode(result.length).concat(result);
     },
@@ -241,7 +241,7 @@ export const Bool: {
   readonly codec: Codec<boolean>;
 } = {
   codec: {
-    encode: (value: boolean): ReadonlyArray<number> => [value ? 1 : 0],
+    encode: (value: number): ReadonlyArray<number> => [value ? 1 : 0],
     decode: (
       index: number,
       binary: Uint8Array
@@ -262,7 +262,7 @@ export const Binary: {
   readonly codec: Codec<Uint8Array>;
 } = {
   codec: {
-    encode: (value: Uint8Array): ReadonlyArray<number> =>
+    encode: (value: number): ReadonlyArray<number> =>
       Int32.codec.encode(value.length).concat([...value]),
     decode: (
       index: number,
@@ -290,11 +290,11 @@ export const List: {
   codec: <element>(
     elementCodec: Codec<element>
   ): Codec<ReadonlyArray<element>> => ({
-    encode: (list: ReadonlyArray<element>): ReadonlyArray<number> => {
-      let result: Array<number> = Int32.codec.encode(list.length) as Array<
+    encode: (value: number): ReadonlyArray<number> => {
+      let result: Array<number> = Int32.codec.encode(value.length) as Array<
         number
       >;
-      for (const element of list) {
+      for (const element of value) {
         result = result.concat(elementCodec.encode(element));
       }
       return result;
@@ -341,7 +341,43 @@ export const Maybe: {
 } = {
   Just: <value>(value: value): Maybe<value> => ({ _: "Just", value: value }),
   Nothing: <value>(): Maybe<value> => ({ _: "Nothing" }),
-  codec: (): {} => {},
+  codec: <value>(
+    valueCodec: <value>(a: Codec<value>) => Codec<Maybe<value>>
+  ): (<value>(a: Codec<value>) => Codec<Maybe<value>>) => ({
+    encode: (value: number): ReadonlyArray<number> => {
+      switch (Maybe._) {
+        case "Just": {
+          return [0].concat(valueCodec.encode(Maybe.value));
+        }
+        case "Nothing": {
+          return [1];
+        }
+      }
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Maybe; readonly nextIndex: number } => {
+      const patternIndex: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      if (patternIndex.result === 0) {
+        const result: {
+          readonly result: value;
+          readonly nextIndex: number;
+        } = valueCodec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Maybe.Just(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 1) {
+        return { result: Maybe.Nothing, nextIndex: patternIndex.nextIndex };
+      }
+      throw new Error("存在しないパターンを指定された 型を更新してください");
+    },
+  }),
 };
 
 /**
@@ -366,7 +402,60 @@ export const Result: {
     _: "Error",
     error: error,
   }),
-  codec: (): {} => {},
+  codec: <ok, error>(
+    okCodec: <ok, error>(
+      a: Codec<ok>,
+      b: Codec<error>
+    ) => Codec<Result<ok, error>>,
+    errorCodec: <ok, error>(
+      a: Codec<ok>,
+      b: Codec<error>
+    ) => Codec<Result<ok, error>>
+  ): (<ok, error>(
+    a: Codec<ok>,
+    b: Codec<error>
+  ) => Codec<Result<ok, error>>) => ({
+    encode: (value: number): ReadonlyArray<number> => {
+      switch (Result._) {
+        case "Ok": {
+          return [0].concat(okCodec.encode(Result.ok));
+        }
+        case "Error": {
+          return [1].concat(errorCodec.encode(Result.error));
+        }
+      }
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Result; readonly nextIndex: number } => {
+      const patternIndex: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      if (patternIndex.result === 0) {
+        const result: {
+          readonly result: ok;
+          readonly nextIndex: number;
+        } = okCodec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Result.Ok(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 1) {
+        const result: {
+          readonly result: error;
+          readonly nextIndex: number;
+        } = errorCodec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Result.Error(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      throw new Error("存在しないパターンを指定された 型を更新してください");
+    },
+  }),
 };
 
 /**
@@ -436,7 +525,139 @@ export const Type: {
     nameAndTypeParameterList: nameAndTypeParameterList,
   }),
   Parameter: (string_: string): Type => ({ _: "Parameter", string_: string_ }),
-  codec: (): {} => {},
+  codec: {
+    encode: (value: number): ReadonlyArray<number> => {
+      switch (Type._) {
+        case "Int32": {
+          return [0];
+        }
+        case "String": {
+          return [1];
+        }
+        case "Bool": {
+          return [2];
+        }
+        case "Binary": {
+          return [3];
+        }
+        case "List": {
+          return [4].concat(Type.codec.encode(Type.type_));
+        }
+        case "Maybe": {
+          return [5].concat(Type.codec.encode(Type.type_));
+        }
+        case "Result": {
+          return [6].concat(OkAndErrorType.codec.encode(Type.okAndErrorType));
+        }
+        case "Id": {
+          return [7].concat(String.codec.encode(Type.string_));
+        }
+        case "Token": {
+          return [8].concat(String.codec.encode(Type.string_));
+        }
+        case "Custom": {
+          return [9].concat(
+            NameAndTypeParameterList.codec.encode(Type.nameAndTypeParameterList)
+          );
+        }
+        case "Parameter": {
+          return [10].concat(String.codec.encode(Type.string_));
+        }
+      }
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Type; readonly nextIndex: number } => {
+      const patternIndex: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      if (patternIndex.result === 0) {
+        return { result: Type.Int32, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 1) {
+        return { result: Type.String, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 2) {
+        return { result: Type.Bool, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 3) {
+        return { result: Type.Binary, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 4) {
+        const result: {
+          readonly result: Type;
+          readonly nextIndex: number;
+        } = Type.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.List(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 5) {
+        const result: {
+          readonly result: Type;
+          readonly nextIndex: number;
+        } = Type.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.Maybe(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 6) {
+        const result: {
+          readonly result: OkAndErrorType;
+          readonly nextIndex: number;
+        } = OkAndErrorType.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.Result(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 7) {
+        const result: {
+          readonly result: string;
+          readonly nextIndex: number;
+        } = String.codec.decode(patternIndex.nextIndex, binary);
+        return { result: Type.Id(result.result), nextIndex: result.nextIndex };
+      }
+      if (patternIndex.result === 8) {
+        const result: {
+          readonly result: string;
+          readonly nextIndex: number;
+        } = String.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.Token(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 9) {
+        const result: {
+          readonly result: NameAndTypeParameterList;
+          readonly nextIndex: number;
+        } = NameAndTypeParameterList.codec.decode(
+          patternIndex.nextIndex,
+          binary
+        );
+        return {
+          result: Type.Custom(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 10) {
+        const result: {
+          readonly result: string;
+          readonly nextIndex: number;
+        } = String.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.Parameter(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      throw new Error("存在しないパターンを指定された 型を更新してください");
+    },
+  },
 };
 
 /**
@@ -444,14 +665,25 @@ export const Type: {
  */
 export const OkAndErrorType: { readonly codec: Codec<OkAndErrorType> } = {
   codec: {
-    encode: (OkAndErrorType: OkAndErrorType): ReadonlyArray<number> =>
-      Type.codec
-        .encode(OkAndErrorType.ok)
-        .concat(Type.codec.encode(OkAndErrorType.error)),
+    encode: (value: number): ReadonlyArray<number> =>
+      Type.codec.encode(value.ok).concat(Type.codec.encode(value.error)),
     decode: (
       index: number,
       binary: Uint8Array
-    ): { readonly result: OkAndErrorType; readonly nextIndex: number } => {},
+    ): { readonly result: OkAndErrorType; readonly nextIndex: number } => {
+      const okAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(index, binary);
+      const errorAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(okAndNextIndex.nextIndex, binary);
+      return {
+        result: { ok: okAndNextIndex.result, error: errorAndNextIndex.result },
+        nextIndex: errorAndNextIndex.nextIndex,
+      };
+    },
   },
 };
 
@@ -462,21 +694,33 @@ export const NameAndTypeParameterList: {
   readonly codec: Codec<NameAndTypeParameterList>;
 } = {
   codec: {
-    encode: (
-      NameAndTypeParameterList: NameAndTypeParameterList
-    ): ReadonlyArray<number> =>
+    encode: (value: number): ReadonlyArray<number> =>
       String.codec
-        .encode(NameAndTypeParameterList.name)
-        .concat(
-          List.codec(Type.codec).encode(NameAndTypeParameterList.parameterList)
-        ),
+        .encode(value.name)
+        .concat(List.codec(Type.codec).encode(value.parameterList)),
     decode: (
       index: number,
       binary: Uint8Array
     ): {
       readonly result: NameAndTypeParameterList;
       readonly nextIndex: number;
-    } => {},
+    } => {
+      const nameAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const parameterListAndNextIndex: {
+        readonly result: ReadonlyArray<Type>;
+        readonly nextIndex: number;
+      } = List.codec(Type.codec).decode(nameAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          parameterList: parameterListAndNextIndex.result,
+        },
+        nextIndex: parameterListAndNextIndex.nextIndex,
+      };
+    },
   },
 };
 
@@ -487,27 +731,51 @@ export const CustomTypeDefinition: {
   readonly codec: Codec<CustomTypeDefinition>;
 } = {
   codec: {
-    encode: (
-      CustomTypeDefinition: CustomTypeDefinition
-    ): ReadonlyArray<number> =>
+    encode: (value: number): ReadonlyArray<number> =>
       String.codec
-        .encode(CustomTypeDefinition.name)
-        .concat(String.codec.encode(CustomTypeDefinition.description))
-        .concat(
-          List.codec(String.codec).encode(
-            CustomTypeDefinition.typeParameterList
-          )
-        )
-        .concat(
-          CustomTypeDefinitionBody.codec.encode(CustomTypeDefinition.body)
-        ),
+        .encode(value.name)
+        .concat(String.codec.encode(value.description))
+        .concat(List.codec(String.codec).encode(value.typeParameterList))
+        .concat(CustomTypeDefinitionBody.codec.encode(value.body)),
     decode: (
       index: number,
       binary: Uint8Array
     ): {
       readonly result: CustomTypeDefinition;
       readonly nextIndex: number;
-    } => {},
+    } => {
+      const nameAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const descriptionAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(nameAndNextIndex.nextIndex, binary);
+      const typeParameterListAndNextIndex: {
+        readonly result: ReadonlyArray<string>;
+        readonly nextIndex: number;
+      } = List.codec(String.codec).decode(
+        descriptionAndNextIndex.nextIndex,
+        binary
+      );
+      const bodyAndNextIndex: {
+        readonly result: CustomTypeDefinitionBody;
+        readonly nextIndex: number;
+      } = CustomTypeDefinitionBody.codec.decode(
+        typeParameterListAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          description: descriptionAndNextIndex.result,
+          typeParameterList: typeParameterListAndNextIndex.result,
+          body: bodyAndNextIndex.result,
+        },
+        nextIndex: bodyAndNextIndex.nextIndex,
+      };
+    },
   },
 };
 
@@ -533,7 +801,57 @@ export const CustomTypeDefinitionBody: {
     _: "Sum",
     patternList: patternList,
   }),
-  codec: (): {} => {},
+  codec: {
+    encode: (value: number): ReadonlyArray<number> => {
+      switch (CustomTypeDefinitionBody._) {
+        case "Product": {
+          return [0].concat(
+            List.codec(Member.codec).encode(CustomTypeDefinitionBody.memberList)
+          );
+        }
+        case "Sum": {
+          return [1].concat(
+            List.codec(Pattern.codec).encode(
+              CustomTypeDefinitionBody.patternList
+            )
+          );
+        }
+      }
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): {
+      readonly result: CustomTypeDefinitionBody;
+      readonly nextIndex: number;
+    } => {
+      const patternIndex: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      if (patternIndex.result === 0) {
+        const result: {
+          readonly result: ReadonlyArray<Member>;
+          readonly nextIndex: number;
+        } = List.codec(Member.codec).decode(patternIndex.nextIndex, binary);
+        return {
+          result: CustomTypeDefinitionBody.Product(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 1) {
+        const result: {
+          readonly result: ReadonlyArray<Pattern>;
+          readonly nextIndex: number;
+        } = List.codec(Pattern.codec).decode(patternIndex.nextIndex, binary);
+        return {
+          result: CustomTypeDefinitionBody.Sum(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      throw new Error("存在しないパターンを指定された 型を更新してください");
+    },
+  },
 };
 
 /**
@@ -541,15 +859,36 @@ export const CustomTypeDefinitionBody: {
  */
 export const Member: { readonly codec: Codec<Member> } = {
   codec: {
-    encode: (Member: Member): ReadonlyArray<number> =>
+    encode: (value: number): ReadonlyArray<number> =>
       String.codec
-        .encode(Member.name)
-        .concat(String.codec.encode(Member.description))
-        .concat(Type.codec.encode(Member["type"])),
+        .encode(value.name)
+        .concat(String.codec.encode(value.description))
+        .concat(Type.codec.encode(value["type"])),
     decode: (
       index: number,
       binary: Uint8Array
-    ): { readonly result: Member; readonly nextIndex: number } => {},
+    ): { readonly result: Member; readonly nextIndex: number } => {
+      const nameAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const descriptionAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(nameAndNextIndex.nextIndex, binary);
+      const typeAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(descriptionAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          description: descriptionAndNextIndex.result,
+          type: typeAndNextIndex.result,
+        },
+        nextIndex: typeAndNextIndex.nextIndex,
+      };
+    },
   },
 };
 
@@ -558,14 +897,38 @@ export const Member: { readonly codec: Codec<Member> } = {
  */
 export const Pattern: { readonly codec: Codec<Pattern> } = {
   codec: {
-    encode: (Pattern: Pattern): ReadonlyArray<number> =>
+    encode: (value: number): ReadonlyArray<number> =>
       String.codec
-        .encode(Pattern.name)
-        .concat(String.codec.encode(Pattern.description))
-        .concat(Maybe.codec(Type.codec).encode(Pattern.parameter)),
+        .encode(value.name)
+        .concat(String.codec.encode(value.description))
+        .concat(Maybe.codec(Type.codec).encode(value.parameter)),
     decode: (
       index: number,
       binary: Uint8Array
-    ): { readonly result: Pattern; readonly nextIndex: number } => {},
+    ): { readonly result: Pattern; readonly nextIndex: number } => {
+      const nameAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const descriptionAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(nameAndNextIndex.nextIndex, binary);
+      const parameterAndNextIndex: {
+        readonly result: Maybe<Type>;
+        readonly nextIndex: number;
+      } = Maybe.codec(Type.codec).decode(
+        descriptionAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          description: descriptionAndNextIndex.result,
+          parameter: parameterAndNextIndex.result,
+        },
+        nextIndex: parameterAndNextIndex.nextIndex,
+      };
+    },
   },
 };

@@ -37,41 +37,29 @@ export const exprDefinition = (): ts.Variable => ({
   ]),
 });
 
-const encodeDefinition = (): ts.Expr => {
-  return ts.lambda(
-    [
-      {
-        name: identifer.fromString("value"),
-        type_: ts.typeBoolean,
-      },
-    ],
-    [],
-    c.encodeReturnType,
-    [
-      ts.statementReturn(
-        ts.arrayLiteral([
-          {
-            expr: ts.conditionalOperator(
-              ts.variable(identifer.fromString("value")),
-              ts.numberLiteral(1),
-              ts.numberLiteral(0)
-            ),
-            spread: false,
-          },
-        ])
-      ),
-    ]
-  );
-};
-
-const decodeDefinition = (): ts.Expr => {
-  return ts.lambda(c.decodeParameterList, [], c.decodeReturnType(type), [
-    c.returnStatement(
-      ts.notEqual(
-        ts.getByExpr(c.parameterBinary, c.parameterIndex),
-        ts.numberLiteral(0)
-      ),
-      ts.addition(c.parameterIndex, ts.numberLiteral(1))
+const encodeDefinition = (): ts.Expr =>
+  c.encodeLambda(type, (valueVar) => [
+    ts.statementReturn(
+      ts.arrayLiteral([
+        {
+          expr: ts.conditionalOperator(
+            valueVar,
+            ts.numberLiteral(1),
+            ts.numberLiteral(0)
+          ),
+          spread: false,
+        },
+      ])
     ),
   ]);
-};
+
+const decodeDefinition = (): ts.Expr =>
+  c.decodeLambda(type, (parameterIndex, parameterBinary) => [
+    c.returnStatement(
+      ts.notEqual(
+        ts.getByExpr(parameterBinary, parameterIndex),
+        ts.numberLiteral(0)
+      ),
+      ts.addition(parameterIndex, ts.numberLiteral(1))
+    ),
+  ]);
