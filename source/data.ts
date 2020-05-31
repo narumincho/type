@@ -286,9 +286,44 @@ export const Binary: {
  */
 export const List: {
   readonly codec: <element>(a: Codec<element>) => Codec<ReadonlyArray<element>>;
-} = <element>(elementCodec: Codec<element>): Codec<ReadonlyArray<element>> => ({
-  codec: { encode: "listのencodeのコード", decode: "listのdecodeのコード" },
-});
+} = {
+  codec: <element>(
+    elementCodec: Codec<element>
+  ): Codec<ReadonlyArray<element>> => ({
+    encode: (list: ReadonlyArray<element>): ReadonlyArray<number> => {
+      let result: Array<number> = Int32.codec.encode(list.length) as Array<
+        number
+      >;
+      for (const element of list) {
+        result = result.concat(elementCodec.encode(element));
+      }
+      return result;
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): {
+      readonly result: ReadonlyArray<element>;
+      readonly nextIndex: number;
+    } => {
+      const lengthResult: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      index = lengthResult.nextIndex;
+      const result: Array<element> = [];
+      for (let i = 0; i < lengthResult.result; i += 1) {
+        const resultAndNextIndex: {
+          readonly result: element;
+          readonly nextIndex: number;
+        } = elementCodec.decode(index, binary);
+        result.push(resultAndNextIndex.result);
+        index = resultAndNextIndex.nextIndex;
+      }
+      return { result: result, nextIndex: index };
+    },
+  }),
+};
 
 /**
  * Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
