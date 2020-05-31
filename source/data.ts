@@ -167,8 +167,8 @@ export const Int32: {
       index: number,
       binary: Uint8Array
     ): { readonly result: number; readonly nextIndex: number } => {
-      let result: number = 0;
-      let offset: number = 0;
+      let result = 0;
+      let offset = 0;
       while (true) {
         const byte: number = binary[index + offset];
         result |= (byte & 127) << (offset * 7);
@@ -234,7 +234,23 @@ export const String: {
 /**
  * Bool. 真か偽. JavaScriptのbooleanで扱う
  */
-export const Bool: {} = {};
+export const Bool: {
+  /**
+   * true: 1, false: 0. (1byte)としてバイナリ保存する
+   */
+  readonly codec: Codec<boolean>;
+} = {
+  codec: {
+    encode: (value: boolean): ReadonlyArray<number> => [value ? 1 : 0],
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: boolean; readonly nextIndex: number } => ({
+      result: binary[index] !== 0,
+      nextIndex: index + 1,
+    }),
+  },
+};
 
 /**
  * バイナリ. JavaScriptのUint8Arrayで扱う

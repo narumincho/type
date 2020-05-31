@@ -2,10 +2,12 @@ import { data as ts, identifer } from "js-ts-code-generator";
 import * as type from "./type";
 import * as util from "./util";
 import * as c from "./case";
-import * as typeDef from "./typeDefinition";
 import * as int32 from "./kernel/int32";
 import * as codec from "./kernel/codec";
 import * as kernelString from "./kernel/string";
+import * as bool from "./kernel/bool";
+import * as maybe from "./kernel/maybe";
+import * as result from "./kernel/result";
 
 export const generate = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
@@ -14,14 +16,14 @@ export const generate = (
 ): ReadonlyArray<ts.Variable> => {
   if (withKernel) {
     const customTypeAndDefaultTypeList: ReadonlyArray<type.CustomTypeDefinition> = [
-      typeDef.maybeCustomTypeDefinition,
-      typeDef.resultCustomTypeDefinition,
+      maybe.customTypeDefinition,
+      result.customTypeDefinition,
       ...customTypeList,
     ];
     return [
       int32.exprDefinition(),
       kernelString.exprDefinition(),
-      bool(),
+      bool.exprDefinition(),
       binary(),
       list(),
       ...[...idAndTokenNameSet.id].map(idVariable),
@@ -38,15 +40,6 @@ export const generate = (
       customTypeDefinitionToTagVariable(customTypeAndDefaultType, false)
     ),
   ];
-};
-
-const bool = (): ts.Variable => {
-  return {
-    name: identifer.fromString("Bool"),
-    document: "Bool. 真か偽. JavaScriptのbooleanで扱う",
-    type_: ts.typeObject(new Map()),
-    expr: ts.objectLiteral([]),
-  };
 };
 
 const binary = (): ts.Variable => {
@@ -460,22 +453,9 @@ const codecExprUse = (type_: type.Type, withKernel: boolean): ts.Expr => {
     case "Int32":
       return int32.codec(withKernel);
     case "String":
-      return ts.get(
-        withKernel
-          ? ts.variable(identifer.fromString("String"))
-          : ts.importedVariable(
-              util.moduleName,
-              identifer.fromString("String")
-            ),
-        util.codecPropertyName
-      );
+      return kernelString.codec(withKernel);
     case "Bool":
-      return ts.get(
-        withKernel
-          ? ts.variable(identifer.fromString("Bool"))
-          : ts.importedVariable(util.moduleName, identifer.fromString("Bool")),
-        util.codecPropertyName
-      );
+      return bool.codec(withKernel);
     case "Binary":
       return ts.get(
         withKernel

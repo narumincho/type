@@ -4,6 +4,8 @@ import { Type, Maybe, CustomTypeDefinitionBody } from "./type";
 import * as util from "./util";
 import * as c from "./case";
 import * as codec from "./kernel/codec";
+import * as maybe from "./kernel/maybe";
+import * as result from "./kernel/result";
 
 export const generateTypeDefinition = (
   customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
@@ -13,8 +15,8 @@ export const generateTypeDefinition = (
   if (widthKernel) {
     return [
       codec.codecTypeDefinition(),
-      customTypeToDefinition(maybeCustomTypeDefinition),
-      customTypeToDefinition(resultCustomTypeDefinition),
+      customTypeToDefinition(maybe.customTypeDefinition),
+      customTypeToDefinition(result.customTypeDefinition),
       ...customTypeList.map(customTypeToDefinition),
       ...[...idOrTokenTypeNameSet.id, ...idOrTokenTypeNameSet.token].map(
         idOrTokenDefinition
@@ -29,84 +31,6 @@ export const generateTypeDefinition = (
   ];
 };
 
-/* ========================================
-                  Maybe
-   ========================================
-*/
-
-const maybeName = "Maybe";
-export const maybeTsType = (
-  elementType: ts.Type,
-  widthKernel: boolean
-): ts.Type =>
-  widthKernel
-    ? ts.typeWithParameter(
-        ts.typeScopeInFile(identifer.fromString(maybeName)),
-        [elementType]
-      )
-    : ts.typeWithParameter(
-        ts.typeImported(util.moduleName, identifer.fromString(maybeName)),
-        [elementType]
-      );
-
-export const maybeCustomTypeDefinition: type.CustomTypeDefinition = {
-  name: maybeName,
-  typeParameterList: ["value"],
-  description:
-    "Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した",
-  body: CustomTypeDefinitionBody.Sum([
-    {
-      name: "Just",
-      description: "値があるということ",
-      parameter: Maybe.Just(Type.Parameter("value")),
-    },
-    {
-      name: "Nothing",
-      description: "値がないということ",
-      parameter: Maybe.Nothing(),
-    },
-  ]),
-};
-
-/* ========================================
-                  Result
-   ========================================
-*/
-
-const resultName = "Result";
-export const resultTsType = (
-  okType: ts.Type,
-  errorType: ts.Type,
-  withKernel: boolean
-): ts.Type =>
-  withKernel
-    ? ts.typeWithParameter(
-        ts.typeScopeInFile(identifer.fromString(resultName)),
-        [okType, errorType]
-      )
-    : ts.typeWithParameter(
-        ts.typeImported(util.moduleName, identifer.fromString(resultName)),
-        [okType, errorType]
-      );
-
-export const resultCustomTypeDefinition: type.CustomTypeDefinition = {
-  name: resultName,
-  description:
-    "成功と失敗を表す型. Elmに標準で定義されているものに変換をするためにデフォルトで用意した",
-  typeParameterList: ["ok", "error"],
-  body: CustomTypeDefinitionBody.Sum([
-    {
-      name: "Ok",
-      description: "成功",
-      parameter: Maybe.Just(Type.Parameter("ok")),
-    },
-    {
-      name: "Error",
-      description: "失敗",
-      parameter: Maybe.Just(Type.Parameter("error")),
-    },
-  ]),
-};
 /* ========================================
                 Id Token
    ========================================
