@@ -342,10 +342,10 @@ export const Maybe: {
   Just: <value>(value: value): Maybe<value> => ({ _: "Just", value: value }),
   Nothing: <value>(): Maybe<value> => ({ _: "Nothing" }),
   codec: <value>(valueCodec: Codec<value>): Codec<Maybe<value>> => ({
-    encode: (value: Maybe): ReadonlyArray<number> => {
-      switch (Maybe._) {
+    encode: (value: Maybe<value>): ReadonlyArray<number> => {
+      switch (value._) {
         case "Just": {
-          return [0].concat(valueCodec.encode(Maybe.value));
+          return [0].concat(valueCodec.encode(value.value));
         }
         case "Nothing": {
           return [1];
@@ -355,7 +355,7 @@ export const Maybe: {
     decode: (
       index: number,
       binary: Uint8Array
-    ): { readonly result: Maybe; readonly nextIndex: number } => {
+    ): { readonly result: Maybe<value>; readonly nextIndex: number } => {
       const patternIndex: {
         readonly result: number;
         readonly nextIndex: number;
@@ -371,7 +371,7 @@ export const Maybe: {
         };
       }
       if (patternIndex.result === 1) {
-        return { result: Maybe.Nothing, nextIndex: patternIndex.nextIndex };
+        return { result: Maybe.Nothing(), nextIndex: patternIndex.nextIndex };
       }
       throw new Error("存在しないパターンを指定された 型を更新してください");
     },
@@ -404,20 +404,20 @@ export const Result: {
     okCodec: Codec<ok>,
     errorCodec: Codec<error>
   ): Codec<Result<ok, error>> => ({
-    encode: (value: Result): ReadonlyArray<number> => {
-      switch (Result._) {
+    encode: (value: Result<ok, error>): ReadonlyArray<number> => {
+      switch (value._) {
         case "Ok": {
-          return [0].concat(okCodec.encode(Result.ok));
+          return [0].concat(okCodec.encode(value.ok));
         }
         case "Error": {
-          return [1].concat(errorCodec.encode(Result.error));
+          return [1].concat(errorCodec.encode(value.error));
         }
       }
     },
     decode: (
       index: number,
       binary: Uint8Array
-    ): { readonly result: Result; readonly nextIndex: number } => {
+    ): { readonly result: Result<ok, error>; readonly nextIndex: number } => {
       const patternIndex: {
         readonly result: number;
         readonly nextIndex: number;
@@ -516,7 +516,7 @@ export const Type: {
   Parameter: (string_: string): Type => ({ _: "Parameter", string_: string_ }),
   codec: {
     encode: (value: Type): ReadonlyArray<number> => {
-      switch (Type._) {
+      switch (value._) {
         case "Int32": {
           return [0];
         }
@@ -530,27 +530,29 @@ export const Type: {
           return [3];
         }
         case "List": {
-          return [4].concat(Type.codec.encode(Type.type_));
+          return [4].concat(Type.codec.encode(value.type_));
         }
         case "Maybe": {
-          return [5].concat(Type.codec.encode(Type.type_));
+          return [5].concat(Type.codec.encode(value.type_));
         }
         case "Result": {
-          return [6].concat(OkAndErrorType.codec.encode(Type.okAndErrorType));
+          return [6].concat(OkAndErrorType.codec.encode(value.okAndErrorType));
         }
         case "Id": {
-          return [7].concat(String.codec.encode(Type.string_));
+          return [7].concat(String.codec.encode(value.string_));
         }
         case "Token": {
-          return [8].concat(String.codec.encode(Type.string_));
+          return [8].concat(String.codec.encode(value.string_));
         }
         case "Custom": {
           return [9].concat(
-            NameAndTypeParameterList.codec.encode(Type.nameAndTypeParameterList)
+            NameAndTypeParameterList.codec.encode(
+              value.nameAndTypeParameterList
+            )
           );
         }
         case "Parameter": {
-          return [10].concat(String.codec.encode(Type.string_));
+          return [10].concat(String.codec.encode(value.string_));
         }
       }
     },
@@ -792,17 +794,13 @@ export const CustomTypeDefinitionBody: {
   }),
   codec: {
     encode: (value: CustomTypeDefinitionBody): ReadonlyArray<number> => {
-      switch (CustomTypeDefinitionBody._) {
+      switch (value._) {
         case "Product": {
-          return [0].concat(
-            List.codec(Member.codec).encode(CustomTypeDefinitionBody.memberList)
-          );
+          return [0].concat(List.codec(Member.codec).encode(value.memberList));
         }
         case "Sum": {
           return [1].concat(
-            List.codec(Pattern.codec).encode(
-              CustomTypeDefinitionBody.patternList
-            )
+            List.codec(Pattern.codec).encode(value.patternList)
           );
         }
       }

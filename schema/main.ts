@@ -239,7 +239,6 @@ const code = prettier.format(
     parser: "typescript",
   }
 );
-console.log(code);
 
 fileSystem.writeFile("./source/data.ts", code).then(() => {
   console.log("output data.ts");

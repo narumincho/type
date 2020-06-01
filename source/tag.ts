@@ -344,7 +344,12 @@ const encodeExprDefinition = (
   withKernel: boolean
 ): ts.Expr =>
   codec.encodeLambda(
-    ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
+    ts.typeWithParameter(
+      ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
+      customTypeDefinition.typeParameterList.map((typeParameter) =>
+        ts.typeScopeInFile(identifer.fromString(typeParameter))
+      )
+    ),
     (valueVar) => {
       switch (customTypeDefinition.body._) {
         case "Product":
@@ -356,7 +361,7 @@ const encodeExprDefinition = (
         case "Sum":
           return sumEncodeDefinitionStatementList(
             customTypeDefinition.body.patternList,
-            ts.variable(identifer.fromString(customTypeDefinition.name)),
+            valueVar,
             withKernel
           );
       }
@@ -463,7 +468,12 @@ const decodeExprDefinition = (
   withKernel: boolean
 ): ts.Expr => {
   return codec.decodeLambda(
-    ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
+    ts.typeWithParameter(
+      ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
+      customTypeDefinition.typeParameterList.map((typeParameter) =>
+        ts.typeScopeInFile(identifer.fromString(typeParameter))
+      )
+    ),
     (parameterIndex, parameterBinary) => {
       switch (customTypeDefinition.body._) {
         case "Product":
@@ -479,7 +489,8 @@ const decodeExprDefinition = (
             customTypeDefinition.body.patternList,
             customTypeDefinition.name,
             parameterIndex,
-            parameterBinary
+            parameterBinary,
+            customTypeDefinition.typeParameterList.length === 0
           );
       }
     }
@@ -549,7 +560,8 @@ const sumDecodeDefinitionStatementList = (
   patternList: ReadonlyArray<type.Pattern>,
   customTypeName: string,
   parameterIndex: ts.Expr,
-  parameterBinary: ts.Expr
+  parameterBinary: ts.Expr,
+  noTypeParameter: boolean
 ): ReadonlyArray<ts.Statement> => {
   const patternIndexAndNextIndexName = identifer.fromString("patternIndex");
   const patternIndexAndNextIndexVar = ts.variable(patternIndexAndNextIndexName);
@@ -567,7 +579,8 @@ const sumDecodeDefinitionStatementList = (
         pattern,
         index,
         patternIndexAndNextIndexVar,
-        parameterBinary
+        parameterBinary,
+        noTypeParameter
       )
     ),
     ts.statementThrowError(
@@ -582,7 +595,8 @@ const tagNameAndParameterCode = (
   pattern: type.Pattern,
   index: number,
   patternIndexAndNextIndexVar: ts.Expr,
-  parameterBinary: ts.Expr
+  parameterBinary: ts.Expr,
+  noTypeParameter: boolean
 ): ts.Statement => {
   switch (pattern.parameter._) {
     case "Just":
@@ -605,9 +619,14 @@ const tagNameAndParameterCode = (
             )
           ),
           codec.returnStatement(
-            ts.call(patternUse(customTypeName, pattern.name), [
-              codec.getResult(ts.variable(identifer.fromString("result"))),
-            ]),
+            patternUse(
+              customTypeName,
+              noTypeParameter,
+              pattern.name,
+              type.Maybe.Just(
+                codec.getResult(ts.variable(identifer.fromString("result")))
+              )
+            ),
             codec.getNextIndex(ts.variable(identifer.fromString("result")))
           ),
         ]
@@ -620,7 +639,12 @@ const tagNameAndParameterCode = (
         ),
         [
           codec.returnStatement(
-            patternUse(customTypeName, pattern.name),
+            patternUse(
+              customTypeName,
+              noTypeParameter,
+              pattern.name,
+              type.Maybe.Nothing()
+            ),
             codec.getNextIndex(patternIndexAndNextIndexVar)
           ),
         ]
@@ -628,8 +652,25 @@ const tagNameAndParameterCode = (
   }
 };
 
-const patternUse = (customTypeName: string, tagName: string): ts.Expr => {
-  return ts.get(ts.variable(identifer.fromString(customTypeName)), tagName);
+const patternUse = (
+  customTypeName: string,
+  noTypeParameter: boolean,
+  tagName: string,
+  parameter: type.Maybe<ts.Expr>
+): ts.Expr => {
+  const tagExpr = ts.get(
+    ts.variable(identifer.fromString(customTypeName)),
+    tagName
+  );
+  switch (parameter._) {
+    case "Just":
+      return ts.call(tagExpr, [parameter.value]);
+    case "Nothing":
+      if (noTypeParameter) {
+        return tagExpr;
+      }
+      return ts.call(tagExpr, []);
+  }
 };
 
 const encodeExprUse = (

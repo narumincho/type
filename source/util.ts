@@ -59,7 +59,6 @@ export const typeToTypeScriptType = (type_: type.Type): ts.Type => {
 export const typeToMemberOrParameterName = (
   type_: type.Type
 ): identifer.Identifer => {
-  console.log(type_);
   return identifer.fromString(c.firstLowerCase(type.toTypeName(type_)));
 };
 
