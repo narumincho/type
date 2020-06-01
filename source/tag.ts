@@ -10,6 +10,7 @@ import * as maybe from "./kernel/maybe";
 import * as result from "./kernel/result";
 import * as binary from "./kernel/binary";
 import * as list from "./kernel/list";
+import * as hexString from "./kernel/hexString";
 
 export const generate = (
   customTypeList: ReadonlyArray<data.CustomTypeDefinition>,
@@ -23,43 +24,35 @@ export const generate = (
       ...customTypeList,
     ];
     return [
-      int32.exprDefinition(),
+      int32.variableDefinition(),
       kernelString.exprDefinition(),
-      bool.exprDefinition(),
-      binary.exprDefinition(),
-      list.exprDefinition(),
-      ...[...idAndTokenNameSet.id].map(idVariable),
-      ...[...idAndTokenNameSet.token].map(tokenVariable),
+      bool.variableDefinition(),
+      binary.variableDefinition(),
+      list.variableDefinition(),
+      hexString.idKernelExprDefinition,
+      hexString.tokenKernelExprDefinition,
+      ...[...idAndTokenNameSet.id].map((name) =>
+        hexString.idVariableDefinition(name, true)
+      ),
+      ...[...idAndTokenNameSet.token].map((name) =>
+        hexString.idVariableDefinition(name, true)
+      ),
       ...customTypeAndDefaultTypeList.map((customTypeAndDefaultType) =>
         customTypeDefinitionToTagVariable(customTypeAndDefaultType, true)
       ),
     ];
   }
   return [
-    ...[...idAndTokenNameSet.id].map(idVariable),
-    ...[...idAndTokenNameSet.token].map(tokenVariable),
+    ...[...idAndTokenNameSet.id].map((name) =>
+      hexString.idVariableDefinition(name, true)
+    ),
+    ...[...idAndTokenNameSet.token].map((name) =>
+      hexString.idVariableDefinition(name, true)
+    ),
     ...customTypeList.map((customTypeAndDefaultType) =>
       customTypeDefinitionToTagVariable(customTypeAndDefaultType, false)
     ),
   ];
-};
-
-const idVariable = (name: string): ts.Variable => {
-  return {
-    name: identifer.fromString(name),
-    document: name + ". ものを識別するのに使う",
-    type_: ts.typeObject(new Map()),
-    expr: ts.objectLiteral([]),
-  };
-};
-
-const tokenVariable = (name: string): ts.Variable => {
-  return {
-    name: identifer.fromString(name),
-    document: name + ". ものを識別したり,あるものであるのを証明したりする",
-    type_: ts.typeObject(new Map()),
-    expr: ts.objectLiteral([]),
-  };
 };
 
 /* ========================================

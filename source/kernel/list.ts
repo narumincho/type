@@ -13,7 +13,7 @@ const elementCodecName = identifer.fromString("elementCodec");
 const elementCodecVar = ts.variable(elementCodecName);
 const elementType = ts.typeScopeInFile(elementTypeName);
 
-export const exprDefinition = (): ts.Variable => ({
+export const variableDefinition = (): ts.Variable => ({
   name: name,
   document: "リスト. JavaScriptのArrayで扱う",
   type_: ts.typeObject(

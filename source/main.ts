@@ -4,7 +4,7 @@ import * as util from "./util";
 import { data as ts } from "js-ts-code-generator";
 import * as data from "./data";
 
-export { util as type };
+export { data };
 
 export const generateTypeScriptCode = (
   customTypeList: ReadonlyArray<data.CustomTypeDefinition>,

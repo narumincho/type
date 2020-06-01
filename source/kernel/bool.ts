@@ -12,7 +12,7 @@ export const codec = (withKernel: boolean): ts.Expr =>
     util.codecPropertyName
   );
 
-export const exprDefinition = (): ts.Variable => ({
+export const variableDefinition = (): ts.Variable => ({
   name: name,
   document: "Bool. 真か偽. JavaScriptのbooleanで扱う",
   type_: ts.typeObject(

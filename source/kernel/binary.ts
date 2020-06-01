@@ -13,7 +13,7 @@ export const codec = (withKernel: boolean): ts.Expr =>
     util.codecPropertyName
   );
 
-export const exprDefinition = (): ts.Variable => ({
+export const variableDefinition = (): ts.Variable => ({
   name: name,
   document: "バイナリ. JavaScriptのUint8Arrayで扱う",
   type_: ts.typeObject(

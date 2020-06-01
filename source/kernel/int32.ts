@@ -22,7 +22,7 @@ export const decode = (
 ): ts.Expr =>
   ts.call(ts.get(codec(withKernel), util.decodePropertyName), [index, binary]);
 
-export const exprDefinition = (): ts.Variable => ({
+export const variableDefinition = (): ts.Variable => ({
   name: name,
   document:
     "-2 147 483 648 ～ 2 147 483 647. 32bit 符号付き整数. JavaScriptのnumberで扱う",

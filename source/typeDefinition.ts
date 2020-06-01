@@ -4,6 +4,7 @@ import * as util from "./util";
 import * as codec from "./kernel/codec";
 import * as maybe from "./kernel/maybe";
 import * as result from "./kernel/result";
+import * as hexString from "./kernel/hexString";
 
 export const generateTypeDefinition = (
   customTypeList: ReadonlyArray<data.CustomTypeDefinition>,
@@ -17,39 +18,17 @@ export const generateTypeDefinition = (
       customTypeToDefinition(result.customTypeDefinition),
       ...customTypeList.map(customTypeToDefinition),
       ...[...idOrTokenTypeNameSet.id, ...idOrTokenTypeNameSet.token].map(
-        idOrTokenDefinition
+        hexString.typeDefinition
       ),
     ];
   }
   return [
     ...customTypeList.map(customTypeToDefinition),
     ...[...idOrTokenTypeNameSet.id, ...idOrTokenTypeNameSet.token].map(
-      idOrTokenDefinition
+      hexString.typeDefinition
     ),
   ];
 };
-
-/* ========================================
-                Id Token
-   ========================================
- */
-
-const idOrTokenDefinition = (name: string): ts.TypeAlias => ({
-  name: identifer.fromString(name),
-  document: "",
-  parameterList: [],
-  type_: ts.typeIntersection(
-    ts.typeString,
-    ts.typeObject(
-      new Map([
-        [
-          "_" + util.firstLowerCase(name),
-          { type_: ts.typeNever, document: "" },
-        ],
-      ])
-    )
-  ),
-});
 
 /* ========================================
                Custom Type

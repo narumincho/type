@@ -167,8 +167,8 @@ export const Int32: {
       index: number,
       binary: Uint8Array
     ): { readonly result: number; readonly nextIndex: number } => {
-      let result = 0;
-      let offset = 0;
+      let result: number = 0;
+      let offset: number = 0;
       while (true) {
         const byte: number = binary[index + offset];
         result |= (byte & 127) << (offset * 7);
@@ -323,6 +323,64 @@ export const List: {
       return { result: result, nextIndex: index };
     },
   }),
+};
+
+/**
+ * Id
+ */
+export const Id: {
+  /**
+   * バイナリに変換する
+   */
+  readonly codec: Codec<string>;
+} = {
+  codec: {
+    encode: (value: string): ReadonlyArray<number> => {
+      const result: Array<number> = [];
+      for (let i = 0; i < 16; i += 1) {
+        result[i] = Number.parseInt(value.slice(i * 2, i * 2 + 2), 16);
+      }
+      return result;
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: string; readonly nextIndex: number } => ({
+      result: [...binary.slice(index, index + 16)]
+        .map((n: number): string => n.toString(16).padStart(2, "0"))
+        .join(""),
+      nextIndex: index + 16,
+    }),
+  },
+};
+
+/**
+ * Token
+ */
+export const Token: {
+  /**
+   * バイナリに変換する
+   */
+  readonly codec: Codec<string>;
+} = {
+  codec: {
+    encode: (value: string): ReadonlyArray<number> => {
+      const result: Array<number> = [];
+      for (let i = 0; i < 32; i += 1) {
+        result[i] = Number.parseInt(value.slice(i * 2, i * 2 + 2), 16);
+      }
+      return result;
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: string; readonly nextIndex: number } => ({
+      result: [...binary.slice(index, index + 32)]
+        .map((n: number): string => n.toString(16).padStart(2, "0"))
+        .join(""),
+      nextIndex: index + 32,
+    }),
+  },
 };
 
 /**

@@ -1,5 +1,10 @@
 import * as nType from "../source/main";
-import { Type, Maybe, CustomTypeDefinitionBody } from "../source/type";
+import {
+  Type,
+  Maybe,
+  CustomTypeDefinitionBody,
+  CustomTypeDefinition,
+} from "../source/data";
 import * as jsTsCodeGenerator from "js-ts-code-generator";
 import { promises as fileSystem } from "fs";
 import * as prettier from "prettier";
@@ -38,7 +43,7 @@ const patternType = Type.Custom({
   parameterList: [],
 });
 
-const customTypeDefinitionList: ReadonlyArray<nType.type.CustomTypeDefinition> = [
+const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
   {
     name: typeName,
     description: "型",
