@@ -1,10 +1,10 @@
 import { data as ts, identifer } from "js-ts-code-generator";
 import {
-  CustomTypeDefinition,
-  CustomTypeDefinitionBody,
   Maybe,
+  CustomTypeDefinitionBody,
   Type,
-} from "../type";
+  CustomTypeDefinition,
+} from "../data";
 import * as util from "../util";
 
 const name = "Maybe";

@@ -1,7 +1,7 @@
 import { data as ts, identifer } from "js-ts-code-generator";
-import * as type from "./type";
+import * as data from "./data";
+import { Maybe } from "./data";
 import * as util from "./util";
-import * as c from "./case";
 import * as codec from "./kernel/codec";
 import * as int32 from "./kernel/int32";
 import * as kernelString from "./kernel/string";
@@ -12,12 +12,12 @@ import * as binary from "./kernel/binary";
 import * as list from "./kernel/list";
 
 export const generate = (
-  customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
-  idAndTokenNameSet: type.IdAndTokenNameSet,
+  customTypeList: ReadonlyArray<data.CustomTypeDefinition>,
+  idAndTokenNameSet: util.IdAndTokenNameSet,
   withKernel: boolean
 ): ReadonlyArray<ts.Variable> => {
   if (withKernel) {
-    const customTypeAndDefaultTypeList: ReadonlyArray<type.CustomTypeDefinition> = [
+    const customTypeAndDefaultTypeList: ReadonlyArray<data.CustomTypeDefinition> = [
       maybe.customTypeDefinition,
       result.customTypeDefinition,
       ...customTypeList,
@@ -71,7 +71,7 @@ const customTypeNameIdentifer = (
   tagName: string
 ): identifer.Identifer => {
   return identifer.fromString(
-    c.firstLowerCase(customTypeName) + c.firstUpperCase(tagName)
+    util.firstLowerCase(customTypeName) + util.firstUpperCase(tagName)
   );
 };
 
@@ -81,7 +81,7 @@ export const customTypeVar = (
 ): ts.Expr => ts.variable(customTypeNameIdentifer(customTypeName, tagName));
 
 const customTypeDefinitionToTagVariable = (
-  customType: type.CustomTypeDefinition,
+  customType: data.CustomTypeDefinition,
   withKernel: boolean
 ): ts.Variable => {
   return {
@@ -93,7 +93,7 @@ const customTypeDefinitionToTagVariable = (
 };
 
 const customTypeDefinitionToType = (
-  customType: type.CustomTypeDefinition,
+  customType: data.CustomTypeDefinition,
   withKernel: boolean
 ): ts.Type => {
   switch (customType.body._) {
@@ -142,7 +142,7 @@ const customTypeDefinitionToType = (
 };
 
 const customTypeDefinitionToExpr = (
-  customType: type.CustomTypeDefinition,
+  customType: data.CustomTypeDefinition,
   withKernel: boolean
 ): ts.Expr => {
   switch (customType.body._) {
@@ -158,7 +158,7 @@ const customTypeDefinitionToExpr = (
           .map((pattern) =>
             ts.memberKeyValue(
               pattern.name,
-              type.isTagTypeAllNoParameter(patternList)
+              util.isTagTypeAllNoParameter(patternList)
                 ? ts.stringLiteral(pattern.name)
                 : patternToTagExpr(
                     identifer.fromString(customType.name),
@@ -176,7 +176,7 @@ const customTypeDefinitionToExpr = (
 const tagNameAndParameterToTagExprType = (
   typeName: identifer.Identifer,
   typeParameterList: ReadonlyArray<string>,
-  pattern: type.Pattern
+  pattern: data.Pattern
 ) => {
   const typeParameterIdentiferList = typeParameterList.map(
     identifer.fromString
@@ -209,7 +209,7 @@ const tagNameAndParameterToTagExprType = (
 const patternToTagExpr = (
   typeName: identifer.Identifer,
   typeParameterList: ReadonlyArray<string>,
-  pattern: type.Pattern
+  pattern: data.Pattern
 ): ts.Expr => {
   const tagField: ts.Member = ts.memberKeyValue(
     "_",
@@ -263,7 +263,7 @@ const patternToTagExpr = (
 
 /** カスタム型の式のcodecプロパティの型 */
 const customTypeToCodecType = (
-  customTypeDefinition: type.CustomTypeDefinition,
+  customTypeDefinition: data.CustomTypeDefinition,
   withKernel: boolean
 ): ts.Type =>
   codec.codecTypeWithTypeParameter(
@@ -273,7 +273,7 @@ const customTypeToCodecType = (
   );
 
 const customTypeToCodecDefinitionMember = (
-  customType: type.CustomTypeDefinition,
+  customType: data.CustomTypeDefinition,
   withKernel: boolean
 ): ReadonlyArray<ts.Member> => {
   return [
@@ -288,7 +288,7 @@ const codecParameterName = (name: string): identifer.Identifer =>
   identifer.fromString(name + "Codec");
 
 const codecExprDefinition = (
-  customTypeDefinition: type.CustomTypeDefinition,
+  customTypeDefinition: data.CustomTypeDefinition,
   withKernel: boolean
 ): ts.Expr => {
   if (customTypeDefinition.typeParameterList.length === 0) {
@@ -321,7 +321,7 @@ const codecExprDefinition = (
 };
 
 const codecDefinitionBodyExpr = (
-  customTypeDefinition: type.CustomTypeDefinition,
+  customTypeDefinition: data.CustomTypeDefinition,
   withKernel: boolean
 ): ts.Expr => {
   return ts.objectLiteral([
@@ -340,7 +340,7 @@ const codecDefinitionBodyExpr = (
  * Encode Definition
  */
 const encodeExprDefinition = (
-  customTypeDefinition: type.CustomTypeDefinition,
+  customTypeDefinition: data.CustomTypeDefinition,
   withKernel: boolean
 ): ts.Expr =>
   codec.encodeLambda(
@@ -369,7 +369,7 @@ const encodeExprDefinition = (
   );
 
 const productEncodeDefinitionStatementList = (
-  memberList: ReadonlyArray<type.Member>,
+  memberList: ReadonlyArray<data.Member>,
   parameter: ts.Expr,
   withKernel: boolean
 ): ReadonlyArray<ts.Statement> => {
@@ -395,11 +395,11 @@ const productEncodeDefinitionStatementList = (
 };
 
 const sumEncodeDefinitionStatementList = (
-  patternList: ReadonlyArray<type.Pattern>,
+  patternList: ReadonlyArray<data.Pattern>,
   parameter: ts.Expr,
   withKernel: boolean
 ): ReadonlyArray<ts.Statement> => {
-  if (type.isTagTypeAllNoParameter(patternList)) {
+  if (util.isTagTypeAllNoParameter(patternList)) {
     return [
       ts.statementSwitch({
         expr: parameter,
@@ -425,7 +425,7 @@ const sumEncodeDefinitionStatementList = (
 };
 
 const patternToSwitchPattern = (
-  patternList: type.Pattern,
+  patternList: data.Pattern,
   index: number,
   parameter: ts.Expr,
   withKernel: boolean
@@ -464,7 +464,7 @@ const patternToSwitchPattern = (
  * Decode Definition
  */
 const decodeExprDefinition = (
-  customTypeDefinition: type.CustomTypeDefinition,
+  customTypeDefinition: data.CustomTypeDefinition,
   withKernel: boolean
 ): ts.Expr => {
   return codec.decodeLambda(
@@ -499,12 +499,12 @@ const decodeExprDefinition = (
 
 const productDecodeDefinitionStatementList = (
   withKernel: boolean,
-  memberList: ReadonlyArray<type.Member>,
+  memberList: ReadonlyArray<data.Member>,
   parameterIndex: ts.Expr,
   parameterBinary: ts.Expr
 ): ReadonlyArray<ts.Statement> => {
   const resultAndNextIndexNameIdentifer = (
-    member: type.Member
+    member: data.Member
   ): identifer.Identifer => identifer.fromString(member.name + "AndNextIndex");
 
   const memberDecoderCode = memberList.reduce<{
@@ -557,7 +557,7 @@ const productDecodeDefinitionStatementList = (
 
 const sumDecodeDefinitionStatementList = (
   withKernel: boolean,
-  patternList: ReadonlyArray<type.Pattern>,
+  patternList: ReadonlyArray<data.Pattern>,
   customTypeName: string,
   parameterIndex: ts.Expr,
   parameterBinary: ts.Expr,
@@ -592,7 +592,7 @@ const sumDecodeDefinitionStatementList = (
 const tagNameAndParameterCode = (
   withKernel: boolean,
   customTypeName: string,
-  pattern: type.Pattern,
+  pattern: data.Pattern,
   index: number,
   patternIndexAndNextIndexVar: ts.Expr,
   parameterBinary: ts.Expr,
@@ -623,7 +623,7 @@ const tagNameAndParameterCode = (
               customTypeName,
               noTypeParameter,
               pattern.name,
-              type.Maybe.Just(
+              Maybe.Just(
                 codec.getResult(ts.variable(identifer.fromString("result")))
               )
             ),
@@ -643,7 +643,7 @@ const tagNameAndParameterCode = (
               customTypeName,
               noTypeParameter,
               pattern.name,
-              type.Maybe.Nothing()
+              Maybe.Nothing()
             ),
             codec.getNextIndex(patternIndexAndNextIndexVar)
           ),
@@ -656,7 +656,7 @@ const patternUse = (
   customTypeName: string,
   noTypeParameter: boolean,
   tagName: string,
-  parameter: type.Maybe<ts.Expr>
+  parameter: Maybe<ts.Expr>
 ): ts.Expr => {
   const tagExpr = ts.get(
     ts.variable(identifer.fromString(customTypeName)),
@@ -675,7 +675,7 @@ const patternUse = (
 
 const encodeExprUse = (
   withKernel: boolean,
-  type_: type.Type,
+  type_: data.Type,
   target: ts.Expr
 ): ts.Expr =>
   ts.call(ts.get(codecExprUse(type_, withKernel), util.encodePropertyName), [
@@ -684,7 +684,7 @@ const encodeExprUse = (
 
 const decodeExprUse = (
   withKernel: boolean,
-  type_: type.Type,
+  type_: data.Type,
   index: ts.Expr,
   binary: ts.Expr
 ) =>
@@ -693,7 +693,7 @@ const decodeExprUse = (
     binary,
   ]);
 
-const codecExprUse = (type_: type.Type, withKernel: boolean): ts.Expr => {
+const codecExprUse = (type_: data.Type, withKernel: boolean): ts.Expr => {
   switch (type_._) {
     case "Int32":
       return int32.codec(withKernel);

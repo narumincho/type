@@ -1,15 +1,13 @@
 import { data as ts, identifer } from "js-ts-code-generator";
-import * as type from "./type";
-import { Type, Maybe, CustomTypeDefinitionBody } from "./type";
+import * as data from "./data";
 import * as util from "./util";
-import * as c from "./case";
 import * as codec from "./kernel/codec";
 import * as maybe from "./kernel/maybe";
 import * as result from "./kernel/result";
 
 export const generateTypeDefinition = (
-  customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
-  idOrTokenTypeNameSet: type.IdAndTokenNameSet,
+  customTypeList: ReadonlyArray<data.CustomTypeDefinition>,
+  idOrTokenTypeNameSet: util.IdAndTokenNameSet,
   widthKernel: boolean
 ): ReadonlyArray<ts.TypeAlias> => {
   if (widthKernel) {
@@ -44,7 +42,10 @@ const idOrTokenDefinition = (name: string): ts.TypeAlias => ({
     ts.typeString,
     ts.typeObject(
       new Map([
-        ["_" + c.firstLowerCase(name), { type_: ts.typeNever, document: "" }],
+        [
+          "_" + util.firstLowerCase(name),
+          { type_: ts.typeNever, document: "" },
+        ],
       ])
     )
   ),
@@ -56,7 +57,7 @@ const idOrTokenDefinition = (name: string): ts.TypeAlias => ({
 */
 
 export const customTypeToDefinition = (
-  customType: type.CustomTypeDefinition
+  customType: data.CustomTypeDefinition
 ): ts.TypeAlias => ({
   name: identifer.fromString(customType.name),
   document: customType.description,
@@ -65,11 +66,11 @@ export const customTypeToDefinition = (
 });
 
 const customTypeDefinitionBodyToTsType = (
-  body: type.CustomTypeDefinitionBody
+  body: data.CustomTypeDefinitionBody
 ): ts.Type => {
   switch (body._) {
     case "Sum":
-      if (type.isTagTypeAllNoParameter(body.patternList)) {
+      if (util.isTagTypeAllNoParameter(body.patternList)) {
         return ts.typeUnion(
           body.patternList.map((pattern) => ts.typeStringLiteral(pattern.name))
         );
@@ -92,7 +93,7 @@ const customTypeDefinitionBodyToTsType = (
   }
 };
 
-const patternListToObjectType = (patternList: type.Pattern): ts.Type => {
+const patternListToObjectType = (patternList: data.Pattern): ts.Type => {
   const tagField: [string, { type_: ts.Type; document: string }] = [
     "_",
     {

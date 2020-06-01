@@ -1,17 +1,17 @@
 import * as typeDefinition from "./typeDefinition";
 import * as tag from "./tag";
-import * as type from "./type";
-import { data } from "js-ts-code-generator";
-import * as c from "./case";
+import * as util from "./util";
+import { data as ts } from "js-ts-code-generator";
+import * as data from "./data";
 
-export { type };
+export { util as type };
 
 export const generateTypeScriptCode = (
-  customTypeList: ReadonlyArray<type.CustomTypeDefinition>,
+  customTypeList: ReadonlyArray<data.CustomTypeDefinition>,
   withKernel: boolean
-): data.Code => {
+): ts.Code => {
   checkCustomTypeListValidation(customTypeList);
-  const idOrTokenTypeNameSet = type.collectIdOrTokenTypeNameSet(customTypeList);
+  const idOrTokenTypeNameSet = util.collectIdOrTokenTypeNameSet(customTypeList);
   return {
     exportDefinitionList: [
       ...typeDefinition
@@ -20,10 +20,10 @@ export const generateTypeScriptCode = (
           idOrTokenTypeNameSet,
           withKernel
         )
-        .map(data.definitionTypeAlias),
+        .map(ts.definitionTypeAlias),
       ...tag
         .generate(customTypeList, idOrTokenTypeNameSet, withKernel)
-        .map(data.definitionVariable),
+        .map(ts.definitionVariable),
     ],
     statementList: [],
   };
@@ -35,14 +35,14 @@ export const generateTypeScriptCode = (
  * @throws 型の定義が正しくできていない場合
  */
 const checkCustomTypeListValidation = (
-  customTypeList: ReadonlyArray<type.CustomTypeDefinition>
+  customTypeList: ReadonlyArray<data.CustomTypeDefinition>
 ): void => {
   const customTypeNameAndTypeParameterListMap: Map<
     string,
     Set<string>
   > = new Map();
   for (const customType of customTypeList) {
-    if (!c.isFirstUpperCaseName(customType.name)) {
+    if (!util.isFirstUpperCaseName(customType.name)) {
       throw new Error("custom type name is invalid. name = " + customType.name);
     }
     if (customTypeNameAndTypeParameterListMap.has(customType.name)) {
@@ -57,7 +57,7 @@ const checkCustomTypeListValidation = (
         );
       }
       typeParameterSet.add(typeParameter);
-      if (!c.isFirstLowerCaseName(typeParameter)) {
+      if (!util.isFirstLowerCaseName(typeParameter)) {
         throw new Error(
           "type parameter name is invalid. name =" + typeParameter
         );
@@ -86,7 +86,7 @@ const checkCustomTypeListValidation = (
 };
 
 const checkCustomTypeBodyValidation = (
-  customTypeBody: type.CustomTypeDefinitionBody,
+  customTypeBody: data.CustomTypeDefinitionBody,
   customTypeNameAndTypeParameterListMap: Map<string, Set<string>>,
   scopedTypeParameterList: Set<string>
 ): void => {
@@ -109,7 +109,7 @@ const checkCustomTypeBodyValidation = (
 };
 
 const checkProductTypeValidation = (
-  memberList: ReadonlyArray<type.Member>,
+  memberList: ReadonlyArray<data.Member>,
   customTypeNameAndTypeParameterListMap: Map<string, Set<string>>,
   scopedTypeParameterList: Set<string>
 ): void => {
@@ -120,7 +120,7 @@ const checkProductTypeValidation = (
     }
     memberNameSet.add(member.name);
 
-    if (!c.isFirstLowerCaseName(member.name)) {
+    if (!util.isFirstLowerCaseName(member.name)) {
       throw new Error("member name is invalid. name =" + member.name);
     }
     checkTypeValidation(
@@ -132,7 +132,7 @@ const checkProductTypeValidation = (
 };
 
 const checkSumTypeValidation = (
-  patternList: ReadonlyArray<type.Pattern>,
+  patternList: ReadonlyArray<data.Pattern>,
   customTypeNameAndTypeParameterListMap: Map<string, Set<string>>,
   scopedTypeParameterList: Set<string>
 ): void => {
@@ -143,7 +143,7 @@ const checkSumTypeValidation = (
     }
     tagNameSet.add(pattern.name);
 
-    if (!c.isFirstUpperCaseName(pattern.name)) {
+    if (!util.isFirstUpperCaseName(pattern.name)) {
       throw new Error("tag name is invalid. name =" + pattern.name);
     }
     if (pattern.parameter._ === "Just") {
@@ -157,7 +157,7 @@ const checkSumTypeValidation = (
 };
 
 const checkTypeValidation = (
-  type_: type.Type,
+  type_: data.Type,
   customTypeNameAndTypeParameterMap: Map<string, Set<string>>,
   scopedTypeParameterList: Set<string>
 ): void => {
@@ -183,12 +183,12 @@ const checkTypeValidation = (
       );
       return;
     case "Id":
-      if (!c.isFirstUpperCaseName(type_.string_)) {
+      if (!util.isFirstUpperCaseName(type_.string_)) {
         throw new Error("Id type name is invalid. name =" + type_.string_);
       }
       return;
     case "Token":
-      if (!c.isFirstUpperCaseName(type_.string_)) {
+      if (!util.isFirstUpperCaseName(type_.string_)) {
         throw new Error("Token type name is invalid. name =" + type_.string_);
       }
       return;

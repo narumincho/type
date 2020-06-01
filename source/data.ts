@@ -167,8 +167,8 @@ export const Int32: {
       index: number,
       binary: Uint8Array
     ): { readonly result: number; readonly nextIndex: number } => {
-      let result: number = 0;
-      let offset: number = 0;
+      let result = 0;
+      let offset = 0;
       while (true) {
         const byte: number = binary[index + offset];
         result |= (byte & 127) << (offset * 7);
