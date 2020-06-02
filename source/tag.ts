@@ -749,9 +749,24 @@ const codecExprUse = (type_: data.Type, withKernel: boolean): ts.Expr => {
         util.codecPropertyName
       );
     case "Custom":
-      return ts.get(
-        ts.variable(identifer.fromString(type_.nameAndTypeParameterList.name)),
-        util.codecPropertyName
+      if (type_.nameAndTypeParameterList.parameterList.length === 0) {
+        return ts.get(
+          ts.variable(
+            identifer.fromString(type_.nameAndTypeParameterList.name)
+          ),
+          util.codecPropertyName
+        );
+      }
+      return ts.call(
+        ts.get(
+          ts.variable(
+            identifer.fromString(type_.nameAndTypeParameterList.name)
+          ),
+          util.codecPropertyName
+        ),
+        type_.nameAndTypeParameterList.parameterList.map((parameter) =>
+          codecExprUse(parameter, withKernel)
+        )
       );
     case "Parameter":
       return ts.variable(codecParameterName(type_.string_));

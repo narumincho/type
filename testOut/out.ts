@@ -1093,7 +1093,9 @@ export const ResponseWithId: {
     dataCodec: Codec<data>
   ): Codec<ResponseWithId<id, data>> => ({
     encode: (value: ResponseWithId<id, data>): ReadonlyArray<number> =>
-      idCodec.encode(value.id).concat(Response.codec.encode(value.response)),
+      idCodec
+        .encode(value.id)
+        .concat(Response.codec(dataCodec).encode(value.response)),
     decode: (
       index: number,
       binary: Uint8Array
@@ -1108,7 +1110,7 @@ export const ResponseWithId: {
       const responseAndNextIndex: {
         readonly result: Response<data>;
         readonly nextIndex: number;
-      } = Response.codec.decode(idAndNextIndex.nextIndex, binary);
+      } = Response.codec(dataCodec).decode(idAndNextIndex.nextIndex, binary);
       return {
         result: {
           id: idAndNextIndex.result,
