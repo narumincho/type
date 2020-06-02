@@ -99,11 +99,11 @@ test(
 
 test(
   "token",
-  "24b6b3789d903e841490ac04ffc2b6f9848ea529b2d9db380d190583b09995e6",
+  "24b6b3789d903e841490ac04ffc2b6f9848ea529b2d9db380d190583b09995e6" as out.FileHash,
   out.FileHash.codec
 );
 
-test("id", "756200c85a0ff28f08daa2d201d616a9", out.UserId.codec);
+test("id", "756200c85a0ff28f08daa2d201d616a9" as out.UserId, out.UserId.codec);
 
 test<out.Maybe<out.Project>>(
   "maybe project",
@@ -113,4 +113,10 @@ test<out.Maybe<out.Project>>(
     image: "0cbeb09760a312a3562547115aa855a39d9e1ca837ed00331e3a84d6de50ff3b" as out.FileHash,
   }),
   out.Maybe.codec(out.Project.codec)
+);
+
+test(
+  "response (customType with type parameter)",
+  out.Response.Found("それな"),
+  out.Response.codec(out.String.codec)
 );

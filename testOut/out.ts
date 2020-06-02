@@ -402,7 +402,15 @@ export const UserId: {
    * バイナリに変換する
    */
   readonly codec: Codec<UserId>;
-} = Id;
+} = {
+  codec: {
+    encode: Id.codec.encode,
+    decode: Id.codec.decode as (
+      a: number,
+      b: Uint8Array
+    ) => { readonly result: UserId; readonly nextIndex: number },
+  },
+};
 
 /**
  * ProjectId
@@ -412,7 +420,15 @@ export const ProjectId: {
    * バイナリに変換する
    */
   readonly codec: Codec<ProjectId>;
-} = Id;
+} = {
+  codec: {
+    encode: Id.codec.encode,
+    decode: Id.codec.decode as (
+      a: number,
+      b: Uint8Array
+    ) => { readonly result: ProjectId; readonly nextIndex: number },
+  },
+};
 
 /**
  * AccessToken
@@ -422,7 +438,15 @@ export const AccessToken: {
    * バイナリに変換する
    */
   readonly codec: Codec<AccessToken>;
-} = Token;
+} = {
+  codec: {
+    encode: Token.codec.encode,
+    decode: Token.codec.decode as (
+      a: number,
+      b: Uint8Array
+    ) => { readonly result: AccessToken; readonly nextIndex: number },
+  },
+};
 
 /**
  * FileHash
@@ -432,7 +456,15 @@ export const FileHash: {
    * バイナリに変換する
    */
   readonly codec: Codec<FileHash>;
-} = Token;
+} = {
+  codec: {
+    encode: Token.codec.encode,
+    decode: Token.codec.decode as (
+      a: number,
+      b: Uint8Array
+    ) => { readonly result: FileHash; readonly nextIndex: number },
+  },
+};
 
 /**
  * Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した

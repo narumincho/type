@@ -143,6 +143,13 @@ export const idVariableDefinition = (
   name: string,
   withKernel: boolean
 ): ts.Variable => {
+  const targetType = ts.typeScopeInFile(identifer.fromString(name));
+  const idCodec = ts.get(
+    withKernel
+      ? ts.variable(idName)
+      : ts.importedVariable(util.moduleName, idName),
+    util.codecPropertyName
+  );
   return {
     name: identifer.fromString(name),
     document: name,
@@ -151,42 +158,75 @@ export const idVariableDefinition = (
         [
           util.codecPropertyName,
           {
-            type_: codec.codecType(
-              ts.typeScopeInFile(identifer.fromString(name)),
-              true
-            ),
+            type_: codec.codecType(targetType, true),
             document: "バイナリに変換する",
           },
         ],
       ])
     ),
-    expr: withKernel
-      ? ts.variable(idName)
-      : ts.importedVariable(util.moduleName, idName),
+    expr: ts.objectLiteral([
+      ts.memberKeyValue(
+        util.codecPropertyName,
+        ts.objectLiteral([
+          ts.memberKeyValue(
+            util.encodePropertyName,
+            ts.get(idCodec, util.encodePropertyName)
+          ),
+          ts.memberKeyValue(
+            util.decodePropertyName,
+            ts.typeAssertion(
+              ts.get(idCodec, util.decodePropertyName),
+              codec.decodeFunctionType(targetType)
+            )
+          ),
+        ])
+      ),
+    ]),
   };
 };
 
 export const tokenVariableDefinition = (
   name: string,
   withKernel: boolean
-): ts.Variable => ({
-  name: identifer.fromString(name),
-  document: name,
-  type_: ts.typeObject(
-    new Map([
-      [
+): ts.Variable => {
+  const targetType = ts.typeScopeInFile(identifer.fromString(name));
+  const tokenCodec = ts.get(
+    withKernel
+      ? ts.variable(tokenName)
+      : ts.importedVariable(util.moduleName, tokenName),
+    util.codecPropertyName
+  );
+  return {
+    name: identifer.fromString(name),
+    document: name,
+    type_: ts.typeObject(
+      new Map([
+        [
+          util.codecPropertyName,
+          {
+            type_: codec.codecType(targetType, true),
+            document: "バイナリに変換する",
+          },
+        ],
+      ])
+    ),
+    expr: ts.objectLiteral([
+      ts.memberKeyValue(
         util.codecPropertyName,
-        {
-          type_: codec.codecType(
-            ts.typeScopeInFile(identifer.fromString(name)),
-            true
+        ts.objectLiteral([
+          ts.memberKeyValue(
+            util.encodePropertyName,
+            ts.get(tokenCodec, util.encodePropertyName)
           ),
-          document: "バイナリに変換する",
-        },
-      ],
-    ])
-  ),
-  expr: withKernel
-    ? ts.variable(tokenName)
-    : ts.importedVariable(util.moduleName, tokenName),
-});
+          ts.memberKeyValue(
+            util.decodePropertyName,
+            ts.typeAssertion(
+              ts.get(tokenCodec, util.decodePropertyName),
+              codec.decodeFunctionType(targetType)
+            )
+          ),
+        ])
+      ),
+    ]),
+  };
+};
