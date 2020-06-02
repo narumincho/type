@@ -1,229 +1,288 @@
-import * as t from "../source/main";
-import { type } from "../source/main";
+import * as nType from "../source/main";
+import {
+  Maybe,
+  Type,
+  CustomTypeDefinition,
+  CustomTypeDefinitionBody,
+} from "../source/data";
 import * as generator from "js-ts-code-generator";
 import * as fileSystem from "fs";
 import * as ts from "typescript";
-import * as childProcess from "child_process";
 import * as prettier from "prettier";
 
-const typeType: type.CustomType = {
-  name: "Type",
-  description: "型",
-  body: type.customTypeBodySum([
-    {
-      name: "Int",
-      description:
-        "-9007199254740991～9007199254740991 JavaScriptのNumberで正確に表現できる整数の範囲",
-      parameter: type.maybeNothing(),
-    },
-    {
-      name: "String",
-      description: "文字列",
-      parameter: type.maybeNothing(),
-    },
-    {
-      name: "Bool",
-      description: "真偽値",
-      parameter: type.maybeNothing(),
-    },
-    {
-      name: "List",
-      description: "リスト",
-      parameter: type.maybeJust(type.typeCustom("Type")),
-    },
-    {
-      name: "Maybe",
-      description: "Maybe",
-      parameter: type.maybeJust(type.typeCustom("Type")),
-    },
-    {
-      name: "Result",
-      description: "Result",
-      parameter: type.maybeJust(type.typeCustom("ResultType")),
-    },
-    {
-      name: "Id",
-      description:
-        "データを識別するためのもの. カスタムの型名を指定する. 16byte. 16進数文字列で32文字",
-      parameter: type.maybeJust(type.typeString),
-    },
-    {
-      name: "Token",
-      description:
-        "データを識別するため. カスタムの型名を指定する. 32byte. 16進数文字列で64文字",
-      parameter: type.maybeJust(type.typeString),
-    },
-    {
-      name: "Custom",
-      description: "用意されていないアプリ特有の型",
-      parameter: type.maybeJust(type.typeString),
-    },
-  ]),
-};
+const fileHash = Type.Token("FileHash");
 
-const resultTypeType: type.CustomType = {
-  name: "ResultType",
-  description: "正常値と異常値",
-  body: type.customTypeBodyProduct([
-    {
-      name: "ok",
-      description: "正常値",
-      memberType: type.typeCustom("Type"),
-    },
-    {
-      name: "error",
-      description: "異常値",
-      memberType: type.typeCustom("Type"),
-    },
-  ]),
-};
-
-const accessToken = type.typeToken("AccessToken");
+const typeName = "Type";
+const typeType = Type.Custom({ name: typeName, parameterList: [] });
+const resultTypeName = "ResultType";
+const resultTypeType = Type.Custom({
+  name: resultTypeName,
+  parameterList: [],
+});
+const accessToken = Type.Token("AccessToken");
 const urlDataName = "UrlData";
 const clientModeName = "ClientMode";
-const locationName = "Location";
-const languageName = "Language";
-
-const urlData: type.CustomType = {
-  name: urlDataName,
-  description:
-    "デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( https://support.google.com/webmasters/answer/182192?hl=ja )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は http://[::1] になる",
-  body: type.customTypeBodyProduct([
-    {
-      name: "clientMode",
-      description: "クライアントモード",
-      memberType: type.typeCustom(clientModeName),
-    },
-    {
-      name: "location",
-      description: "場所",
-      memberType: type.typeCustom(locationName),
-    },
-    {
-      name: "language",
-      description: "言語",
-      memberType: type.typeCustom(languageName),
-    },
-    {
-      name: "accessToken",
-      description:
-        "アクセストークン. ログインした後のリダイレクト先としてサーバーから渡される",
-      memberType: type.typeMaybe(accessToken),
-    },
-    {
-      name: "if",
-      description: "予約語をこっそり入れてみる",
-      memberType: type.typeBool,
-    },
-  ]),
-};
-
-const clientMode: type.CustomType = {
+const clientModeType = Type.Custom({
   name: clientModeName,
-  description: "デバッグの状態と, デバッグ時ならアクセスしているポート番号",
-  body: type.customTypeBodySum([
-    {
-      name: "DebugMode",
-      description:
-        "デバッグモード. ポート番号を保持する. オリジンは http://[::1]:2520 のようなもの",
-      parameter: type.maybeJust(type.typeInt32),
-    },
-    {
-      name: "Release",
-      description: "リリースモード. https://definy.app ",
-      parameter: type.maybeNothing(),
-    },
-  ]),
-};
+  parameterList: [],
+});
+const locationName = "Location";
+const locationType = Type.Custom({ name: locationName, parameterList: [] });
+const languageName = "Language";
+const languageType = Type.Custom({ name: languageName, parameterList: [] });
+const projectName = "Project";
 
-const location: type.CustomType = {
-  name: locationName,
-  description:
-    "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
-  body: type.customTypeBodySum([
-    {
-      name: "Home",
-      description: "最初のページ",
-      parameter: type.maybeNothing(),
-    },
-    {
-      name: "User",
-      description: "ユーザーの詳細ページ",
-      parameter: type.maybeJust(type.typeId("UserId")),
-    },
-    {
-      name: "Project",
-      description: "プロジェクトの詳細ページ",
-      parameter: type.maybeJust(type.typeId("ProjectId")),
-    },
-  ]),
-};
+const responseWithIdName = "ResponseWithId";
+const responseName = "Response";
+const responseType = (type_: Type): Type =>
+  Type.Custom({ name: responseName, parameterList: [type_] });
 
-const language: type.CustomType = {
-  name: languageName,
-  description: "英語,日本語,エスペラント語などの言語",
-  body: type.customTypeBodySum([
-    {
-      name: "Japanese",
-      description: "日本語",
-      parameter: type.maybeNothing(),
-    },
-    {
-      name: "English",
-      description: "英語",
-      parameter: type.maybeNothing(),
-    },
-    {
-      name: "Esperanto",
-      description: "エスペラント語",
-      parameter: type.maybeNothing(),
-    },
-  ]),
-};
-
-const fileHash = type.typeToken("FileHash");
-
-const project: type.CustomType = {
-  name: "Project",
-  description: "プロジェクト",
-  body: type.customTypeBodyProduct([
-    {
-      name: "name",
-      description: "プロジェクト名",
-      memberType: type.typeString,
-    },
-    {
-      name: "icon",
-      description: "プロジェクトのアイコン画像",
-      memberType: fileHash,
-    },
-    {
-      name: "image",
-      description: "プロジェクトのカバー画像",
-      memberType: fileHash,
-    },
-  ]),
-};
-
-const customTypeList: ReadonlyArray<type.CustomType> = [
-  typeType,
-  resultTypeType,
-  language,
-  urlData,
-  clientMode,
-  location,
-  project,
+const customTypeList: ReadonlyArray<CustomTypeDefinition> = [
+  {
+    name: typeName,
+    typeParameterList: [],
+    description: "型",
+    body: CustomTypeDefinitionBody.Sum([
+      {
+        name: "Int",
+        description:
+          "-9007199254740991～9007199254740991 JavaScriptのNumberで正確に表現できる整数の範囲",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "String",
+        description: "文字列",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Bool",
+        description: "真偽値",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "List",
+        description: "リスト",
+        parameter: Maybe.Just(typeType),
+      },
+      {
+        name: "Maybe",
+        description: "Maybe",
+        parameter: Maybe.Just(typeType),
+      },
+      {
+        name: "Result",
+        description: "Result",
+        parameter: Maybe.Just(resultTypeType),
+      },
+      {
+        name: "Id",
+        description:
+          "データを識別するためのもの. カスタムの型名を指定する. 16byte. 16進数文字列で32文字",
+        parameter: Maybe.Just(Type.String),
+      },
+      {
+        name: "Token",
+        description:
+          "データを識別するため. カスタムの型名を指定する. 32byte. 16進数文字列で64文字",
+        parameter: Maybe.Just(Type.String),
+      },
+      {
+        name: "Custom",
+        description: "用意されていないアプリ特有の型",
+        parameter: Maybe.Just(Type.String),
+      },
+      {
+        name: "Parameter",
+        description: "型パラメーター",
+        parameter: Maybe.Just(Type.String),
+      },
+    ]),
+  },
+  {
+    name: resultTypeName,
+    typeParameterList: [],
+    description: "正常値と異常値",
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "ok",
+        description: "正常値",
+        type: typeType,
+      },
+      {
+        name: "error",
+        description: "異常値",
+        type: typeType,
+      },
+    ]),
+  },
+  {
+    name: urlDataName,
+    typeParameterList: [],
+    description:
+      "デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( https://support.google.com/webmasters/answer/182192?hl=ja )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は http://[::1] になる",
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "clientMode",
+        description: "クライアントモード",
+        type: clientModeType,
+      },
+      {
+        name: "location",
+        description: "場所",
+        type: locationType,
+      },
+      {
+        name: "language",
+        description: "言語",
+        type: languageType,
+      },
+      {
+        name: "accessToken",
+        description:
+          "アクセストークン. ログインした後のリダイレクト先としてサーバーから渡される",
+        type: Type.Maybe(accessToken),
+      },
+      {
+        name: "if",
+        description: "予約語をこっそり入れてみる",
+        type: Type.Bool,
+      },
+    ]),
+  },
+  {
+    name: clientModeName,
+    typeParameterList: [],
+    description: "デバッグの状態と, デバッグ時ならアクセスしているポート番号",
+    body: CustomTypeDefinitionBody.Sum([
+      {
+        name: "DebugMode",
+        description:
+          "デバッグモード. ポート番号を保持する. オリジンは http://[::1]:2520 のようなもの",
+        parameter: Maybe.Just(Type.Int32),
+      },
+      {
+        name: "Release",
+        description: "リリースモード. https://definy.app ",
+        parameter: Maybe.Nothing(),
+      },
+    ]),
+  },
+  {
+    name: locationName,
+    typeParameterList: [],
+    description:
+      "DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる",
+    body: CustomTypeDefinitionBody.Sum([
+      {
+        name: "Home",
+        description: "最初のページ",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "User",
+        description: "ユーザーの詳細ページ",
+        parameter: Maybe.Just(Type.Id("UserId")),
+      },
+      {
+        name: "Project",
+        description: "プロジェクトの詳細ページ",
+        parameter: Maybe.Just(Type.Id("ProjectId")),
+      },
+    ]),
+  },
+  {
+    name: languageName,
+    typeParameterList: [],
+    description: "英語,日本語,エスペラント語などの言語",
+    body: CustomTypeDefinitionBody.Sum([
+      {
+        name: "Japanese",
+        description: "日本語",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "English",
+        description: "英語",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Esperanto",
+        description: "エスペラント語",
+        parameter: Maybe.Nothing(),
+      },
+    ]),
+  },
+  {
+    name: projectName,
+    typeParameterList: [],
+    description: "プロジェクト",
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "name",
+        description: "プロジェクト名",
+        type: Type.String,
+      },
+      {
+        name: "icon",
+        description: "プロジェクトのアイコン画像",
+        type: fileHash,
+      },
+      {
+        name: "image",
+        description: "プロジェクトのカバー画像",
+        type: fileHash,
+      },
+    ]),
+  },
+  {
+    name: responseWithIdName,
+    typeParameterList: ["id", "data"],
+    description:
+      "Elmで扱えるように何のリソースのレスポンスかが含まれたレスポンス",
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "id",
+        description: "リクエストしたリソースのID",
+        type: Type.Parameter("id"),
+      },
+      {
+        name: "response",
+        description: "レスポンス",
+        type: responseType(Type.Parameter("data")),
+      },
+    ]),
+  },
+  {
+    name: responseName,
+    typeParameterList: ["data"],
+    description: "リソースをリクエストしたあとのレスポンス",
+    body: CustomTypeDefinitionBody.Sum([
+      {
+        name: "ConnectionError",
+        description: "オフラインかサーバー上でエラーが発生しました",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "NotFound",
+        description: "リソースが存在しない",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Found",
+        description: "取得に成功した",
+        parameter: Maybe.Just(Type.Parameter("data")),
+      },
+    ]),
+  },
 ];
 
 const typeDefinitionTypeScriptCode = generator.generateCodeAsString(
-  t.generateTypeScriptCode(customTypeList),
+  nType.generateTypeScriptCode(customTypeList),
   "TypeScript"
 );
-const elmCodeAsString: string = t.generateElmCode("Data", customTypeList);
 
 const testOutFolderName = "testOut";
 const typeScriptPath = testOutFolderName + "/out.ts";
-const elmPath = testOutFolderName + "/out.elm";
 
 fileSystem.mkdir(testOutFolderName, () => {
   fileSystem.promises
@@ -247,12 +306,6 @@ fileSystem.mkdir(testOutFolderName, () => {
       }).emit();
 
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      require("../../testOutJs/main.js");
+      require("../../testOutJs/testOut/main.js");
     });
-  fileSystem.promises.writeFile(elmPath, elmCodeAsString).then(() => {
-    console.log("elm output code");
-    childProcess.exec("elm-format --yes " + elmPath, () => {
-      console.log("elm formatted");
-    });
-  });
 });

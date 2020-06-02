@@ -1,99 +1,239 @@
-import * as elm from "./elm";
-import * as typeDefinition from "./typeScript/typeDefinition";
-import * as encoder from "./typeScript/encoder";
-import * as decoder from "./typeScript/decoder";
-import * as tag from "./typeScript/tag";
-import * as type from "./type";
-import { data } from "js-ts-code-generator";
-import * as c from "./case";
+import * as typeDefinition from "./typeDefinition";
+import * as tag from "./tag";
+import * as util from "./util";
+import { data as ts } from "js-ts-code-generator";
+import * as data from "./data";
 
-export { type };
+export { data };
 
 export const generateTypeScriptCode = (
-  customTypeList: ReadonlyArray<type.CustomType>
-): data.Code => {
-  validCustomTypeList(customTypeList);
-  const idOrTokenTypeNameSet = type.collectIdOrTokenTypeNameSet(customTypeList);
+  customTypeList: ReadonlyArray<data.CustomTypeDefinition>
+): ts.Code => {
+  /**
+   * Maybeなどの型は@narumincho/typeのnpmモジュールを使うようにしようとしたが
+   * それだとjs-ts-code-generatorとの循環参照になってしまうので, やはり強制的にMaybeの型を出力する
+   */
+  const withKernel = true;
+  checkCustomTypeListValidation(customTypeList);
+  const idOrTokenTypeNameSet = util.collectIdOrTokenTypeNameSet(customTypeList);
   return {
     exportDefinitionList: [
       ...typeDefinition
-        .generateTypeDefinition(customTypeList, idOrTokenTypeNameSet)
-        .map(data.definitionTypeAlias),
-      ...tag.generate(customTypeList),
-      ...encoder.generateCode(customTypeList).map(data.definitionFunction),
-      ...decoder.generateCode(customTypeList).map(data.definitionFunction),
+        .generateTypeDefinition(
+          customTypeList,
+          idOrTokenTypeNameSet,
+          withKernel
+        )
+        .map(ts.definitionTypeAlias),
+      ...tag
+        .generate(customTypeList, idOrTokenTypeNameSet, withKernel)
+        .map(ts.definitionVariable),
     ],
     statementList: [],
   };
 };
 
-export const generateElmCode = (
-  moduleName: string,
-  customTypeList: ReadonlyArray<type.CustomType>
-): string => {
-  validCustomTypeList(customTypeList);
-  const idOrTokenTypeNameSet = type.collectIdOrTokenTypeNameSet(customTypeList);
-  return elm.generateCode(moduleName, customTypeList, idOrTokenTypeNameSet);
-};
-
-const validCustomTypeList = (
-  customTypeList: ReadonlyArray<type.CustomType>
+/**
+ * 指定した型の定義が正しくできているか調べる
+ * Elmの予約語判定はここではやらない
+ * @throws 型の定義が正しくできていない場合
+ */
+const checkCustomTypeListValidation = (
+  customTypeList: ReadonlyArray<data.CustomTypeDefinition>
 ): void => {
+  const customTypeNameAndTypeParameterListMap: Map<
+    string,
+    Set<string>
+  > = new Map();
   for (const customType of customTypeList) {
-    validCustomType(customType);
+    if (!util.isFirstUpperCaseName(customType.name)) {
+      throw new Error("custom type name is invalid. name = " + customType.name);
+    }
+    if (customTypeNameAndTypeParameterListMap.has(customType.name)) {
+      throw new Error("duplicate custom type name. name =" + customType.name);
+    }
+
+    const typeParameterSet: Set<string> = new Set();
+    for (const typeParameter of customType.typeParameterList) {
+      if (typeParameterSet.has(typeParameter)) {
+        throw new Error(
+          "duplicate type parameter name. name =" + typeParameter
+        );
+      }
+      typeParameterSet.add(typeParameter);
+      if (!util.isFirstLowerCaseName(typeParameter)) {
+        throw new Error(
+          "type parameter name is invalid. name =" + typeParameter
+        );
+      }
+    }
+    customTypeNameAndTypeParameterListMap.set(
+      customType.name,
+      typeParameterSet
+    );
+  }
+
+  for (const customType of customTypeList) {
+    const scopedTypeParameterList = customTypeNameAndTypeParameterListMap.get(
+      customType.name
+    );
+    if (scopedTypeParameterList === undefined) {
+      throw new Error("internal error. fail collect custom type");
+    }
+
+    checkCustomTypeBodyValidation(
+      customType.body,
+      customTypeNameAndTypeParameterListMap,
+      scopedTypeParameterList
+    );
   }
 };
 
-const validCustomType = (customType: type.CustomType): void => {
-  if (!c.isFirstUpperCaseName(customType.name)) {
-    throw new Error("custom type name is invalid. name = " + customType.name);
-  }
-  switch (customType.body._) {
+const checkCustomTypeBodyValidation = (
+  customTypeBody: data.CustomTypeDefinitionBody,
+  customTypeNameAndTypeParameterListMap: Map<string, Set<string>>,
+  scopedTypeParameterList: Set<string>
+): void => {
+  switch (customTypeBody._) {
     case "Product":
-      validProductType(customType.body.memberNameAndTypeList);
+      checkProductTypeValidation(
+        customTypeBody.memberList,
+        customTypeNameAndTypeParameterListMap,
+        scopedTypeParameterList
+      );
       return;
     case "Sum":
-      validSumType(customType.body.tagNameAndParameterList);
+      checkSumTypeValidation(
+        customTypeBody.patternList,
+        customTypeNameAndTypeParameterListMap,
+        scopedTypeParameterList
+      );
       return;
   }
 };
 
-const validProductType = (
-  memberNameAndTypeList: ReadonlyArray<type.MemberNameAndType>
+const checkProductTypeValidation = (
+  memberList: ReadonlyArray<data.Member>,
+  customTypeNameAndTypeParameterListMap: Map<string, Set<string>>,
+  scopedTypeParameterList: Set<string>
 ): void => {
   const memberNameSet: Set<string> = new Set();
-  for (const memberNameAndType of memberNameAndTypeList) {
-    if (memberNameSet.has(memberNameAndType.name)) {
-      throw new Error(
-        "duplicate member name. member name =" + memberNameAndType.name
-      );
+  for (const member of memberList) {
+    if (memberNameSet.has(member.name)) {
+      throw new Error("duplicate member name. name =" + member.name);
     }
-    memberNameSet.add(memberNameAndType.name);
+    memberNameSet.add(member.name);
 
-    if (!c.isFirstLowerCaseName(memberNameAndType.name)) {
-      throw new Error(
-        "member name is invalid. member name =" + memberNameAndType.name
+    if (!util.isFirstLowerCaseName(member.name)) {
+      throw new Error("member name is invalid. name =" + member.name);
+    }
+    checkTypeValidation(
+      member.type,
+      customTypeNameAndTypeParameterListMap,
+      scopedTypeParameterList
+    );
+  }
+};
+
+const checkSumTypeValidation = (
+  patternList: ReadonlyArray<data.Pattern>,
+  customTypeNameAndTypeParameterListMap: Map<string, Set<string>>,
+  scopedTypeParameterList: Set<string>
+): void => {
+  const tagNameSet: Set<string> = new Set();
+  for (const pattern of patternList) {
+    if (tagNameSet.has(pattern.name)) {
+      throw new Error("duplicate tag name. name =" + pattern.name);
+    }
+    tagNameSet.add(pattern.name);
+
+    if (!util.isFirstUpperCaseName(pattern.name)) {
+      throw new Error("tag name is invalid. name =" + pattern.name);
+    }
+    if (pattern.parameter._ === "Just") {
+      checkTypeValidation(
+        pattern.parameter.value,
+        customTypeNameAndTypeParameterListMap,
+        scopedTypeParameterList
       );
     }
   }
 };
 
-const validSumType = (
-  tagNameAndParameterList: ReadonlyArray<type.TagNameAndParameter>
+const checkTypeValidation = (
+  type_: data.Type,
+  customTypeNameAndTypeParameterMap: Map<string, Set<string>>,
+  scopedTypeParameterList: Set<string>
 ): void => {
-  const tagNameSet: Set<string> = new Set();
-  for (const tagNameAndParameter of tagNameAndParameterList) {
-    if (tagNameSet.has(tagNameAndParameter.name)) {
-      throw new Error(
-        "duplicate tag name. tag name =" + tagNameAndParameter.name
+  switch (type_._) {
+    case "List":
+    case "Maybe":
+      checkTypeValidation(
+        type_.type_,
+        customTypeNameAndTypeParameterMap,
+        scopedTypeParameterList
       );
-    }
-    tagNameSet.add(tagNameAndParameter.name);
-
-    if (!c.isFirstUpperCaseName(tagNameAndParameter.name)) {
-      throw new Error(
-        "tag name is invalid. tag name =" + tagNameAndParameter.name
+      return;
+    case "Result":
+      checkTypeValidation(
+        type_.okAndErrorType.ok,
+        customTypeNameAndTypeParameterMap,
+        scopedTypeParameterList
       );
+      checkTypeValidation(
+        type_.okAndErrorType.error,
+        customTypeNameAndTypeParameterMap,
+        scopedTypeParameterList
+      );
+      return;
+    case "Id":
+      if (!util.isFirstUpperCaseName(type_.string_)) {
+        throw new Error("Id type name is invalid. name =" + type_.string_);
+      }
+      return;
+    case "Token": {
+      if (!util.isFirstUpperCaseName(type_.string_)) {
+        throw new Error("Token type name is invalid. name =" + type_.string_);
+      }
+      return;
     }
+    case "Custom": {
+      const customTypeTypeParameterList = customTypeNameAndTypeParameterMap.get(
+        type_.nameAndTypeParameterList.name
+      );
+      if (customTypeTypeParameterList === undefined) {
+        throw new Error(
+          "custom type " +
+            type_.nameAndTypeParameterList.name +
+            " is not defined."
+        );
+      }
+      if (
+        customTypeTypeParameterList.size !==
+        type_.nameAndTypeParameterList.parameterList.length
+      ) {
+        throw new Error(
+          "type parameter count error. " +
+            type_.nameAndTypeParameterList.name +
+            " need " +
+            customTypeTypeParameterList.size.toString() +
+            " parameter(s). but you specified " +
+            type_.nameAndTypeParameterList.parameterList.length.toString() +
+            " parameter(s)"
+        );
+      }
+      for (const parameter of type_.nameAndTypeParameterList.parameterList) {
+        checkTypeValidation(
+          parameter,
+          customTypeNameAndTypeParameterMap,
+          scopedTypeParameterList
+        );
+      }
+      return;
+    }
+    case "Parameter":
+      if (!scopedTypeParameterList.has(type_.string_)) {
+        throw new Error("type parameter " + type_.string_ + " is not defined.");
+      }
   }
 };

@@ -29,21 +29,25 @@ export type Result<ok, error> =
  * 型
  */
 export type Type =
-  | { readonly _: "Int" }
+  | { readonly _: "Int32" }
   | { readonly _: "String" }
   | { readonly _: "Bool" }
+  | { readonly _: "Binary" }
   | { readonly _: "List"; readonly type_: Type }
   | { readonly _: "Maybe"; readonly type_: Type }
-  | { readonly _: "Result"; readonly resultType: ResultType }
+  | { readonly _: "Result"; readonly okAndErrorType: OkAndErrorType }
   | { readonly _: "Id"; readonly string_: string }
   | { readonly _: "Token"; readonly string_: string }
-  | { readonly _: "Custom"; readonly string_: string }
+  | {
+      readonly _: "Custom";
+      readonly nameAndTypeParameterList: NameAndTypeParameterList;
+    }
   | { readonly _: "Parameter"; readonly string_: string };
 
 /**
  * 正常値と異常値
  */
-export type ResultType = {
+export type OkAndErrorType = {
   /**
    * 正常値
    */
@@ -55,98 +59,83 @@ export type ResultType = {
 };
 
 /**
- * デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( https://support.google.com/webmasters/answer/182192?hl=ja )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は http://[::1] になる
+ * カスタム型の指定
  */
-export type UrlData = {
+export type NameAndTypeParameterList = {
   /**
-   * クライアントモード
-   */
-  readonly clientMode: ClientMode;
-  /**
-   * 場所
-   */
-  readonly location: Location;
-  /**
-   * 言語
-   */
-  readonly language: Language;
-  /**
-   * アクセストークン. ログインした後のリダイレクト先としてサーバーから渡される
-   */
-  readonly accessToken: Maybe<AccessToken>;
-  /**
-   * 予約語をこっそり入れてみる
-   */
-  readonly if: boolean;
-};
-
-/**
- * デバッグの状態と, デバッグ時ならアクセスしているポート番号
- */
-export type ClientMode =
-  | { readonly _: "DebugMode"; readonly int32: number }
-  | { readonly _: "Release" };
-
-/**
- * DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる
- */
-export type Location =
-  | { readonly _: "Home" }
-  | { readonly _: "User"; readonly userId: UserId }
-  | { readonly _: "Project"; readonly projectId: ProjectId };
-
-/**
- * 英語,日本語,エスペラント語などの言語
- */
-export type Language = "Japanese" | "English" | "Esperanto";
-
-/**
- * プロジェクト
- */
-export type Project = {
-  /**
-   * プロジェクト名
+   * カスタム型名
    */
   readonly name: string;
   /**
-   * プロジェクトのアイコン画像
+   * 型パラメーター
    */
-  readonly icon: FileHash;
-  /**
-   * プロジェクトのカバー画像
-   */
-  readonly image: FileHash;
+  readonly parameterList: ReadonlyArray<Type>;
 };
 
 /**
- * Elmで扱えるように何のリソースのレスポンスかが含まれたレスポンス
+ * カスタム型の定義
  */
-export type ResponseWithId<id, data> = {
+export type CustomTypeDefinition = {
   /**
-   * リクエストしたリソースのID
+   * 型の名前. [A-Z][a-zA-Z0-9]* の正規表現を満たせばOK
    */
-  readonly id: id;
+  readonly name: string;
   /**
-   * レスポンス
+   * 型の説明. DOCコメントそしてコードに出力される
    */
-  readonly response: Response<data>;
+  readonly description: string;
+  /**
+   * 型パラメーターは小文字で始めなければならない. Elmでの出力と外部の型を隠さないようにするため
+   */
+  readonly typeParameterList: ReadonlyArray<string>;
+  /**
+   * 型の定義の本体
+   */
+  readonly body: CustomTypeDefinitionBody;
 };
 
 /**
- * リソースをリクエストしたあとのレスポンス
+ * カスタム型の定義の本体
  */
-export type Response<data> =
-  | { readonly _: "ConnectionError" }
-  | { readonly _: "NotFound" }
-  | { readonly _: "Found"; readonly data: data };
+export type CustomTypeDefinitionBody =
+  | { readonly _: "Product"; readonly memberList: ReadonlyArray<Member> }
+  | { readonly _: "Sum"; readonly patternList: ReadonlyArray<Pattern> };
 
-export type UserId = string & { readonly _userId: never };
+/**
+ * 直積型の構成要素. 名前と型を持つ
+ */
+export type Member = {
+  /**
+   * メンバー名
+   */
+  readonly name: string;
+  /**
+   * メンバーの説明
+   */
+  readonly description: string;
+  /**
+   * 型
+   */
+  readonly type: Type;
+};
 
-export type ProjectId = string & { readonly _projectId: never };
-
-export type AccessToken = string & { readonly _accessToken: never };
-
-export type FileHash = string & { readonly _fileHash: never };
+/**
+ * 直和型の構成要素. タグと,パラメーターの型がついている
+ */
+export type Pattern = {
+  /**
+   * タグ名
+   */
+  readonly name: string;
+  /**
+   * パターンの説明
+   */
+  readonly description: string;
+  /**
+   * そのパターンにある型
+   */
+  readonly parameter: Maybe<Type>;
+};
 
 /**
  * -2 147 483 648 ～ 2 147 483 647. 32bit 符号付き整数. JavaScriptのnumberで扱う
@@ -395,78 +384,6 @@ export const Token: {
 };
 
 /**
- * UserId
- */
-export const UserId: {
-  /**
-   * バイナリに変換する
-   */
-  readonly codec: Codec<UserId>;
-} = {
-  codec: {
-    encode: Id.codec.encode,
-    decode: Id.codec.decode as (
-      a: number,
-      b: Uint8Array
-    ) => { readonly result: UserId; readonly nextIndex: number },
-  },
-};
-
-/**
- * ProjectId
- */
-export const ProjectId: {
-  /**
-   * バイナリに変換する
-   */
-  readonly codec: Codec<ProjectId>;
-} = {
-  codec: {
-    encode: Id.codec.encode,
-    decode: Id.codec.decode as (
-      a: number,
-      b: Uint8Array
-    ) => { readonly result: ProjectId; readonly nextIndex: number },
-  },
-};
-
-/**
- * AccessToken
- */
-export const AccessToken: {
-  /**
-   * バイナリに変換する
-   */
-  readonly codec: Codec<AccessToken>;
-} = {
-  codec: {
-    encode: Token.codec.encode,
-    decode: Token.codec.decode as (
-      a: number,
-      b: Uint8Array
-    ) => { readonly result: AccessToken; readonly nextIndex: number },
-  },
-};
-
-/**
- * FileHash
- */
-export const FileHash: {
-  /**
-   * バイナリに変換する
-   */
-  readonly codec: Codec<FileHash>;
-} = {
-  codec: {
-    encode: Token.codec.encode,
-    decode: Token.codec.decode as (
-      a: number,
-      b: Uint8Array
-    ) => { readonly result: FileHash; readonly nextIndex: number },
-  },
-};
-
-/**
  * Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
  */
 export const Maybe: {
@@ -593,64 +510,72 @@ export const Result: {
  */
 export const Type: {
   /**
-   * -9007199254740991～9007199254740991 JavaScriptのNumberで正確に表現できる整数の範囲
+   * 32bit 符号付き整数. (-2 147 483 648 ～ 2147483647). JavaScriptのnumberとして扱える
    */
-  readonly Int: Type;
+  readonly Int32: Type;
   /**
-   * 文字列
+   * 文字列. JavaScriptのStringとして扱える
    */
   readonly String: Type;
   /**
-   * 真偽値
+   * 真偽値. JavaScriptのbooleanとして扱える
    */
   readonly Bool: Type;
   /**
-   * リスト
+   * バイナリ. JavaScriptのUint8Arrayとして扱える
+   */
+  readonly Binary: Type;
+  /**
+   * リスト. JavaScriptのArrayとして扱える
    */
   readonly List: (a: Type) => Type;
   /**
-   * Maybe
+   * Maybe. 指定した型の値があるJustと値がないNothingのどちらか
    */
   readonly Maybe: (a: Type) => Type;
   /**
-   * Result
+   * Result. 成功と失敗を表す
    */
-  readonly Result: (a: ResultType) => Type;
+  readonly Result: (a: OkAndErrorType) => Type;
   /**
-   * データを識別するためのもの. カスタムの型名を指定する. 16byte. 16進数文字列で32文字
+   * データを識別するためのもの. `UserId`などの型名を指定する. 16byte. 16進数文字列で32文字
    */
   readonly Id: (a: string) => Type;
   /**
-   * データを識別するため. カスタムの型名を指定する. 32byte. 16進数文字列で64文字
+   * データを識別,証明するため. `AccessToken`などの型名を指定する. 32byte. 16進数文字列で64文字
    */
   readonly Token: (a: string) => Type;
   /**
    * 用意されていないアプリ特有の型
    */
-  readonly Custom: (a: string) => Type;
+  readonly Custom: (a: NameAndTypeParameterList) => Type;
   /**
-   * 型パラメーター
+   * カスタム型の定義で使う型変数
    */
   readonly Parameter: (a: string) => Type;
   readonly codec: Codec<Type>;
 } = {
-  Int: { _: "Int" },
+  Int32: { _: "Int32" },
   String: { _: "String" },
   Bool: { _: "Bool" },
+  Binary: { _: "Binary" },
   List: (type_: Type): Type => ({ _: "List", type_: type_ }),
   Maybe: (type_: Type): Type => ({ _: "Maybe", type_: type_ }),
-  Result: (resultType: ResultType): Type => ({
+  Result: (okAndErrorType: OkAndErrorType): Type => ({
     _: "Result",
-    resultType: resultType,
+    okAndErrorType: okAndErrorType,
   }),
   Id: (string_: string): Type => ({ _: "Id", string_: string_ }),
   Token: (string_: string): Type => ({ _: "Token", string_: string_ }),
-  Custom: (string_: string): Type => ({ _: "Custom", string_: string_ }),
+  Custom: (nameAndTypeParameterList: NameAndTypeParameterList): Type => ({
+    _: "Custom",
+    nameAndTypeParameterList: nameAndTypeParameterList,
+  }),
   Parameter: (string_: string): Type => ({ _: "Parameter", string_: string_ }),
   codec: {
     encode: (value: Type): ReadonlyArray<number> => {
       switch (value._) {
-        case "Int": {
+        case "Int32": {
           return [0];
         }
         case "String": {
@@ -659,26 +584,33 @@ export const Type: {
         case "Bool": {
           return [2];
         }
-        case "List": {
-          return [3].concat(Type.codec.encode(value.type_));
+        case "Binary": {
+          return [3];
         }
-        case "Maybe": {
+        case "List": {
           return [4].concat(Type.codec.encode(value.type_));
         }
+        case "Maybe": {
+          return [5].concat(Type.codec.encode(value.type_));
+        }
         case "Result": {
-          return [5].concat(ResultType.codec.encode(value.resultType));
+          return [6].concat(OkAndErrorType.codec.encode(value.okAndErrorType));
         }
         case "Id": {
-          return [6].concat(String.codec.encode(value.string_));
-        }
-        case "Token": {
           return [7].concat(String.codec.encode(value.string_));
         }
-        case "Custom": {
+        case "Token": {
           return [8].concat(String.codec.encode(value.string_));
         }
+        case "Custom": {
+          return [9].concat(
+            NameAndTypeParameterList.codec.encode(
+              value.nameAndTypeParameterList
+            )
+          );
+        }
         case "Parameter": {
-          return [9].concat(String.codec.encode(value.string_));
+          return [10].concat(String.codec.encode(value.string_));
         }
       }
     },
@@ -691,7 +623,7 @@ export const Type: {
         readonly nextIndex: number;
       } = Int32.codec.decode(index, binary);
       if (patternIndex.result === 0) {
-        return { result: Type.Int, nextIndex: patternIndex.nextIndex };
+        return { result: Type.Int32, nextIndex: patternIndex.nextIndex };
       }
       if (patternIndex.result === 1) {
         return { result: Type.String, nextIndex: patternIndex.nextIndex };
@@ -700,6 +632,9 @@ export const Type: {
         return { result: Type.Bool, nextIndex: patternIndex.nextIndex };
       }
       if (patternIndex.result === 3) {
+        return { result: Type.Binary, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 4) {
         const result: {
           readonly result: Type;
           readonly nextIndex: number;
@@ -709,7 +644,7 @@ export const Type: {
           nextIndex: result.nextIndex,
         };
       }
-      if (patternIndex.result === 4) {
+      if (patternIndex.result === 5) {
         const result: {
           readonly result: Type;
           readonly nextIndex: number;
@@ -719,24 +654,24 @@ export const Type: {
           nextIndex: result.nextIndex,
         };
       }
-      if (patternIndex.result === 5) {
+      if (patternIndex.result === 6) {
         const result: {
-          readonly result: ResultType;
+          readonly result: OkAndErrorType;
           readonly nextIndex: number;
-        } = ResultType.codec.decode(patternIndex.nextIndex, binary);
+        } = OkAndErrorType.codec.decode(patternIndex.nextIndex, binary);
         return {
           result: Type.Result(result.result),
           nextIndex: result.nextIndex,
         };
       }
-      if (patternIndex.result === 6) {
+      if (patternIndex.result === 7) {
         const result: {
           readonly result: string;
           readonly nextIndex: number;
         } = String.codec.decode(patternIndex.nextIndex, binary);
         return { result: Type.Id(result.result), nextIndex: result.nextIndex };
       }
-      if (patternIndex.result === 7) {
+      if (patternIndex.result === 8) {
         const result: {
           readonly result: string;
           readonly nextIndex: number;
@@ -746,17 +681,20 @@ export const Type: {
           nextIndex: result.nextIndex,
         };
       }
-      if (patternIndex.result === 8) {
+      if (patternIndex.result === 9) {
         const result: {
-          readonly result: string;
+          readonly result: NameAndTypeParameterList;
           readonly nextIndex: number;
-        } = String.codec.decode(patternIndex.nextIndex, binary);
+        } = NameAndTypeParameterList.codec.decode(
+          patternIndex.nextIndex,
+          binary
+        );
         return {
           result: Type.Custom(result.result),
           nextIndex: result.nextIndex,
         };
       }
-      if (patternIndex.result === 9) {
+      if (patternIndex.result === 10) {
         const result: {
           readonly result: string;
           readonly nextIndex: number;
@@ -774,14 +712,14 @@ export const Type: {
 /**
  * 正常値と異常値
  */
-export const ResultType: { readonly codec: Codec<ResultType> } = {
+export const OkAndErrorType: { readonly codec: Codec<OkAndErrorType> } = {
   codec: {
-    encode: (value: ResultType): ReadonlyArray<number> =>
+    encode: (value: OkAndErrorType): ReadonlyArray<number> =>
       Type.codec.encode(value.ok).concat(Type.codec.encode(value.error)),
     decode: (
       index: number,
       binary: Uint8Array
-    ): { readonly result: ResultType; readonly nextIndex: number } => {
+    ): { readonly result: OkAndErrorType; readonly nextIndex: number } => {
       const okAndNextIndex: {
         readonly result: Type;
         readonly nextIndex: number;
@@ -799,395 +737,243 @@ export const ResultType: { readonly codec: Codec<ResultType> } = {
 };
 
 /**
- * デバッグモードかどうか,言語とページの場所. URLとして表現されるデータ. Googleなどの検索エンジンの都合( https://support.google.com/webmasters/answer/182192?hl=ja )で,URLにページの言語のを入れて,言語ごとに別のURLである必要がある. デバッグ時のホスト名は http://[::1] になる
+ * カスタム型の指定
  */
-export const UrlData: { readonly codec: Codec<UrlData> } = {
-  codec: {
-    encode: (value: UrlData): ReadonlyArray<number> =>
-      ClientMode.codec
-        .encode(value.clientMode)
-        .concat(Location.codec.encode(value.location))
-        .concat(Language.codec.encode(value.language))
-        .concat(Maybe.codec(AccessToken.codec).encode(value.accessToken))
-        .concat(Bool.codec.encode(value["if"])),
-    decode: (
-      index: number,
-      binary: Uint8Array
-    ): { readonly result: UrlData; readonly nextIndex: number } => {
-      const clientModeAndNextIndex: {
-        readonly result: ClientMode;
-        readonly nextIndex: number;
-      } = ClientMode.codec.decode(index, binary);
-      const locationAndNextIndex: {
-        readonly result: Location;
-        readonly nextIndex: number;
-      } = Location.codec.decode(clientModeAndNextIndex.nextIndex, binary);
-      const languageAndNextIndex: {
-        readonly result: Language;
-        readonly nextIndex: number;
-      } = Language.codec.decode(locationAndNextIndex.nextIndex, binary);
-      const accessTokenAndNextIndex: {
-        readonly result: Maybe<AccessToken>;
-        readonly nextIndex: number;
-      } = Maybe.codec(AccessToken.codec).decode(
-        languageAndNextIndex.nextIndex,
-        binary
-      );
-      const ifAndNextIndex: {
-        readonly result: boolean;
-        readonly nextIndex: number;
-      } = Bool.codec.decode(accessTokenAndNextIndex.nextIndex, binary);
-      return {
-        result: {
-          clientMode: clientModeAndNextIndex.result,
-          location: locationAndNextIndex.result,
-          language: languageAndNextIndex.result,
-          accessToken: accessTokenAndNextIndex.result,
-          if: ifAndNextIndex.result,
-        },
-        nextIndex: ifAndNextIndex.nextIndex,
-      };
-    },
-  },
-};
-
-/**
- * デバッグの状態と, デバッグ時ならアクセスしているポート番号
- */
-export const ClientMode: {
-  /**
-   * デバッグモード. ポート番号を保持する. オリジンは http://[::1]:2520 のようなもの
-   */
-  readonly DebugMode: (a: number) => ClientMode;
-  /**
-   * リリースモード. https://definy.app
-   */
-  readonly Release: ClientMode;
-  readonly codec: Codec<ClientMode>;
+export const NameAndTypeParameterList: {
+  readonly codec: Codec<NameAndTypeParameterList>;
 } = {
-  DebugMode: (int32: number): ClientMode => ({ _: "DebugMode", int32: int32 }),
-  Release: { _: "Release" },
   codec: {
-    encode: (value: ClientMode): ReadonlyArray<number> => {
-      switch (value._) {
-        case "DebugMode": {
-          return [0].concat(Int32.codec.encode(value.int32));
-        }
-        case "Release": {
-          return [1];
-        }
-      }
-    },
-    decode: (
-      index: number,
-      binary: Uint8Array
-    ): { readonly result: ClientMode; readonly nextIndex: number } => {
-      const patternIndex: {
-        readonly result: number;
-        readonly nextIndex: number;
-      } = Int32.codec.decode(index, binary);
-      if (patternIndex.result === 0) {
-        const result: {
-          readonly result: number;
-          readonly nextIndex: number;
-        } = Int32.codec.decode(patternIndex.nextIndex, binary);
-        return {
-          result: ClientMode.DebugMode(result.result),
-          nextIndex: result.nextIndex,
-        };
-      }
-      if (patternIndex.result === 1) {
-        return {
-          result: ClientMode.Release,
-          nextIndex: patternIndex.nextIndex,
-        };
-      }
-      throw new Error("存在しないパターンを指定された 型を更新してください");
-    },
-  },
-};
-
-/**
- * DefinyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる
- */
-export const Location: {
-  /**
-   * 最初のページ
-   */
-  readonly Home: Location;
-  /**
-   * ユーザーの詳細ページ
-   */
-  readonly User: (a: UserId) => Location;
-  /**
-   * プロジェクトの詳細ページ
-   */
-  readonly Project: (a: ProjectId) => Location;
-  readonly codec: Codec<Location>;
-} = {
-  Home: { _: "Home" },
-  User: (userId: UserId): Location => ({ _: "User", userId: userId }),
-  Project: (projectId: ProjectId): Location => ({
-    _: "Project",
-    projectId: projectId,
-  }),
-  codec: {
-    encode: (value: Location): ReadonlyArray<number> => {
-      switch (value._) {
-        case "Home": {
-          return [0];
-        }
-        case "User": {
-          return [1].concat(UserId.codec.encode(value.userId));
-        }
-        case "Project": {
-          return [2].concat(ProjectId.codec.encode(value.projectId));
-        }
-      }
-    },
-    decode: (
-      index: number,
-      binary: Uint8Array
-    ): { readonly result: Location; readonly nextIndex: number } => {
-      const patternIndex: {
-        readonly result: number;
-        readonly nextIndex: number;
-      } = Int32.codec.decode(index, binary);
-      if (patternIndex.result === 0) {
-        return { result: Location.Home, nextIndex: patternIndex.nextIndex };
-      }
-      if (patternIndex.result === 1) {
-        const result: {
-          readonly result: UserId;
-          readonly nextIndex: number;
-        } = UserId.codec.decode(patternIndex.nextIndex, binary);
-        return {
-          result: Location.User(result.result),
-          nextIndex: result.nextIndex,
-        };
-      }
-      if (patternIndex.result === 2) {
-        const result: {
-          readonly result: ProjectId;
-          readonly nextIndex: number;
-        } = ProjectId.codec.decode(patternIndex.nextIndex, binary);
-        return {
-          result: Location.Project(result.result),
-          nextIndex: result.nextIndex,
-        };
-      }
-      throw new Error("存在しないパターンを指定された 型を更新してください");
-    },
-  },
-};
-
-/**
- * 英語,日本語,エスペラント語などの言語
- */
-export const Language: {
-  /**
-   * 日本語
-   */
-  readonly Japanese: Language;
-  /**
-   * 英語
-   */
-  readonly English: Language;
-  /**
-   * エスペラント語
-   */
-  readonly Esperanto: Language;
-  readonly codec: Codec<Language>;
-} = {
-  Japanese: "Japanese",
-  English: "English",
-  Esperanto: "Esperanto",
-  codec: {
-    encode: (value: Language): ReadonlyArray<number> => {
-      switch (value) {
-        case "Japanese": {
-          return [0];
-        }
-        case "English": {
-          return [1];
-        }
-        case "Esperanto": {
-          return [2];
-        }
-      }
-    },
-    decode: (
-      index: number,
-      binary: Uint8Array
-    ): { readonly result: Language; readonly nextIndex: number } => {
-      const patternIndex: {
-        readonly result: number;
-        readonly nextIndex: number;
-      } = Int32.codec.decode(index, binary);
-      if (patternIndex.result === 0) {
-        return { result: Language.Japanese, nextIndex: patternIndex.nextIndex };
-      }
-      if (patternIndex.result === 1) {
-        return { result: Language.English, nextIndex: patternIndex.nextIndex };
-      }
-      if (patternIndex.result === 2) {
-        return {
-          result: Language.Esperanto,
-          nextIndex: patternIndex.nextIndex,
-        };
-      }
-      throw new Error("存在しないパターンを指定された 型を更新してください");
-    },
-  },
-};
-
-/**
- * プロジェクト
- */
-export const Project: { readonly codec: Codec<Project> } = {
-  codec: {
-    encode: (value: Project): ReadonlyArray<number> =>
+    encode: (value: NameAndTypeParameterList): ReadonlyArray<number> =>
       String.codec
         .encode(value.name)
-        .concat(FileHash.codec.encode(value.icon))
-        .concat(FileHash.codec.encode(value.image)),
-    decode: (
-      index: number,
-      binary: Uint8Array
-    ): { readonly result: Project; readonly nextIndex: number } => {
-      const nameAndNextIndex: {
-        readonly result: string;
-        readonly nextIndex: number;
-      } = String.codec.decode(index, binary);
-      const iconAndNextIndex: {
-        readonly result: FileHash;
-        readonly nextIndex: number;
-      } = FileHash.codec.decode(nameAndNextIndex.nextIndex, binary);
-      const imageAndNextIndex: {
-        readonly result: FileHash;
-        readonly nextIndex: number;
-      } = FileHash.codec.decode(iconAndNextIndex.nextIndex, binary);
-      return {
-        result: {
-          name: nameAndNextIndex.result,
-          icon: iconAndNextIndex.result,
-          image: imageAndNextIndex.result,
-        },
-        nextIndex: imageAndNextIndex.nextIndex,
-      };
-    },
-  },
-};
-
-/**
- * Elmで扱えるように何のリソースのレスポンスかが含まれたレスポンス
- */
-export const ResponseWithId: {
-  readonly codec: <id, data>(
-    a: Codec<id>,
-    b: Codec<data>
-  ) => Codec<ResponseWithId<id, data>>;
-} = {
-  codec: <id, data>(
-    idCodec: Codec<id>,
-    dataCodec: Codec<data>
-  ): Codec<ResponseWithId<id, data>> => ({
-    encode: (value: ResponseWithId<id, data>): ReadonlyArray<number> =>
-      idCodec
-        .encode(value.id)
-        .concat(Response.codec(dataCodec).encode(value.response)),
+        .concat(List.codec(Type.codec).encode(value.parameterList)),
     decode: (
       index: number,
       binary: Uint8Array
     ): {
-      readonly result: ResponseWithId<id, data>;
+      readonly result: NameAndTypeParameterList;
       readonly nextIndex: number;
     } => {
-      const idAndNextIndex: {
-        readonly result: id;
+      const nameAndNextIndex: {
+        readonly result: string;
         readonly nextIndex: number;
-      } = idCodec.decode(index, binary);
-      const responseAndNextIndex: {
-        readonly result: Response<data>;
+      } = String.codec.decode(index, binary);
+      const parameterListAndNextIndex: {
+        readonly result: ReadonlyArray<Type>;
         readonly nextIndex: number;
-      } = Response.codec(dataCodec).decode(idAndNextIndex.nextIndex, binary);
+      } = List.codec(Type.codec).decode(nameAndNextIndex.nextIndex, binary);
       return {
         result: {
-          id: idAndNextIndex.result,
-          response: responseAndNextIndex.result,
+          name: nameAndNextIndex.result,
+          parameterList: parameterListAndNextIndex.result,
         },
-        nextIndex: responseAndNextIndex.nextIndex,
+        nextIndex: parameterListAndNextIndex.nextIndex,
       };
     },
-  }),
+  },
 };
 
 /**
- * リソースをリクエストしたあとのレスポンス
+ * カスタム型の定義
  */
-export const Response: {
-  /**
-   * オフラインかサーバー上でエラーが発生しました
-   */
-  readonly ConnectionError: <data>() => Response<data>;
-  /**
-   * リソースが存在しない
-   */
-  readonly NotFound: <data>() => Response<data>;
-  /**
-   * 取得に成功した
-   */
-  readonly Found: <data>(a: data) => Response<data>;
-  readonly codec: <data>(a: Codec<data>) => Codec<Response<data>>;
+export const CustomTypeDefinition: {
+  readonly codec: Codec<CustomTypeDefinition>;
 } = {
-  ConnectionError: <data>(): Response<data> => ({ _: "ConnectionError" }),
-  NotFound: <data>(): Response<data> => ({ _: "NotFound" }),
-  Found: <data>(data: data): Response<data> => ({ _: "Found", data: data }),
-  codec: <data>(dataCodec: Codec<data>): Codec<Response<data>> => ({
-    encode: (value: Response<data>): ReadonlyArray<number> => {
+  codec: {
+    encode: (value: CustomTypeDefinition): ReadonlyArray<number> =>
+      String.codec
+        .encode(value.name)
+        .concat(String.codec.encode(value.description))
+        .concat(List.codec(String.codec).encode(value.typeParameterList))
+        .concat(CustomTypeDefinitionBody.codec.encode(value.body)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): {
+      readonly result: CustomTypeDefinition;
+      readonly nextIndex: number;
+    } => {
+      const nameAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const descriptionAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(nameAndNextIndex.nextIndex, binary);
+      const typeParameterListAndNextIndex: {
+        readonly result: ReadonlyArray<string>;
+        readonly nextIndex: number;
+      } = List.codec(String.codec).decode(
+        descriptionAndNextIndex.nextIndex,
+        binary
+      );
+      const bodyAndNextIndex: {
+        readonly result: CustomTypeDefinitionBody;
+        readonly nextIndex: number;
+      } = CustomTypeDefinitionBody.codec.decode(
+        typeParameterListAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          description: descriptionAndNextIndex.result,
+          typeParameterList: typeParameterListAndNextIndex.result,
+          body: bodyAndNextIndex.result,
+        },
+        nextIndex: bodyAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * カスタム型の定義の本体
+ */
+export const CustomTypeDefinitionBody: {
+  /**
+   * 直積型. AとBとC
+   */
+  readonly Product: (a: ReadonlyArray<Member>) => CustomTypeDefinitionBody;
+  /**
+   * 直和型. AかBかC
+   */
+  readonly Sum: (a: ReadonlyArray<Pattern>) => CustomTypeDefinitionBody;
+  readonly codec: Codec<CustomTypeDefinitionBody>;
+} = {
+  Product: (memberList: ReadonlyArray<Member>): CustomTypeDefinitionBody => ({
+    _: "Product",
+    memberList: memberList,
+  }),
+  Sum: (patternList: ReadonlyArray<Pattern>): CustomTypeDefinitionBody => ({
+    _: "Sum",
+    patternList: patternList,
+  }),
+  codec: {
+    encode: (value: CustomTypeDefinitionBody): ReadonlyArray<number> => {
       switch (value._) {
-        case "ConnectionError": {
-          return [0];
+        case "Product": {
+          return [0].concat(List.codec(Member.codec).encode(value.memberList));
         }
-        case "NotFound": {
-          return [1];
-        }
-        case "Found": {
-          return [2].concat(dataCodec.encode(value.data));
+        case "Sum": {
+          return [1].concat(
+            List.codec(Pattern.codec).encode(value.patternList)
+          );
         }
       }
     },
     decode: (
       index: number,
       binary: Uint8Array
-    ): { readonly result: Response<data>; readonly nextIndex: number } => {
+    ): {
+      readonly result: CustomTypeDefinitionBody;
+      readonly nextIndex: number;
+    } => {
       const patternIndex: {
         readonly result: number;
         readonly nextIndex: number;
       } = Int32.codec.decode(index, binary);
       if (patternIndex.result === 0) {
+        const result: {
+          readonly result: ReadonlyArray<Member>;
+          readonly nextIndex: number;
+        } = List.codec(Member.codec).decode(patternIndex.nextIndex, binary);
         return {
-          result: Response.ConnectionError(),
-          nextIndex: patternIndex.nextIndex,
+          result: CustomTypeDefinitionBody.Product(result.result),
+          nextIndex: result.nextIndex,
         };
       }
       if (patternIndex.result === 1) {
-        return {
-          result: Response.NotFound(),
-          nextIndex: patternIndex.nextIndex,
-        };
-      }
-      if (patternIndex.result === 2) {
         const result: {
-          readonly result: data;
+          readonly result: ReadonlyArray<Pattern>;
           readonly nextIndex: number;
-        } = dataCodec.decode(patternIndex.nextIndex, binary);
+        } = List.codec(Pattern.codec).decode(patternIndex.nextIndex, binary);
         return {
-          result: Response.Found(result.result),
+          result: CustomTypeDefinitionBody.Sum(result.result),
           nextIndex: result.nextIndex,
         };
       }
       throw new Error("存在しないパターンを指定された 型を更新してください");
     },
-  }),
+  },
+};
+
+/**
+ * 直積型の構成要素. 名前と型を持つ
+ */
+export const Member: { readonly codec: Codec<Member> } = {
+  codec: {
+    encode: (value: Member): ReadonlyArray<number> =>
+      String.codec
+        .encode(value.name)
+        .concat(String.codec.encode(value.description))
+        .concat(Type.codec.encode(value["type"])),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Member; readonly nextIndex: number } => {
+      const nameAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const descriptionAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(nameAndNextIndex.nextIndex, binary);
+      const typeAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(descriptionAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          description: descriptionAndNextIndex.result,
+          type: typeAndNextIndex.result,
+        },
+        nextIndex: typeAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * 直和型の構成要素. タグと,パラメーターの型がついている
+ */
+export const Pattern: { readonly codec: Codec<Pattern> } = {
+  codec: {
+    encode: (value: Pattern): ReadonlyArray<number> =>
+      String.codec
+        .encode(value.name)
+        .concat(String.codec.encode(value.description))
+        .concat(Maybe.codec(Type.codec).encode(value.parameter)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Pattern; readonly nextIndex: number } => {
+      const nameAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const descriptionAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(nameAndNextIndex.nextIndex, binary);
+      const parameterAndNextIndex: {
+        readonly result: Maybe<Type>;
+        readonly nextIndex: number;
+      } = Maybe.codec(Type.codec).decode(
+        descriptionAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          description: descriptionAndNextIndex.result,
+          parameter: parameterAndNextIndex.result,
+        },
+        nextIndex: parameterAndNextIndex.nextIndex,
+      };
+    },
+  },
 };
