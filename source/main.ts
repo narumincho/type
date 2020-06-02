@@ -24,10 +24,10 @@ export const generateTypeScriptCode = (
           idOrTokenTypeNameSet,
           withKernel
         )
-        .map(ts.definitionTypeAlias),
+        .map(ts.ExportDefinition.TypeAlias),
       ...tag
         .generate(customTypeList, idOrTokenTypeNameSet, withKernel)
-        .map(ts.definitionVariable),
+        .map(ts.ExportDefinition.Variable),
     ],
     statementList: [],
   };

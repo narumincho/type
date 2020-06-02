@@ -31,6 +31,6 @@
     "typescript": "^3.9.3"
   },
   "dependencies": {
-    "js-ts-code-generator": "^0.2.11"
+    "js-ts-code-generator": "^0.2.14"
   }
 }
