@@ -35,7 +35,7 @@ export const generate = (
         hexString.idVariableDefinition(name, true)
       ),
       ...[...idAndTokenNameSet.token].map((name) =>
-        hexString.idVariableDefinition(name, true)
+        hexString.tokenVariableDefinition(name, true)
       ),
       ...customTypeAndDefaultTypeList.map((customTypeAndDefaultType) =>
         customTypeDefinitionToTagVariable(customTypeAndDefaultType, true)
@@ -47,7 +47,7 @@ export const generate = (
       hexString.idVariableDefinition(name, true)
     ),
     ...[...idAndTokenNameSet.token].map((name) =>
-      hexString.idVariableDefinition(name, true)
+      hexString.tokenVariableDefinition(name, true)
     ),
     ...customTypeList.map((customTypeAndDefaultType) =>
       customTypeDefinitionToTagVariable(customTypeAndDefaultType, false)

@@ -7,9 +7,13 @@ import * as data from "./data";
 export { data };
 
 export const generateTypeScriptCode = (
-  customTypeList: ReadonlyArray<data.CustomTypeDefinition>,
-  withKernel: boolean
+  customTypeList: ReadonlyArray<data.CustomTypeDefinition>
 ): ts.Code => {
+  /**
+   * Maybeなどの型は@narumincho/typeのnpmモジュールを使うようにしようとしたが
+   * それだとjs-ts-code-generatorとの循環参照になってしまうので, やはり強制的にMaybeの型を出力する
+   */
+  const withKernel = true;
   checkCustomTypeListValidation(customTypeList);
   const idOrTokenTypeNameSet = util.collectIdOrTokenTypeNameSet(customTypeList);
   return {
@@ -187,11 +191,12 @@ const checkTypeValidation = (
         throw new Error("Id type name is invalid. name =" + type_.string_);
       }
       return;
-    case "Token":
+    case "Token": {
       if (!util.isFirstUpperCaseName(type_.string_)) {
         throw new Error("Token type name is invalid. name =" + type_.string_);
       }
       return;
+    }
     case "Custom": {
       const customTypeTypeParameterList = customTypeNameAndTypeParameterMap.get(
         type_.nameAndTypeParameterList.name

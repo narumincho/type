@@ -237,7 +237,7 @@ const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
 
 const code = prettier.format(
   jsTsCodeGenerator.generateCodeAsString(
-    nType.generateTypeScriptCode(customTypeDefinitionList, true),
+    nType.generateTypeScriptCode(customTypeDefinitionList),
     "TypeScript"
   ),
   {

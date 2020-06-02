@@ -142,24 +142,29 @@ export const typeDefinition = (name: string): ts.TypeAlias => ({
 export const idVariableDefinition = (
   name: string,
   withKernel: boolean
-): ts.Variable => ({
-  name: identifer.fromString(name),
-  document: name,
-  type_: ts.typeObject(
-    new Map([
-      [
-        util.codecPropertyName,
-        {
-          type_: codec.codecType(type, true),
-          document: "バイナリに変換する",
-        },
-      ],
-    ])
-  ),
-  expr: withKernel
-    ? ts.variable(idName)
-    : ts.importedVariable(util.moduleName, idName),
-});
+): ts.Variable => {
+  return {
+    name: identifer.fromString(name),
+    document: name,
+    type_: ts.typeObject(
+      new Map([
+        [
+          util.codecPropertyName,
+          {
+            type_: codec.codecType(
+              ts.typeScopeInFile(identifer.fromString(name)),
+              true
+            ),
+            document: "バイナリに変換する",
+          },
+        ],
+      ])
+    ),
+    expr: withKernel
+      ? ts.variable(idName)
+      : ts.importedVariable(util.moduleName, idName),
+  };
+};
 
 export const tokenVariableDefinition = (
   name: string,
@@ -172,13 +177,16 @@ export const tokenVariableDefinition = (
       [
         util.codecPropertyName,
         {
-          type_: codec.codecType(type, true),
+          type_: codec.codecType(
+            ts.typeScopeInFile(identifer.fromString(name)),
+            true
+          ),
           document: "バイナリに変換する",
         },
       ],
     ])
   ),
   expr: withKernel
-    ? ts.variable(idName)
+    ? ts.variable(tokenName)
     : ts.importedVariable(util.moduleName, tokenName),
 });
