@@ -57,9 +57,15 @@ const encodeDefinition = (): ts.Expr => {
   const resultVar = ts.variable(resultName);
   const byteName = identifer.fromString("byte");
   const byteVar = ts.variable(byteName);
+  const restName = identifer.fromString("rest");
+  const restVar = ts.variable(restName);
 
   return c.encodeLambda(type, (valueVar) => [
-    ts.statementSet(valueVar, "|", ts.numberLiteral(0)),
+    ts.statementLetVariableDefinition(
+      restName,
+      ts.typeNumber,
+      ts.bitwiseOr(valueVar, ts.numberLiteral(0))
+    ),
     ts.statementVariableDefinition(
       resultName,
       ts.arrayType(ts.typeNumber),
@@ -69,20 +75,20 @@ const encodeDefinition = (): ts.Expr => {
       ts.statementVariableDefinition(
         byteName,
         ts.typeNumber,
-        ts.bitwiseAnd(valueVar, ts.numberLiteral(0x7f))
+        ts.bitwiseAnd(restVar, ts.numberLiteral(0x7f))
       ),
-      ts.statementSet(valueVar, ">>", ts.numberLiteral(7)),
+      ts.statementSet(restVar, ">>", ts.numberLiteral(7)),
       ts.statementIf(
         ts.logicalOr(
           ts.logicalAnd(
-            ts.equal(valueVar, ts.numberLiteral(0)),
+            ts.equal(restVar, ts.numberLiteral(0)),
             ts.equal(
               ts.bitwiseAnd(byteVar, ts.numberLiteral(0x40)),
               ts.numberLiteral(0)
             )
           ),
           ts.logicalAnd(
-            ts.equal(valueVar, ts.numberLiteral(-1)),
+            ts.equal(restVar, ts.numberLiteral(-1)),
             ts.notEqual(
               ts.bitwiseAnd(byteVar, ts.numberLiteral(0x40)),
               ts.numberLiteral(0)

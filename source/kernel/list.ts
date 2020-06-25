@@ -95,6 +95,8 @@ const decodeDefinition = (): ts.Expr => {
   const lengthResultVar = ts.variable(lengthResultName);
   const resultAndNextIndexName = identifer.fromString("resultAndNextIndex");
   const resultAndNextIndexVar = ts.variable(resultAndNextIndexName);
+  const nextIndexName = identifer.fromString("nextIndex");
+  const nextIndexVar = ts.variable(nextIndexName);
 
   return c.decodeLambda(
     ts.readonlyArrayType(elementTypeVar),
@@ -104,7 +106,11 @@ const decodeDefinition = (): ts.Expr => {
         c.decodeReturnType(ts.typeNumber),
         int32.decode(true, parameterIndex, parameterBinary)
       ),
-      ts.statementSet(parameterIndex, null, c.getNextIndex(lengthResultVar)),
+      ts.statementLetVariableDefinition(
+        nextIndexName,
+        ts.typeNumber,
+        c.getNextIndex(lengthResultVar)
+      ),
       ts.statementVariableDefinition(
         resultName,
         ts.arrayType(elementTypeVar),
@@ -115,7 +121,7 @@ const decodeDefinition = (): ts.Expr => {
           resultAndNextIndexName,
           c.decodeReturnType(elementTypeVar),
           ts.call(ts.get(elementCodecVar, util.decodePropertyName), [
-            parameterIndex,
+            nextIndexVar,
             parameterBinary,
           ])
         ),
@@ -123,7 +129,7 @@ const decodeDefinition = (): ts.Expr => {
           ts.callMethod(resultVar, "push", [c.getResult(resultAndNextIndexVar)])
         ),
         ts.statementSet(
-          parameterIndex,
+          nextIndexVar,
           null,
           c.getNextIndex(resultAndNextIndexVar)
         ),

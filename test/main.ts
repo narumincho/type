@@ -37,6 +37,9 @@ const responseName = "Response";
 const responseType = (type_: Type): Type =>
   Type.Custom({ name: responseName, parameterList: [type_] });
 
+const userName = "User";
+const userType = Type.Custom({ name: userName, parameterList: [] });
+
 const customTypeList: ReadonlyArray<CustomTypeDefinition> = [
   {
     name: typeName,
@@ -271,6 +274,30 @@ const customTypeList: ReadonlyArray<CustomTypeDefinition> = [
         name: "Found",
         description: "取得に成功した",
         parameter: Maybe.Just(Type.Parameter("data")),
+      },
+    ]),
+  },
+  {
+    name: userName,
+    description: "ユーザー",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "name",
+        description:
+          "ユーザー名. 表示される名前. 他のユーザーとかぶっても良い. 絵文字も使える. 全角英数は半角英数,半角カタカナは全角カタカナ, (株)の合字を分解するなどのNFKCの正規化がされる. U+0000-U+0019 と U+007F-U+00A0 の範囲の文字は入らない. 前後に空白を含められない. 間の空白は2文字以上連続しない. 文字数のカウント方法は正規化されたあとのCodePoint単位. Twitterと同じ, 1文字以上50文字以下",
+        type: Type.String,
+      },
+      {
+        name: "imageHash",
+        description: "プロフィール画像",
+        type: fileHash,
+      },
+      {
+        name: "introduction",
+        description:
+          "自己紹介文. 改行文字を含めることができる. Twitterと同じ 0～160文字",
+        type: Type.String,
       },
     ]),
   },

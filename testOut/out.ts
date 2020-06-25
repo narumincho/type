@@ -140,6 +140,24 @@ export type Response<data> =
   | { readonly _: "NotFound" }
   | { readonly _: "Found"; readonly data: data };
 
+/**
+ * ユーザー
+ */
+export type User = {
+  /**
+   * ユーザー名. 表示される名前. 他のユーザーとかぶっても良い. 絵文字も使える. 全角英数は半角英数,半角カタカナは全角カタカナ, (株)の合字を分解するなどのNFKCの正規化がされる. U+0000-U+0019 と U+007F-U+00A0 の範囲の文字は入らない. 前後に空白を含められない. 間の空白は2文字以上連続しない. 文字数のカウント方法は正規化されたあとのCodePoint単位. Twitterと同じ, 1文字以上50文字以下
+   */
+  readonly name: string;
+  /**
+   * プロフィール画像
+   */
+  readonly imageHash: FileHash;
+  /**
+   * 自己紹介文. 改行文字を含めることができる. Twitterと同じ 0～160文字
+   */
+  readonly introduction: string;
+};
+
 export type UserId = string & { readonly _userId: never };
 
 export type ProjectId = string & { readonly _projectId: never };
@@ -159,14 +177,14 @@ export const Int32: {
 } = {
   codec: {
     encode: (value: number): ReadonlyArray<number> => {
-      value |= 0;
+      let rest: number = value | 0;
       const result: Array<number> = [];
       while (true) {
-        const byte: number = value & 127;
-        value >>= 7;
+        const byte: number = rest & 127;
+        rest >>= 7;
         if (
-          (value === 0 && (byte & 64) === 0) ||
-          (value === -1 && (byte & 64) !== 0)
+          (rest === 0 && (byte & 64) === 0) ||
+          (rest === -1 && (byte & 64) !== 0)
         ) {
           result.push(byte);
           return result;
@@ -321,15 +339,15 @@ export const List: {
         readonly result: number;
         readonly nextIndex: number;
       } = Int32.codec.decode(index, binary);
-      index = lengthResult.nextIndex;
+      let nextIndex: number = lengthResult.nextIndex;
       const result: Array<element> = [];
       for (let i = 0; i < lengthResult.result; i += 1) {
         const resultAndNextIndex: {
           readonly result: element;
           readonly nextIndex: number;
-        } = elementCodec.decode(index, binary);
+        } = elementCodec.decode(nextIndex, binary);
         result.push(resultAndNextIndex.result);
-        index = resultAndNextIndex.nextIndex;
+        nextIndex = resultAndNextIndex.nextIndex;
       }
       return { result: result, nextIndex: index };
     },
@@ -1190,4 +1208,42 @@ export const Response: {
       throw new Error("存在しないパターンを指定された 型を更新してください");
     },
   }),
+};
+
+/**
+ * ユーザー
+ */
+export const User: { readonly codec: Codec<User> } = {
+  codec: {
+    encode: (value: User): ReadonlyArray<number> =>
+      String.codec
+        .encode(value.name)
+        .concat(FileHash.codec.encode(value.imageHash))
+        .concat(String.codec.encode(value.introduction)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: User; readonly nextIndex: number } => {
+      const nameAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const imageHashAndNextIndex: {
+        readonly result: FileHash;
+        readonly nextIndex: number;
+      } = FileHash.codec.decode(nameAndNextIndex.nextIndex, binary);
+      const introductionAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(imageHashAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          imageHash: imageHashAndNextIndex.result,
+          introduction: introductionAndNextIndex.result,
+        },
+        nextIndex: introductionAndNextIndex.nextIndex,
+      };
+    },
+  },
 };

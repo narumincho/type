@@ -148,14 +148,14 @@ export const Int32: {
 } = {
   codec: {
     encode: (value: number): ReadonlyArray<number> => {
-      value |= 0;
+      let rest: number = value | 0;
       const result: Array<number> = [];
       while (true) {
-        const byte: number = value & 127;
-        value >>= 7;
+        const byte: number = rest & 127;
+        rest >>= 7;
         if (
-          (value === 0 && (byte & 64) === 0) ||
-          (value === -1 && (byte & 64) !== 0)
+          (rest === 0 && (byte & 64) === 0) ||
+          (rest === -1 && (byte & 64) !== 0)
         ) {
           result.push(byte);
           return result;
@@ -310,15 +310,15 @@ export const List: {
         readonly result: number;
         readonly nextIndex: number;
       } = Int32.codec.decode(index, binary);
-      index = lengthResult.nextIndex;
+      let nextIndex: number = lengthResult.nextIndex;
       const result: Array<element> = [];
       for (let i = 0; i < lengthResult.result; i += 1) {
         const resultAndNextIndex: {
           readonly result: element;
           readonly nextIndex: number;
-        } = elementCodec.decode(index, binary);
+        } = elementCodec.decode(nextIndex, binary);
         result.push(resultAndNextIndex.result);
-        index = resultAndNextIndex.nextIndex;
+        nextIndex = resultAndNextIndex.nextIndex;
       }
       return { result: result, nextIndex: index };
     },

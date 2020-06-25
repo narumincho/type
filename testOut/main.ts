@@ -120,3 +120,13 @@ test(
   out.Response.Found("それな"),
   out.Response.codec(out.String.codec)
 );
+
+test(
+  "user",
+  {
+    name: "ナルミンチョ",
+    imageHash: "b26c81c8d3706404ebd680ee7a7958d94ac4e531572525ff7d5467d1f2f3d407" as out.FileHash,
+    introduction: "文字列のデコードがうまくいきますように",
+  },
+  out.User.codec
+);
