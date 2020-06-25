@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-require-imports */
 /// @ts-check
 
 const ts = require("typescript");
@@ -11,8 +13,8 @@ ts.createProgram({
     moduleResolution: ts.ModuleResolutionKind.NodeJs,
     newLine: ts.NewLineKind.LineFeed,
     outDir: "schemaJs",
-    strict: true
-  }
+    strict: true,
+  },
 }).emit();
 
-require("./schemaJs/schema/main.js");
+require("../schemaJs/schema/main.js");
