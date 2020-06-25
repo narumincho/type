@@ -56,7 +56,7 @@
       },
       "sourceType": "module",
       "project": [
-        "./tsconfig.json",
+        "./source/tsconfig.json",
         "./schema/tsconfig.json",
         "./test/tsconfig.json",
         "./testOut/tsconfig.json"

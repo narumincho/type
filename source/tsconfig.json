@@ -9,6 +9,5 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "distribution",
     "declaration": true
-  },
-  "include": ["source/**/*"]
+  }
 }
