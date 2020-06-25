@@ -1,16 +1,15 @@
-import { data as ts, identifer } from "js-ts-code-generator";
-import * as data from "./data";
-import { Maybe } from "./data";
-import * as util from "./util";
+import * as binary from "./kernel/binary";
+import * as bool from "./kernel/bool";
 import * as codec from "./kernel/codec";
+import * as data from "./data";
+import * as hexString from "./kernel/hexString";
 import * as int32 from "./kernel/int32";
 import * as kernelString from "./kernel/string";
-import * as bool from "./kernel/bool";
+import * as list from "./kernel/list";
 import * as maybe from "./kernel/maybe";
 import * as result from "./kernel/result";
-import * as binary from "./kernel/binary";
-import * as list from "./kernel/list";
-import * as hexString from "./kernel/hexString";
+import * as util from "./util";
+import { identifer, data as ts } from "js-ts-code-generator";
 
 export const generate = (
   customTypeList: ReadonlyArray<data.CustomTypeDefinition>,
@@ -55,10 +54,11 @@ export const generate = (
   ];
 };
 
-/* ========================================
-                  Custom
-   ========================================
-*/
+/*
+ * ========================================
+ *                Custom
+ * ========================================
+ */
 const customTypeNameIdentifer = (
   customTypeName: string,
   tagName: string
@@ -145,7 +145,7 @@ const customTypeDefinitionToExpr = (
       );
 
     case "Sum": {
-      const patternList = customType.body.patternList;
+      const { patternList } = customType.body;
       return ts.objectLiteral(
         patternList
           .map((pattern) =>
@@ -190,10 +190,8 @@ const tagNameAndParameterToTagExprType = (
       );
 
     case "Nothing":
-      {
-        if (typeParameterList.length === 0) {
-          return returnType;
-        }
+      if (typeParameterList.length === 0) {
+        return returnType;
       }
       return ts.typeFunction(typeParameterIdentiferList, [], returnType);
   }
@@ -504,7 +502,7 @@ const productDecodeDefinitionStatementList = (
     nextIndexExpr: ts.Expr;
     statementList: ReadonlyArray<ts.Statement>;
   }>(
-    (data, memberNameAndType) => {
+    (statementAndNextIndexExpr, memberNameAndType) => {
       const resultAndNextIndexName = resultAndNextIndexNameIdentifer(
         memberNameAndType
       );
@@ -512,7 +510,7 @@ const productDecodeDefinitionStatementList = (
 
       return {
         nextIndexExpr: codec.getNextIndex(resultAndNextIndexVar),
-        statementList: data.statementList.concat(
+        statementList: statementAndNextIndexExpr.statementList.concat(
           ts.statementVariableDefinition(
             resultAndNextIndexName,
             codec.decodeReturnType(
@@ -521,7 +519,7 @@ const productDecodeDefinitionStatementList = (
             decodeExprUse(
               withKernel,
               memberNameAndType.type,
-              data.nextIndexExpr,
+              statementAndNextIndexExpr.nextIndexExpr,
               parameterBinary
             )
           )
@@ -616,7 +614,7 @@ const tagNameAndParameterCode = (
               customTypeName,
               noTypeParameter,
               pattern.name,
-              Maybe.Just(
+              data.Maybe.Just(
                 codec.getResult(ts.variable(identifer.fromString("result")))
               )
             ),
@@ -636,7 +634,7 @@ const tagNameAndParameterCode = (
               customTypeName,
               noTypeParameter,
               pattern.name,
-              Maybe.Nothing()
+              data.Maybe.Nothing()
             ),
             codec.getNextIndex(patternIndexAndNextIndexVar)
           ),
@@ -649,7 +647,7 @@ const patternUse = (
   customTypeName: string,
   noTypeParameter: boolean,
   tagName: string,
-  parameter: Maybe<ts.Expr>
+  parameter: data.Maybe<ts.Expr>
 ): ts.Expr => {
   const tagExpr = ts.get(
     ts.variable(identifer.fromString(customTypeName)),
@@ -678,12 +676,12 @@ const encodeExprUse = (
 const decodeExprUse = (
   withKernel: boolean,
   type_: data.Type,
-  index: ts.Expr,
-  binary: ts.Expr
+  indexExpr: ts.Expr,
+  binaryExpr: ts.Expr
 ) =>
   ts.call(ts.get(codecExprUse(type_, withKernel), util.decodePropertyName), [
-    index,
-    binary,
+    indexExpr,
+    binaryExpr,
   ]);
 
 const codecExprUse = (type_: data.Type, withKernel: boolean): ts.Expr => {

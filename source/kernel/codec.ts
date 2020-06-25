@@ -1,5 +1,5 @@
-import { data as ts, identifer } from "js-ts-code-generator";
 import * as util from "../util";
+import { identifer, data as ts } from "js-ts-code-generator";
 
 export const codecTypeWithTypeParameter = (
   type_: ts.Type,
@@ -87,7 +87,7 @@ export const encodeLambda = (
     [
       {
         name: valueName,
-        type_: type_,
+        type_,
       },
     ],
     [],
@@ -115,7 +115,7 @@ export const decodeReturnType = (type_: ts.Type): ts.Type =>
       [
         util.resultProperty,
         {
-          type_: type_,
+          type_,
           document: "",
         },
       ],

@@ -1,6 +1,6 @@
-import { data as ts, identifer } from "js-ts-code-generator";
-import * as util from "../util";
 import * as c from "./codec";
+import * as util from "../util";
+import { identifer, data as ts } from "js-ts-code-generator";
 
 const name = identifer.fromString("Int32");
 
@@ -23,7 +23,7 @@ export const decode = (
   ts.call(ts.get(codec(withKernel), util.decodePropertyName), [index, binary]);
 
 export const variableDefinition = (): ts.Variable => ({
-  name: name,
+  name,
   document:
     "-2 147 483 648 ～ 2 147 483 647. 32bit 符号付き整数. JavaScriptのnumberで扱う",
   type_: ts.typeObject(

@@ -1,14 +1,14 @@
+import * as fileSystem from "fs";
+import * as generator from "js-ts-code-generator";
 import * as nType from "../source/main";
+import * as prettier from "prettier";
+import * as ts from "typescript";
 import {
-  Maybe,
-  Type,
   CustomTypeDefinition,
   CustomTypeDefinitionBody,
+  Maybe,
+  Type,
 } from "../source/data";
-import * as generator from "js-ts-code-generator";
-import * as fileSystem from "fs";
-import * as ts from "typescript";
-import * as prettier from "prettier";
 
 const fileHash = Type.Token("FileHash");
 

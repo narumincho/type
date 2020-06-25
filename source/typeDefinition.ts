@@ -1,10 +1,10 @@
-import { data as ts, identifer } from "js-ts-code-generator";
-import * as data from "./data";
-import * as util from "./util";
 import * as codec from "./kernel/codec";
+import * as data from "./data";
+import * as hexString from "./kernel/hexString";
 import * as maybe from "./kernel/maybe";
 import * as result from "./kernel/result";
-import * as hexString from "./kernel/hexString";
+import * as util from "./util";
+import { identifer, data as ts } from "js-ts-code-generator";
 
 export const generateTypeDefinition = (
   customTypeList: ReadonlyArray<data.CustomTypeDefinition>,
@@ -30,10 +30,11 @@ export const generateTypeDefinition = (
   ];
 };
 
-/* ========================================
-               Custom Type
-   ========================================
-*/
+/*
+ * ========================================
+ *             Custom Type
+ * ========================================
+ */
 
 export const customTypeToDefinition = (
   customType: data.CustomTypeDefinition

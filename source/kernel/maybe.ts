@@ -1,11 +1,11 @@
-import { data as ts, identifer } from "js-ts-code-generator";
-import {
-  Maybe,
-  CustomTypeDefinitionBody,
-  Type,
-  CustomTypeDefinition,
-} from "../data";
 import * as util from "../util";
+import {
+  CustomTypeDefinition,
+  CustomTypeDefinitionBody,
+  Maybe,
+  Type,
+} from "../data";
+import { identifer, data as ts } from "js-ts-code-generator";
 
 const name = "Maybe";
 
@@ -20,7 +20,7 @@ export const type = (elementType: ts.Type, widthKernel: boolean): ts.Type =>
       );
 
 export const customTypeDefinition: CustomTypeDefinition = {
-  name: name,
+  name,
   typeParameterList: ["value"],
   description:
     "Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した",

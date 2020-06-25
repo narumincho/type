@@ -1,5 +1,5 @@
-import { data as ts, identifer } from "js-ts-code-generator";
 import * as data from "./data";
+import { identifer, data as ts } from "js-ts-code-generator";
 
 export const typeToTypeScriptType = (type_: data.Type): ts.Type => {
   switch (type_._) {

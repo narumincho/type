@@ -1,7 +1,7 @@
-import { data as ts, identifer } from "js-ts-code-generator";
-import * as util from "../util";
 import * as c from "./codec";
 import * as int32 from "./int32";
+import * as util from "../util";
+import { identifer, data as ts } from "js-ts-code-generator";
 
 export const name = identifer.fromString("String");
 
@@ -14,7 +14,7 @@ export const codec = (withKernel: boolean): ts.Expr =>
   );
 
 export const exprDefinition = (): ts.Variable => ({
-  name: name,
+  name,
   document: "文字列. JavaScriptのstringで扱う",
   type_: ts.typeObject(
     new Map([

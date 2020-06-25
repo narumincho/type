@@ -1,7 +1,7 @@
-import { data as ts, identifer } from "js-ts-code-generator";
-import * as util from "../util";
 import * as c from "./codec";
 import * as int32 from "./int32";
+import * as util from "../util";
+import { identifer, data as ts } from "js-ts-code-generator";
 
 export const name = identifer.fromString("List");
 
@@ -14,7 +14,7 @@ const elementCodecVar = ts.variable(elementCodecName);
 const elementType = ts.typeScopeInFile(elementTypeName);
 
 export const variableDefinition = (): ts.Variable => ({
-  name: name,
+  name,
   document: "リスト. JavaScriptのArrayで扱う",
   type_: ts.typeObject(
     new Map([

@@ -11,8 +11,8 @@ ts.createProgram({
     moduleResolution: ts.ModuleResolutionKind.NodeJs,
     newLine: ts.NewLineKind.LineFeed,
     outDir: "testJs",
-    strict: true
-  }
+    strict: true,
+  },
 }).emit();
 
 require("../testJs/test/main.js");

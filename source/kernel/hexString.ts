@@ -1,6 +1,6 @@
-import { data as ts, identifer } from "js-ts-code-generator";
 import * as codec from "./codec";
 import * as util from "../util";
+import { identifer, data as ts } from "js-ts-code-generator";
 
 const type = ts.typeString;
 
@@ -90,7 +90,7 @@ const variableDefinition = (
   byteSize: number,
   name: identifer.Identifer
 ): ts.Variable => ({
-  name: name,
+  name,
   document: name,
   type_: ts.typeObject(
     new Map([

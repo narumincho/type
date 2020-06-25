@@ -1,11 +1,11 @@
-import { data as ts, identifer } from "js-ts-code-generator";
-import {
-  Maybe,
-  CustomTypeDefinitionBody,
-  Type,
-  CustomTypeDefinition,
-} from "../data";
 import * as util from "../util";
+import {
+  CustomTypeDefinition,
+  CustomTypeDefinitionBody,
+  Maybe,
+  Type,
+} from "../data";
+import { identifer, data as ts } from "js-ts-code-generator";
 
 const name = "Result";
 
@@ -25,7 +25,7 @@ export const type = (
       );
 
 export const customTypeDefinition: CustomTypeDefinition = {
-  name: name,
+  name,
   description:
     "成功と失敗を表す型. Elmに標準で定義されているものに変換をするためにデフォルトで用意した",
   typeParameterList: ["ok", "error"],

@@ -1,6 +1,6 @@
-import { data as ts, identifer } from "js-ts-code-generator";
-import * as util from "../util";
 import * as c from "./codec";
+import * as util from "../util";
+import { identifer, data as ts } from "js-ts-code-generator";
 
 const name = identifer.fromString("Bool");
 
@@ -13,7 +13,7 @@ export const codec = (withKernel: boolean): ts.Expr =>
   );
 
 export const variableDefinition = (): ts.Variable => ({
-  name: name,
+  name,
   document: "Bool. 真か偽. JavaScriptのbooleanで扱う",
   type_: ts.typeObject(
     new Map([

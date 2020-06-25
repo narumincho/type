@@ -1,8 +1,8 @@
-import * as typeDefinition from "./typeDefinition";
+import * as data from "./data";
 import * as tag from "./tag";
+import * as typeDefinition from "./typeDefinition";
 import * as util from "./util";
 import { data as ts } from "js-ts-code-generator";
-import * as data from "./data";
 
 export { data };
 
@@ -108,7 +108,6 @@ const checkCustomTypeBodyValidation = (
         customTypeNameAndTypeParameterListMap,
         scopedTypeParameterList
       );
-      return;
   }
 };
 
