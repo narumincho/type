@@ -1,8 +1,8 @@
 {
   "name": "@narumincho/type",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Generate TypeScript type definitions, encode and decode code",
-  "main": "distribution/main.js",
+  "main": "source/main.js",
   "scripts": {
     "test": "node test/start.js",
     "generateTypeCode": "node schema/start.js"

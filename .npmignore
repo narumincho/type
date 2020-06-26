@@ -5,6 +5,5 @@ testOutput
 test
 testJs
 testOut
-testOutJs
 *.ts
 !*.d.ts
