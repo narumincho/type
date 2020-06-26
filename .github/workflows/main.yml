@@ -31,11 +31,9 @@ jobs:
         uses: actions/setup-node@master
         with:
           node-version: "12.x"
-      - name: Install npm dependencies (npm ci)
+      - name: Install npm dependencies
         run: npm ci
-      - name: Transpile Source (npx tsc)
-        run: npx tsc --project source/tsconfig.json
-      - name: Transpile Schema (npx tsc)
+      - name: Compile
         run: npx tsc --project schema/tsconfig.json
       - name: npm publish
         id: publish

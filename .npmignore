@@ -7,3 +7,4 @@ testJs
 testOut
 testOutJs
 *.ts
+!*.d.ts
