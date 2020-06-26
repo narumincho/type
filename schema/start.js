@@ -7,9 +7,9 @@ const ts = require("typescript");
 ts.createProgram({
   rootNames: ["schema/main.ts"],
   options: {
-    target: ts.ScriptTarget.ES2020,
+    target: ts.ScriptTarget.ES2019,
     module: ts.ModuleKind.CommonJS,
-    lib: ["ES2020"],
+    lib: ["ES2019"],
     moduleResolution: ts.ModuleResolutionKind.NodeJs,
     newLine: ts.NewLineKind.LineFeed,
     outDir: "schemaJs",

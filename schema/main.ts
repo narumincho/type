@@ -1,13 +1,13 @@
-import * as nType from "../source/main";
-import {
-  Type,
-  Maybe,
-  CustomTypeDefinitionBody,
-  CustomTypeDefinition,
-} from "../source/data";
 import * as jsTsCodeGenerator from "js-ts-code-generator";
-import { promises as fileSystem } from "fs";
+import * as nType from "../source/main";
 import * as prettier from "prettier";
+import {
+  CustomTypeDefinition,
+  CustomTypeDefinitionBody,
+  Maybe,
+  Type,
+} from "../source/data";
+import { promises as fileSystem } from "fs";
 
 const typeName = "Type";
 const okAndErrorTypeName = "OkAndErrorType";

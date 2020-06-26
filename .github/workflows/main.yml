@@ -33,8 +33,10 @@ jobs:
           node-version: "12.x"
       - name: Install npm dependencies (npm ci)
         run: npm ci
-      - name: Transpile TypeScript (npx tsc)
+      - name: Transpile Source (npx tsc)
         run: npx tsc --project source/tsconfig.json
+      - name: Transpile Schema (npx tsc)
+        run: npx tsc --project schema/tsconfig.json
       - name: npm publish
         id: publish
         uses: JS-DevTools/npm-publish@v1

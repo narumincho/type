@@ -2,8 +2,8 @@ node_modules
 .github
 .vscode
 testOutput
-source
 test
 testJs
 testOut
 testOutJs
+*.ts
