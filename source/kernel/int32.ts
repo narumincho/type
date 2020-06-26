@@ -26,12 +26,12 @@ export const variableDefinition = (): ts.Variable => ({
   name,
   document:
     "-2 147 483 648 ～ 2 147 483 647. 32bit 符号付き整数. JavaScriptのnumberで扱う",
-  type_: ts.typeObject(
+  type: ts.typeObject(
     new Map([
       [
         util.codecPropertyName,
         {
-          type_: c.codecType(ts.typeNumber, true),
+          type: c.codecType(ts.typeNumber, true),
           document:
             "numberの32bit符号あり整数をSigned Leb128のバイナリに変換する",
         },

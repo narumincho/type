@@ -56,7 +56,7 @@ const decodeDefinition = (byteSize: number): ts.Expr => {
               [
                 {
                   name: identifer.fromString("n"),
-                  type_: ts.typeNumber,
+                  type: ts.typeNumber,
                 },
               ],
               [],
@@ -92,12 +92,12 @@ const variableDefinition = (
 ): ts.Variable => ({
   name,
   document: name,
-  type_: ts.typeObject(
+  type: ts.typeObject(
     new Map([
       [
         util.codecPropertyName,
         {
-          type_: codec.codecType(type, true),
+          type: codec.codecType(type, true),
           document: "バイナリに変換する",
         },
       ],
@@ -126,14 +126,11 @@ export const typeDefinition = (name: string): ts.TypeAlias => ({
   name: identifer.fromString(name),
   document: "",
   parameterList: [],
-  type_: ts.typeIntersection(
+  type: ts.typeIntersection(
     ts.typeString,
     ts.typeObject(
       new Map([
-        [
-          "_" + util.firstLowerCase(name),
-          { type_: ts.typeNever, document: "" },
-        ],
+        ["_" + util.firstLowerCase(name), { type: ts.typeNever, document: "" }],
       ])
     )
   ),
@@ -153,12 +150,12 @@ export const idVariableDefinition = (
   return {
     name: identifer.fromString(name),
     document: name,
-    type_: ts.typeObject(
+    type: ts.typeObject(
       new Map([
         [
           util.codecPropertyName,
           {
-            type_: codec.codecType(targetType, true),
+            type: codec.codecType(targetType, true),
             document: "バイナリに変換する",
           },
         ],
@@ -199,12 +196,12 @@ export const tokenVariableDefinition = (
   return {
     name: identifer.fromString(name),
     document: name,
-    type_: ts.typeObject(
+    type: ts.typeObject(
       new Map([
         [
           util.codecPropertyName,
           {
-            type_: codec.codecType(targetType, true),
+            type: codec.codecType(targetType, true),
             document: "バイナリに変換する",
           },
         ],

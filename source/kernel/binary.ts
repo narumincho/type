@@ -16,12 +16,12 @@ export const codec = (withKernel: boolean): ts.Expr =>
 export const variableDefinition = (): ts.Variable => ({
   name,
   document: "バイナリ. JavaScriptのUint8Arrayで扱う",
-  type_: ts.typeObject(
+  type: ts.typeObject(
     new Map([
       [
         util.codecPropertyName,
         {
-          type_: c.codecType(type, true),
+          type: c.codecType(type, true),
           document: "最初にバイト数, その次にバイナリそのまま",
         },
       ],

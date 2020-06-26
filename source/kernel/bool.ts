@@ -15,12 +15,12 @@ export const codec = (withKernel: boolean): ts.Expr =>
 export const variableDefinition = (): ts.Variable => ({
   name,
   document: "Bool. 真か偽. JavaScriptのbooleanで扱う",
-  type_: ts.typeObject(
+  type: ts.typeObject(
     new Map([
       [
         util.codecPropertyName,
         {
-          type_: c.codecType(type, true),
+          type: c.codecType(type, true),
           document: "true: 1, false: 0. (1byte)としてバイナリに変換する",
         },
       ],

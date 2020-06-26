@@ -80,7 +80,7 @@ const customTypeDefinitionToTagVariable = (
   return {
     name: identifer.fromString(customType.name),
     document: customType.description,
-    type_: customTypeDefinitionToType(customType, withKernel),
+    type: customTypeDefinitionToType(customType, withKernel),
     expr: customTypeDefinitionToExpr(customType, withKernel),
   };
 };
@@ -96,7 +96,7 @@ const customTypeDefinitionToType = (
           [
             util.codecPropertyName,
             {
-              type_: customTypeToCodecType(customType, withKernel),
+              type: customTypeToCodecType(customType, withKernel),
               document: "",
             },
           ],
@@ -111,7 +111,7 @@ const customTypeDefinitionToType = (
                 [
                   pattern.name,
                   {
-                    type_: tagNameAndParameterToTagExprType(
+                    type: tagNameAndParameterToTagExprType(
                       identifer.fromString(customType.name),
                       customType.typeParameterList,
                       pattern
@@ -124,7 +124,7 @@ const customTypeDefinitionToType = (
               [
                 util.codecPropertyName,
                 {
-                  type_: customTypeToCodecType(customType, withKernel),
+                  type: customTypeToCodecType(customType, withKernel),
                   document: "",
                 },
               ] as const,
@@ -222,7 +222,7 @@ const patternToTagExpr = (
         [
           {
             name: parameterIdentifer,
-            type_: util.typeToTypeScriptType(pattern.parameter.value),
+            type: util.typeToTypeScriptType(pattern.parameter.value),
           },
         ],
         typeParameterList.map(identifer.fromString),
@@ -290,7 +290,7 @@ const codecExprDefinition = (
   return ts.lambda(
     customTypeDefinition.typeParameterList.map((typeParameter) => ({
       name: codecParameterName(typeParameter),
-      type_: codec.codecType(
+      type: codec.codecType(
         ts.typeScopeInFile(identifer.fromString(typeParameter)),
         withKernel
       ),

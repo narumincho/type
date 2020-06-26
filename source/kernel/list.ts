@@ -16,12 +16,12 @@ const elementType = ts.typeScopeInFile(elementTypeName);
 export const variableDefinition = (): ts.Variable => ({
   name,
   document: "リスト. JavaScriptのArrayで扱う",
-  type_: ts.typeObject(
+  type: ts.typeObject(
     new Map([
       [
         util.codecPropertyName,
         {
-          type_: c.codecTypeWithTypeParameter(
+          type: c.codecTypeWithTypeParameter(
             ts.typeScopeInGlobal(identifer.fromString("ReadonlyArray")),
             ["element"],
             true
@@ -38,7 +38,7 @@ export const variableDefinition = (): ts.Variable => ({
         [
           {
             name: elementCodecName,
-            type_: c.codecType(elementType, true),
+            type: c.codecType(elementType, true),
           },
         ],
         [elementTypeName],
@@ -134,7 +134,7 @@ const decodeDefinition = (): ts.Expr => {
           c.getNextIndex(resultAndNextIndexVar)
         ),
       ]),
-      c.returnStatement(resultVar, parameterIndex),
+      c.returnStatement(resultVar, nextIndexVar),
     ]
   );
 };

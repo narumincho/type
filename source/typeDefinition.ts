@@ -42,7 +42,7 @@ export const customTypeToDefinition = (
   name: identifer.fromString(customType.name),
   document: customType.description,
   parameterList: customType.typeParameterList.map(identifer.fromString),
-  type_: customTypeDefinitionBodyToTsType(customType.body),
+  type: customTypeDefinitionBodyToTsType(customType.body),
 });
 
 const customTypeDefinitionBodyToTsType = (
@@ -64,7 +64,7 @@ const customTypeDefinitionBodyToTsType = (
           body.memberList.map((member) => [
             member.name,
             {
-              type_: util.typeToTypeScriptType(member.type),
+              type: util.typeToTypeScriptType(member.type),
               document: member.description,
             },
           ])
@@ -74,11 +74,11 @@ const customTypeDefinitionBodyToTsType = (
 };
 
 const patternListToObjectType = (patternList: data.Pattern): ts.Type => {
-  const tagField: [string, { type_: ts.Type; document: string }] = [
+  const tagField: [string, { type: ts.Type; document: string }] = [
     "_",
     {
       document: "",
-      type_: ts.typeStringLiteral(patternList.name),
+      type: ts.typeStringLiteral(patternList.name),
     },
   ];
 
@@ -91,7 +91,7 @@ const patternListToObjectType = (patternList: data.Pattern): ts.Type => {
             util.typeToMemberOrParameterName(patternList.parameter.value),
             {
               document: "",
-              type_: util.typeToTypeScriptType(patternList.parameter.value),
+              type: util.typeToTypeScriptType(patternList.parameter.value),
             },
           ],
         ])

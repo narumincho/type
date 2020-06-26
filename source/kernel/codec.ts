@@ -45,12 +45,12 @@ export const codecTypeDefinition = (): ts.TypeAlias => {
     name: codecName,
     document: "バイナリと相互変換するための関数",
     parameterList: [typeParameterIdentifer],
-    type_: ts.typeObject(
+    type: ts.typeObject(
       new Map([
         [
           util.encodePropertyName,
           {
-            type_: encodeFunctionType(
+            type: encodeFunctionType(
               ts.typeScopeInFile(typeParameterIdentifer)
             ),
             document: "",
@@ -59,7 +59,7 @@ export const codecTypeDefinition = (): ts.TypeAlias => {
         [
           util.decodePropertyName,
           {
-            type_: decodeFunctionType(
+            type: decodeFunctionType(
               ts.typeScopeInFile(typeParameterIdentifer)
             ),
             document: "",
@@ -87,7 +87,7 @@ export const encodeLambda = (
     [
       {
         name: valueName,
-        type_,
+        type: type_,
       },
     ],
     [],
@@ -105,7 +105,7 @@ const encodeReturnType = ts.readonlyArrayType(ts.typeNumber);
 export const decodeFunctionType = (type_: ts.Type): ts.Type =>
   ts.typeFunction(
     [],
-    decodeParameterList.map((parameter) => parameter.type_),
+    decodeParameterList.map((parameter) => parameter.type),
     decodeReturnType(type_)
   );
 
@@ -115,11 +115,11 @@ export const decodeReturnType = (type_: ts.Type): ts.Type =>
       [
         util.resultProperty,
         {
-          type_,
+          type: type_,
           document: "",
         },
       ],
-      [util.nextIndexProperty, { type_: ts.typeNumber, document: "" }],
+      [util.nextIndexProperty, { type: ts.typeNumber, document: "" }],
     ])
   );
 
@@ -132,12 +132,12 @@ const binaryIdentifer = identifer.fromString("binary");
 const decodeParameterList: ReadonlyArray<ts.ParameterWithDocument> = [
   {
     name: indexIdentifer,
-    type_: ts.typeNumber,
+    type: ts.typeNumber,
     document: "バイナリを読み込み開始位置",
   },
   {
     name: binaryIdentifer,
-    type_: ts.uint8ArrayType,
+    type: ts.uint8ArrayType,
     document: "バイナリ",
   },
 ];

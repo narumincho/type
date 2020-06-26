@@ -16,12 +16,12 @@ export const codec = (withKernel: boolean): ts.Expr =>
 export const exprDefinition = (): ts.Variable => ({
   name,
   document: "文字列. JavaScriptのstringで扱う",
-  type_: ts.typeObject(
+  type: ts.typeObject(
     new Map([
       [
         util.codecPropertyName,
         {
-          type_: c.codecType(type, true),
+          type: c.codecType(type, true),
           document: "stringをUTF-8のバイナリに変換する",
         },
       ],
