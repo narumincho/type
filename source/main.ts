@@ -168,7 +168,7 @@ const checkTypeValidation = (
     case "List":
     case "Maybe":
       checkTypeValidation(
-        type_.type_,
+        type_.type,
         customTypeNameAndTypeParameterMap,
         scopedTypeParameterList
       );
@@ -186,13 +186,13 @@ const checkTypeValidation = (
       );
       return;
     case "Id":
-      if (!util.isFirstUpperCaseName(type_.string_)) {
-        throw new Error("Id type name is invalid. name =" + type_.string_);
+      if (!util.isFirstUpperCaseName(type_.string)) {
+        throw new Error("Id type name is invalid. name =" + type_.string);
       }
       return;
     case "Token": {
-      if (!util.isFirstUpperCaseName(type_.string_)) {
-        throw new Error("Token type name is invalid. name =" + type_.string_);
+      if (!util.isFirstUpperCaseName(type_.string)) {
+        throw new Error("Token type name is invalid. name =" + type_.string);
       }
       return;
     }
@@ -231,8 +231,8 @@ const checkTypeValidation = (
       return;
     }
     case "Parameter":
-      if (!scopedTypeParameterList.has(type_.string_)) {
-        throw new Error("type parameter " + type_.string_ + " is not defined.");
+      if (!scopedTypeParameterList.has(type_.string)) {
+        throw new Error("type parameter " + type_.string + " is not defined.");
       }
   }
 };

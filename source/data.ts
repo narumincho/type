@@ -33,16 +33,16 @@ export type Type =
   | { readonly _: "String" }
   | { readonly _: "Bool" }
   | { readonly _: "Binary" }
-  | { readonly _: "List"; readonly type_: Type }
-  | { readonly _: "Maybe"; readonly type_: Type }
+  | { readonly _: "List"; readonly type: Type }
+  | { readonly _: "Maybe"; readonly type: Type }
   | { readonly _: "Result"; readonly okAndErrorType: OkAndErrorType }
-  | { readonly _: "Id"; readonly string_: string }
-  | { readonly _: "Token"; readonly string_: string }
+  | { readonly _: "Id"; readonly string: string }
+  | { readonly _: "Token"; readonly string: string }
   | {
       readonly _: "Custom";
       readonly nameAndTypeParameterList: NameAndTypeParameterList;
     }
-  | { readonly _: "Parameter"; readonly string_: string };
+  | { readonly _: "Parameter"; readonly string: string };
 
 /**
  * 正常値と異常値
@@ -559,19 +559,19 @@ export const Type: {
   String: { _: "String" },
   Bool: { _: "Bool" },
   Binary: { _: "Binary" },
-  List: (type_: Type): Type => ({ _: "List", type_: type_ }),
-  Maybe: (type_: Type): Type => ({ _: "Maybe", type_: type_ }),
+  List: (type: Type): Type => ({ _: "List", type: type }),
+  Maybe: (type: Type): Type => ({ _: "Maybe", type: type }),
   Result: (okAndErrorType: OkAndErrorType): Type => ({
     _: "Result",
     okAndErrorType: okAndErrorType,
   }),
-  Id: (string_: string): Type => ({ _: "Id", string_: string_ }),
-  Token: (string_: string): Type => ({ _: "Token", string_: string_ }),
+  Id: (string: string): Type => ({ _: "Id", string: string }),
+  Token: (string: string): Type => ({ _: "Token", string: string }),
   Custom: (nameAndTypeParameterList: NameAndTypeParameterList): Type => ({
     _: "Custom",
     nameAndTypeParameterList: nameAndTypeParameterList,
   }),
-  Parameter: (string_: string): Type => ({ _: "Parameter", string_: string_ }),
+  Parameter: (string: string): Type => ({ _: "Parameter", string: string }),
   codec: {
     encode: (value: Type): ReadonlyArray<number> => {
       switch (value._) {
@@ -588,19 +588,19 @@ export const Type: {
           return [3];
         }
         case "List": {
-          return [4].concat(Type.codec.encode(value.type_));
+          return [4].concat(Type.codec.encode(value["type"]));
         }
         case "Maybe": {
-          return [5].concat(Type.codec.encode(value.type_));
+          return [5].concat(Type.codec.encode(value["type"]));
         }
         case "Result": {
           return [6].concat(OkAndErrorType.codec.encode(value.okAndErrorType));
         }
         case "Id": {
-          return [7].concat(String.codec.encode(value.string_));
+          return [7].concat(String.codec.encode(value["string"]));
         }
         case "Token": {
-          return [8].concat(String.codec.encode(value.string_));
+          return [8].concat(String.codec.encode(value["string"]));
         }
         case "Custom": {
           return [9].concat(
@@ -610,7 +610,7 @@ export const Type: {
           );
         }
         case "Parameter": {
-          return [10].concat(String.codec.encode(value.string_));
+          return [10].concat(String.codec.encode(value["string"]));
         }
       }
     },

@@ -16,12 +16,12 @@ export const typeToTypeScriptType = (type_: data.Type): ts.Type => {
       return ts.uint8ArrayType;
 
     case "List":
-      return ts.readonlyArrayType(typeToTypeScriptType(type_.type_));
+      return ts.readonlyArrayType(typeToTypeScriptType(type_.type));
 
     case "Maybe":
       return ts.typeWithParameter(
         ts.typeScopeInGlobal(identifer.fromString("Maybe")),
-        [typeToTypeScriptType(type_.type_)]
+        [typeToTypeScriptType(type_.type)]
       );
     case "Result":
       return ts.typeWithParameter(
@@ -34,7 +34,7 @@ export const typeToTypeScriptType = (type_: data.Type): ts.Type => {
 
     case "Id":
     case "Token":
-      return ts.typeScopeInFile(identifer.fromString(type_.string_));
+      return ts.typeScopeInFile(identifer.fromString(type_.string));
 
     case "Custom": {
       if (type_.nameAndTypeParameterList.parameterList.length === 0) {
@@ -51,14 +51,12 @@ export const typeToTypeScriptType = (type_: data.Type): ts.Type => {
     }
 
     case "Parameter":
-      return ts.typeScopeInFile(identifer.fromString(type_.string_));
+      return ts.typeScopeInFile(identifer.fromString(type_.string));
   }
 };
 
-export const typeToMemberOrParameterName = (
-  type_: data.Type
-): identifer.Identifer => {
-  return identifer.fromString(firstLowerCase(toTypeName(type_)));
+export const typeToMemberOrParameterName = (type_: data.Type): string => {
+  return firstLowerCase(toTypeName(type_));
 };
 
 export const moduleName = "@narumincho/type";
@@ -80,9 +78,9 @@ export const toTypeName = (type_: data.Type): string => {
     case "Binary":
       return "Binary";
     case "List":
-      return toTypeName(type_.type_) + "List";
+      return toTypeName(type_.type) + "List";
     case "Maybe":
-      return toTypeName(type_.type_) + "Maybe";
+      return toTypeName(type_.type) + "Maybe";
     case "Result":
       return (
         toTypeName(type_.okAndErrorType.error) +
@@ -91,11 +89,11 @@ export const toTypeName = (type_: data.Type): string => {
       );
     case "Id":
     case "Token":
-      return type_.string_;
+      return type_.string;
     case "Custom":
       return type_.nameAndTypeParameterList.name;
     case "Parameter":
-      return type_.string_;
+      return type_.string;
   }
 };
 
@@ -168,12 +166,12 @@ const getIdAndTokenTypeNameInType = (type_: data.Type): IdAndTokenNameSet => {
     case "Parameter":
       return { id: new Set(), token: new Set() };
     case "Id":
-      return { id: new Set([type_.string_]), token: new Set() };
+      return { id: new Set([type_.string]), token: new Set() };
     case "Token":
-      return { id: new Set(), token: new Set([type_.string_]) };
+      return { id: new Set(), token: new Set([type_.string]) };
     case "List":
     case "Maybe":
-      return getIdAndTokenTypeNameInType(type_.type_);
+      return getIdAndTokenTypeNameInType(type_.type);
     case "Result":
       return flatIdAndTokenNameSetList([
         getIdAndTokenTypeNameInType(type_.okAndErrorType.ok),
@@ -256,7 +254,7 @@ const isIncludeBinaryTypeInType = (type_: data.Type): boolean => {
       return true;
     case "List":
     case "Maybe":
-      return isIncludeBinaryTypeInType(type_.type_);
+      return isIncludeBinaryTypeInType(type_.type);
     case "Result":
       return (
         isIncludeBinaryTypeInType(type_.okAndErrorType.ok) ||

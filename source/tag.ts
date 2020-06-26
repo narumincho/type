@@ -214,11 +214,14 @@ const patternToTagExpr = (
   );
 
   switch (pattern.parameter._) {
-    case "Just":
+    case "Just": {
+      const parameterIdentifer = identifer.fromString(
+        util.typeToMemberOrParameterName(pattern.parameter.value)
+      );
       return ts.lambda(
         [
           {
-            name: util.typeToMemberOrParameterName(pattern.parameter.value),
+            name: parameterIdentifer,
             type_: util.typeToTypeScriptType(pattern.parameter.value),
           },
         ],
@@ -230,14 +233,13 @@ const patternToTagExpr = (
               tagField,
               ts.memberKeyValue(
                 util.typeToMemberOrParameterName(pattern.parameter.value),
-                ts.variable(
-                  util.typeToMemberOrParameterName(pattern.parameter.value)
-                )
+                ts.variable(parameterIdentifer)
               ),
             ])
           ),
         ]
       );
+    }
 
     case "Nothing":
       if (typeParameterList.length === 0) {
@@ -705,7 +707,7 @@ const codecExprUse = (type_: data.Type, withKernel: boolean): ts.Expr => {
               ),
           util.codecPropertyName
         ),
-        [codecExprUse(type_.type_, withKernel)]
+        [codecExprUse(type_.type, withKernel)]
       );
     case "Maybe":
       return ts.call(
@@ -718,7 +720,7 @@ const codecExprUse = (type_: data.Type, withKernel: boolean): ts.Expr => {
               ),
           util.codecPropertyName
         ),
-        [codecExprUse(type_.type_, withKernel)]
+        [codecExprUse(type_.type, withKernel)]
       );
     case "Result":
       return ts.call(
@@ -738,12 +740,12 @@ const codecExprUse = (type_: data.Type, withKernel: boolean): ts.Expr => {
       );
     case "Id":
       return ts.get(
-        ts.variable(identifer.fromString(type_.string_)),
+        ts.variable(identifer.fromString(type_.string)),
         util.codecPropertyName
       );
     case "Token":
       return ts.get(
-        ts.variable(identifer.fromString(type_.string_)),
+        ts.variable(identifer.fromString(type_.string)),
         util.codecPropertyName
       );
     case "Custom":
@@ -767,6 +769,6 @@ const codecExprUse = (type_: data.Type, withKernel: boolean): ts.Expr => {
         )
       );
     case "Parameter":
-      return ts.variable(codecParameterName(type_.string_));
+      return ts.variable(codecParameterName(type_.string));
   }
 };
