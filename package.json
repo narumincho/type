@@ -1,6 +1,6 @@
 {
   "name": "@narumincho/type",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Generate TypeScript type definitions, encode and decode code",
   "main": "distribution/main.js",
   "scripts": {
