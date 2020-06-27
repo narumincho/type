@@ -7,11 +7,8 @@ export const name = identifer.fromString("Binary");
 
 export const type: ts.Type = ts.uint8ArrayType;
 
-export const codec = (withKernel: boolean): ts.Expr =>
-  ts.get(
-    withKernel ? ts.variable(name) : ts.importedVariable(util.moduleName, name),
-    util.codecPropertyName
-  );
+export const codec = (): ts.Expr =>
+  ts.get(ts.variable(name), util.codecPropertyName);
 
 export const variableDefinition = (): ts.Variable => ({
   name,
@@ -21,7 +18,7 @@ export const variableDefinition = (): ts.Variable => ({
       [
         util.codecPropertyName,
         {
-          type: c.codecType(type, true),
+          type: c.codecType(type),
           document: "最初にバイト数, その次にバイナリそのまま",
         },
       ],
@@ -41,7 +38,7 @@ export const variableDefinition = (): ts.Variable => ({
 const encodeDefinition = (): ts.Expr =>
   c.encodeLambda(type, (valueVar) => [
     ts.statementReturn(
-      ts.callMethod(int32.encode(true, ts.get(valueVar, "length")), "concat", [
+      ts.callMethod(int32.encode(ts.get(valueVar, "length")), "concat", [
         ts.arrayLiteral([{ expr: valueVar, spread: true }]),
       ])
     ),
@@ -57,7 +54,7 @@ const decodeDefinition = (): ts.Expr => {
     ts.statementVariableDefinition(
       lengthName,
       c.decodeReturnType(ts.typeNumber),
-      int32.decode(true, parameterIndex, parameterBinary)
+      int32.decode(parameterIndex, parameterBinary)
     ),
     ts.statementVariableDefinition(
       nextIndexName,

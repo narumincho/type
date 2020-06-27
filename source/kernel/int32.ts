@@ -6,21 +6,14 @@ const name = identifer.fromString("Int32");
 
 const type = ts.typeNumber;
 
-export const codec = (withKernel: boolean): ts.Expr =>
-  ts.get(
-    withKernel ? ts.variable(name) : ts.importedVariable(util.moduleName, name),
-    util.codecPropertyName
-  );
+export const codec = (): ts.Expr =>
+  ts.get(ts.variable(name), util.codecPropertyName);
 
-export const encode = (withKernel: boolean, target: ts.Expr): ts.Expr =>
-  ts.call(ts.get(codec(withKernel), util.encodePropertyName), [target]);
+export const encode = (target: ts.Expr): ts.Expr =>
+  ts.call(ts.get(codec(), util.encodePropertyName), [target]);
 
-export const decode = (
-  withKernel: boolean,
-  index: ts.Expr,
-  binary: ts.Expr
-): ts.Expr =>
-  ts.call(ts.get(codec(withKernel), util.decodePropertyName), [index, binary]);
+export const decode = (index: ts.Expr, binary: ts.Expr): ts.Expr =>
+  ts.call(ts.get(codec(), util.decodePropertyName), [index, binary]);
 
 export const variableDefinition = (): ts.Variable => ({
   name,
@@ -31,7 +24,7 @@ export const variableDefinition = (): ts.Variable => ({
       [
         util.codecPropertyName,
         {
-          type: c.codecType(ts.typeNumber, true),
+          type: c.codecType(ts.typeNumber),
           document:
             "numberの32bit符号あり整数をSigned Leb128のバイナリに変換する",
         },

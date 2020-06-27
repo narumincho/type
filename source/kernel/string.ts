@@ -7,11 +7,8 @@ export const name = identifer.fromString("String");
 
 export const type = ts.typeString;
 
-export const codec = (withKernel: boolean): ts.Expr =>
-  ts.get(
-    withKernel ? ts.variable(name) : ts.importedVariable(util.moduleName, name),
-    util.codecPropertyName
-  );
+export const codec = (): ts.Expr =>
+  ts.get(ts.variable(name), util.codecPropertyName);
 
 export const exprDefinition = (): ts.Variable => ({
   name,
@@ -21,7 +18,7 @@ export const exprDefinition = (): ts.Variable => ({
       [
         util.codecPropertyName,
         {
-          type: c.codecType(type, true),
+          type: c.codecType(type),
           document: "stringをUTF-8のバイナリに変換する",
         },
       ],
@@ -77,7 +74,7 @@ const encodeDefinition = (): ts.Expr => {
       ])
     ),
     ts.statementReturn(
-      ts.callMethod(int32.encode(true, ts.get(resultVar, "length")), "concat", [
+      ts.callMethod(int32.encode(ts.get(resultVar, "length")), "concat", [
         resultVar,
       ])
     ),
@@ -97,7 +94,7 @@ const decodeDefinition = (): ts.Expr => {
     ts.statementVariableDefinition(
       lengthName,
       c.decodeReturnType(ts.typeNumber),
-      int32.decode(true, parameterIndex, parameterBinary)
+      int32.decode(parameterIndex, parameterBinary)
     ),
     ts.statementVariableDefinition(
       nextIndexName,

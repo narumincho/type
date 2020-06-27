@@ -59,8 +59,6 @@ export const typeToMemberOrParameterName = (type_: data.Type): string => {
   return firstLowerCase(toTypeName(type_));
 };
 
-export const moduleName = "@narumincho/type";
-
 export const codecPropertyName = "codec";
 export const encodePropertyName = "encode";
 export const decodePropertyName = "decode";

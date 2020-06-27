@@ -1,4 +1,3 @@
-import * as util from "../util";
 import {
   CustomTypeDefinition,
   CustomTypeDefinitionBody,
@@ -9,15 +8,10 @@ import { identifer, data as ts } from "js-ts-code-generator";
 
 const name = "Maybe";
 
-export const type = (elementType: ts.Type, widthKernel: boolean): ts.Type =>
-  widthKernel
-    ? ts.typeWithParameter(ts.typeScopeInFile(identifer.fromString(name)), [
-        elementType,
-      ])
-    : ts.typeWithParameter(
-        ts.typeImported(util.moduleName, identifer.fromString(name)),
-        [elementType]
-      );
+export const type = (elementType: ts.Type): ts.Type =>
+  ts.typeWithParameter(ts.typeScopeInFile(identifer.fromString(name)), [
+    elementType,
+  ]);
 
 export const customTypeDefinition: CustomTypeDefinition = {
   name,

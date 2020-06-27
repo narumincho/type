@@ -9,24 +9,15 @@ export { data };
 export const generateTypeScriptCode = (
   customTypeList: ReadonlyArray<data.CustomTypeDefinition>
 ): ts.Code => {
-  /**
-   * Maybeなどの型は@narumincho/typeのnpmモジュールを使うようにしようとしたが
-   * それだとjs-ts-code-generatorとの循環参照になってしまうので, やはり強制的にMaybeの型を出力する
-   */
-  const withKernel = true;
   checkCustomTypeListValidation(customTypeList);
   const idOrTokenTypeNameSet = util.collectIdOrTokenTypeNameSet(customTypeList);
   return {
     exportDefinitionList: [
       ...typeDefinition
-        .generateTypeDefinition(
-          customTypeList,
-          idOrTokenTypeNameSet,
-          withKernel
-        )
+        .generateTypeDefinition(customTypeList, idOrTokenTypeNameSet)
         .map(ts.ExportDefinition.TypeAlias),
       ...tag
-        .generate(customTypeList, idOrTokenTypeNameSet, withKernel)
+        .generate(customTypeList, idOrTokenTypeNameSet)
         .map(ts.ExportDefinition.Variable),
     ],
     statementList: [],

@@ -6,11 +6,8 @@ const name = identifer.fromString("Bool");
 
 export const type: ts.Type = ts.typeBoolean;
 
-export const codec = (withKernel: boolean): ts.Expr =>
-  ts.get(
-    withKernel ? ts.variable(name) : ts.importedVariable(util.moduleName, name),
-    util.codecPropertyName
-  );
+export const codec = (): ts.Expr =>
+  ts.get(ts.variable(name), util.codecPropertyName);
 
 export const variableDefinition = (): ts.Variable => ({
   name,
@@ -20,7 +17,7 @@ export const variableDefinition = (): ts.Variable => ({
       [
         util.codecPropertyName,
         {
-          type: c.codecType(type, true),
+          type: c.codecType(type),
           document: "true: 1, false: 0. (1byte)としてバイナリに変換する",
         },
       ],

@@ -23,8 +23,7 @@ export const variableDefinition = (): ts.Variable => ({
         {
           type: c.codecTypeWithTypeParameter(
             ts.typeScopeInGlobal(identifer.fromString("ReadonlyArray")),
-            ["element"],
-            true
+            ["element"]
           ),
           document: "",
         },
@@ -38,11 +37,11 @@ export const variableDefinition = (): ts.Variable => ({
         [
           {
             name: elementCodecName,
-            type: c.codecType(elementType, true),
+            type: c.codecType(elementType),
           },
         ],
         [elementTypeName],
-        c.codecType(type(elementType), true),
+        c.codecType(type(elementType)),
         [
           ts.statementReturn(
             ts.objectLiteral([
@@ -67,7 +66,7 @@ const encodeDefinition = (): ts.Expr => {
         resultName,
         ts.arrayType(ts.typeNumber),
         ts.typeAssertion(
-          int32.encode(true, ts.get(valueVar, "length")),
+          int32.encode(ts.get(valueVar, "length")),
           ts.arrayType(ts.typeNumber)
         )
       ),
@@ -104,7 +103,7 @@ const decodeDefinition = (): ts.Expr => {
       ts.statementVariableDefinition(
         lengthResultName,
         c.decodeReturnType(ts.typeNumber),
-        int32.decode(true, parameterIndex, parameterBinary)
+        int32.decode(parameterIndex, parameterBinary)
       ),
       ts.statementLetVariableDefinition(
         nextIndexName,

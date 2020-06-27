@@ -3,18 +3,14 @@ import { identifer, data as ts } from "js-ts-code-generator";
 
 export const codecTypeWithTypeParameter = (
   type_: ts.Type,
-  typeParameterList: ReadonlyArray<string>,
-  withKernel: boolean
+  typeParameterList: ReadonlyArray<string>
 ): ts.Type => {
   return typeParameterList.length === 0
-    ? codecType(type_, withKernel)
+    ? codecType(type_)
     : ts.typeFunction(
         typeParameterList.map(identifer.fromString),
         typeParameterList.map((typeParameter) =>
-          codecType(
-            ts.typeScopeInFile(identifer.fromString(typeParameter)),
-            withKernel
-          )
+          codecType(ts.typeScopeInFile(identifer.fromString(typeParameter)))
         ),
         codecType(
           ts.typeWithParameter(
@@ -22,22 +18,16 @@ export const codecTypeWithTypeParameter = (
             typeParameterList.map((typeParameter) =>
               ts.typeScopeInFile(identifer.fromString(typeParameter))
             )
-          ),
-          withKernel
+          )
         )
       );
 };
 
 const codecName = identifer.fromString("Codec");
 
-/** `@narumincho/type`の型`Codec<type_>`か `Codec<type_>` を表す */
-export const codecType = (type_: ts.Type, withKernel: boolean): ts.Type =>
-  ts.typeWithParameter(
-    withKernel
-      ? ts.typeScopeInFile(codecName)
-      : ts.typeImported(util.moduleName, codecName),
-    [type_]
-  );
+/** `Codec<type_>` を表す */
+export const codecType = (type_: ts.Type): ts.Type =>
+  ts.typeWithParameter(ts.typeScopeInFile(codecName), [type_]);
 
 export const codecTypeDefinition = (): ts.TypeAlias => {
   const typeParameterIdentifer = identifer.fromString("T");

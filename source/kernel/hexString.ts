@@ -97,7 +97,7 @@ const variableDefinition = (
       [
         util.codecPropertyName,
         {
-          type: codec.codecType(type, true),
+          type: codec.codecType(type),
           document: "バイナリに変換する",
         },
       ],
@@ -136,17 +136,9 @@ export const typeDefinition = (name: string): ts.TypeAlias => ({
   ),
 });
 
-export const idVariableDefinition = (
-  name: string,
-  withKernel: boolean
-): ts.Variable => {
+export const idVariableDefinition = (name: string): ts.Variable => {
   const targetType = ts.typeScopeInFile(identifer.fromString(name));
-  const idCodec = ts.get(
-    withKernel
-      ? ts.variable(idName)
-      : ts.importedVariable(util.moduleName, idName),
-    util.codecPropertyName
-  );
+  const idCodec = ts.get(ts.variable(idName), util.codecPropertyName);
   return {
     name: identifer.fromString(name),
     document: name,
@@ -155,7 +147,7 @@ export const idVariableDefinition = (
         [
           util.codecPropertyName,
           {
-            type: codec.codecType(targetType, true),
+            type: codec.codecType(targetType),
             document: "バイナリに変換する",
           },
         ],
@@ -182,17 +174,9 @@ export const idVariableDefinition = (
   };
 };
 
-export const tokenVariableDefinition = (
-  name: string,
-  withKernel: boolean
-): ts.Variable => {
+export const tokenVariableDefinition = (name: string): ts.Variable => {
   const targetType = ts.typeScopeInFile(identifer.fromString(name));
-  const tokenCodec = ts.get(
-    withKernel
-      ? ts.variable(tokenName)
-      : ts.importedVariable(util.moduleName, tokenName),
-    util.codecPropertyName
-  );
+  const tokenCodec = ts.get(ts.variable(tokenName), util.codecPropertyName);
   return {
     name: identifer.fromString(name),
     document: name,
@@ -201,7 +185,7 @@ export const tokenVariableDefinition = (
         [
           util.codecPropertyName,
           {
-            type: codec.codecType(targetType, true),
+            type: codec.codecType(targetType),
             document: "バイナリに変換する",
           },
         ],

@@ -8,21 +8,12 @@ import { identifer, data as ts } from "js-ts-code-generator";
 
 export const generateTypeDefinition = (
   customTypeList: ReadonlyArray<data.CustomTypeDefinition>,
-  idOrTokenTypeNameSet: util.IdAndTokenNameSet,
-  widthKernel: boolean
+  idOrTokenTypeNameSet: util.IdAndTokenNameSet
 ): ReadonlyArray<ts.TypeAlias> => {
-  if (widthKernel) {
-    return [
-      codec.codecTypeDefinition(),
-      customTypeToDefinition(maybe.customTypeDefinition),
-      customTypeToDefinition(result.customTypeDefinition),
-      ...customTypeList.map(customTypeToDefinition),
-      ...[...idOrTokenTypeNameSet.id, ...idOrTokenTypeNameSet.token].map(
-        hexString.typeDefinition
-      ),
-    ];
-  }
   return [
+    codec.codecTypeDefinition(),
+    customTypeToDefinition(maybe.customTypeDefinition),
+    customTypeToDefinition(result.customTypeDefinition),
     ...customTypeList.map(customTypeToDefinition),
     ...[...idOrTokenTypeNameSet.id, ...idOrTokenTypeNameSet.token].map(
       hexString.typeDefinition
