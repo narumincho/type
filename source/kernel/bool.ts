@@ -9,30 +9,15 @@ export const type: ts.Type = ts.typeBoolean;
 export const codec = (): ts.Expr =>
   ts.get(ts.variable(name), util.codecPropertyName);
 
-export const variableDefinition = (): ts.Variable => ({
-  name,
-  document: "Bool. 真か偽. JavaScriptのbooleanで扱う",
-  type: ts.typeObject(
-    new Map([
-      [
-        util.codecPropertyName,
-        {
-          type: c.codecType(type),
-          document: "true: 1, false: 0. (1byte)としてバイナリに変換する",
-        },
-      ],
-    ])
-  ),
-  expr: ts.objectLiteral([
-    ts.memberKeyValue(
-      util.codecPropertyName,
-      ts.objectLiteral([
-        ts.memberKeyValue(util.encodePropertyName, encodeDefinition()),
-        ts.memberKeyValue(util.decodePropertyName, decodeDefinition()),
-      ])
-    ),
-  ]),
-});
+export const variableDefinition = (): ts.Variable =>
+  c.variableDefinition(
+    name,
+    type,
+    "Bool. 真か偽. JavaScriptのbooleanで扱える",
+    "true: 1, false: 0. (1byte)としてバイナリに変換する",
+    encodeDefinition(),
+    decodeDefinition()
+  );
 
 const encodeDefinition = (): ts.Expr =>
   c.encodeLambda(type, (valueVar) => [

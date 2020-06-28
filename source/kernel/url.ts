@@ -18,6 +18,7 @@ export const variableDefinition = (): ts.Variable => ({
       [
         util.codecPropertyName,
         {
+          required: true,
           type: c.codecType(type),
           document:
             "文字列表現を直接入れる. URLコンストラクタでURLの形式かどうか調べる",

@@ -10,30 +10,15 @@ export const type = ts.typeString;
 export const codec = (): ts.Expr =>
   ts.get(ts.variable(name), util.codecPropertyName);
 
-export const exprDefinition = (): ts.Variable => ({
-  name,
-  document: "文字列. JavaScriptのstringで扱う",
-  type: ts.typeObject(
-    new Map([
-      [
-        util.codecPropertyName,
-        {
-          type: c.codecType(type),
-          document: "stringをUTF-8のバイナリに変換する",
-        },
-      ],
-    ])
-  ),
-  expr: ts.objectLiteral([
-    ts.memberKeyValue(
-      util.codecPropertyName,
-      ts.objectLiteral([
-        ts.memberKeyValue(util.encodePropertyName, encodeDefinition()),
-        ts.memberKeyValue(util.decodePropertyName, decodeDefinition()),
-      ])
-    ),
-  ]),
-});
+export const exprDefinition = (): ts.Variable =>
+  c.variableDefinition(
+    name,
+    type,
+    "文字列. JavaScriptのstringで扱う",
+    "stringをUTF-8のバイナリに変換する",
+    encodeDefinition(),
+    decodeDefinition()
+  );
 
 const encodeDefinition = (): ts.Expr => {
   const resultName = identifer.fromString("result");

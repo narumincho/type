@@ -40,6 +40,7 @@ export const codecTypeDefinition = (): ts.TypeAlias => {
         [
           util.encodePropertyName,
           {
+            required: true,
             type: encodeFunctionType(
               ts.typeScopeInFile(typeParameterIdentifer)
             ),
@@ -49,6 +50,7 @@ export const codecTypeDefinition = (): ts.TypeAlias => {
         [
           util.decodePropertyName,
           {
+            required: true,
             type: decodeFunctionType(
               ts.typeScopeInFile(typeParameterIdentifer)
             ),
@@ -59,6 +61,39 @@ export const codecTypeDefinition = (): ts.TypeAlias => {
     ),
   };
 };
+
+export const variableDefinition = (
+  name: identifer.Identifer,
+  type_: ts.Type,
+  document: string,
+  codecDocument: string,
+  encodeDefinition: ts.Expr,
+  decodeDefinition: ts.Expr
+): ts.Variable => ({
+  name,
+  document,
+  type: ts.typeObject(
+    new Map([
+      [
+        util.codecPropertyName,
+        {
+          required: true,
+          type: codecType(type_),
+          document: codecDocument,
+        },
+      ],
+    ])
+  ),
+  expr: ts.objectLiteral([
+    ts.memberKeyValue(
+      util.codecPropertyName,
+      ts.objectLiteral([
+        ts.memberKeyValue(util.encodePropertyName, encodeDefinition),
+        ts.memberKeyValue(util.decodePropertyName, decodeDefinition),
+      ])
+    ),
+  ]),
+});
 
 /**
  * ```ts
@@ -105,11 +140,15 @@ export const decodeReturnType = (type_: ts.Type): ts.Type =>
       [
         util.resultProperty,
         {
+          required: true,
           type: type_,
           document: "",
         },
       ],
-      [util.nextIndexProperty, { type: ts.typeNumber, document: "" }],
+      [
+        util.nextIndexProperty,
+        { required: true, type: ts.typeNumber, document: "" },
+      ],
     ])
   );
 

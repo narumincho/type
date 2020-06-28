@@ -10,30 +10,15 @@ export const type: ts.Type = ts.uint8ArrayType;
 export const codec = (): ts.Expr =>
   ts.get(ts.variable(name), util.codecPropertyName);
 
-export const variableDefinition = (): ts.Variable => ({
-  name,
-  document: "バイナリ. JavaScriptのUint8Arrayで扱う",
-  type: ts.typeObject(
-    new Map([
-      [
-        util.codecPropertyName,
-        {
-          type: c.codecType(type),
-          document: "最初にバイト数, その次にバイナリそのまま",
-        },
-      ],
-    ])
-  ),
-  expr: ts.objectLiteral([
-    ts.memberKeyValue(
-      util.codecPropertyName,
-      ts.objectLiteral([
-        ts.memberKeyValue(util.encodePropertyName, encodeDefinition()),
-        ts.memberKeyValue(util.decodePropertyName, decodeDefinition()),
-      ])
-    ),
-  ]),
-});
+export const variableDefinition = (): ts.Variable =>
+  c.variableDefinition(
+    name,
+    type,
+    "バイナリ. JavaScriptのUint8Arrayで扱える",
+    "最初にLED128でバイト数, その次にバイナリそのまま",
+    encodeDefinition(),
+    decodeDefinition()
+  );
 
 const encodeDefinition = (): ts.Expr =>
   c.encodeLambda(type, (valueVar) => [

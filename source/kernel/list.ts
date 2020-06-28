@@ -21,6 +21,7 @@ export const variableDefinition = (): ts.Variable => ({
       [
         util.codecPropertyName,
         {
+          required: true,
           type: c.codecTypeWithTypeParameter(
             ts.typeScopeInGlobal(identifer.fromString("ReadonlyArray")),
             ["element"]

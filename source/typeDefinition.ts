@@ -55,6 +55,7 @@ const customTypeDefinitionBodyToTsType = (
           body.memberList.map((member) => [
             member.name,
             {
+              required: true,
               type: util.typeToTypeScriptType(member.type),
               document: member.description,
             },
@@ -65,9 +66,13 @@ const customTypeDefinitionBodyToTsType = (
 };
 
 const patternListToObjectType = (patternList: data.Pattern): ts.Type => {
-  const tagField: [string, { type: ts.Type; document: string }] = [
+  const tagField: [
+    string,
+    { required: boolean; type: ts.Type; document: string }
+  ] = [
     "_",
     {
+      required: true,
       document: "",
       type: ts.typeStringLiteral(patternList.name),
     },
@@ -81,6 +86,7 @@ const patternListToObjectType = (patternList: data.Pattern): ts.Type => {
           [
             util.typeToMemberOrParameterName(patternList.parameter.value),
             {
+              required: true,
               document: "",
               type: util.typeToTypeScriptType(patternList.parameter.value),
             },

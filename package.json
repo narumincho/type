@@ -31,7 +31,7 @@
     "typescript": "^3.9.5"
   },
   "dependencies": {
-    "js-ts-code-generator": "^0.2.16"
+    "js-ts-code-generator": "^0.2.17"
   },
   "eslintConfig": {
     "extends": [

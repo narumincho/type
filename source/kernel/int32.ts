@@ -15,32 +15,15 @@ export const encode = (target: ts.Expr): ts.Expr =>
 export const decode = (index: ts.Expr, binary: ts.Expr): ts.Expr =>
   ts.call(ts.get(codec(), util.decodePropertyName), [index, binary]);
 
-export const variableDefinition = (): ts.Variable => ({
-  name,
-  document:
+export const variableDefinition = (): ts.Variable =>
+  c.variableDefinition(
+    name,
+    type,
     "-2 147 483 648 ～ 2 147 483 647. 32bit 符号付き整数. JavaScriptのnumberで扱う",
-  type: ts.typeObject(
-    new Map([
-      [
-        util.codecPropertyName,
-        {
-          type: c.codecType(ts.typeNumber),
-          document:
-            "numberの32bit符号あり整数をSigned Leb128のバイナリに変換する",
-        },
-      ],
-    ])
-  ),
-  expr: ts.objectLiteral([
-    ts.memberKeyValue(
-      util.codecPropertyName,
-      ts.objectLiteral([
-        ts.memberKeyValue(util.encodePropertyName, encodeDefinition()),
-        ts.memberKeyValue(util.decodePropertyName, decodeDefinition()),
-      ])
-    ),
-  ]),
-});
+    "numberの32bit符号あり整数をSigned Leb128のバイナリに変換する",
+    encodeDefinition(),
+    decodeDefinition()
+  );
 
 /**
  * numberの32bit符号あり整数をSigned Leb128のバイナリに変換するコード

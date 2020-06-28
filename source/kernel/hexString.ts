@@ -89,33 +89,16 @@ const decodeDefinition = (byteSize: number): ts.Expr => {
 const variableDefinition = (
   byteSize: number,
   name: identifer.Identifer
-): ts.Variable => ({
-  name,
-  document: name,
-  type: ts.typeObject(
-    new Map([
-      [
-        util.codecPropertyName,
-        {
-          type: codec.codecType(type),
-          document: "バイナリに変換する",
-        },
-      ],
-    ])
-  ),
-  expr: ts.objectLiteral([
-    ts.memberKeyValue(
-      util.codecPropertyName,
-      ts.objectLiteral([
-        ts.memberKeyValue(
-          util.encodePropertyName,
-          hexEncodeDefinition(byteSize)
-        ),
-        ts.memberKeyValue(util.decodePropertyName, decodeDefinition(byteSize)),
-      ])
-    ),
-  ]),
-});
+): ts.Variable =>
+  codec.variableDefinition(
+    name,
+    type,
+    byteSize.toString() +
+      "byteのバイナリ. JSでは 0-fの16進数の文字列として扱う",
+    "",
+    hexEncodeDefinition(byteSize),
+    decodeDefinition(byteSize)
+  );
 
 const idName = identifer.fromString("Id");
 const tokenName = identifer.fromString("Token");
@@ -130,7 +113,10 @@ export const typeDefinition = (name: string): ts.TypeAlias => ({
     ts.typeString,
     ts.typeObject(
       new Map([
-        ["_" + util.firstLowerCase(name), { type: ts.typeNever, document: "" }],
+        [
+          "_" + util.firstLowerCase(name),
+          { required: true, type: ts.typeNever, document: "" },
+        ],
       ])
     )
   ),
@@ -147,6 +133,7 @@ export const idVariableDefinition = (name: string): ts.Variable => {
         [
           util.codecPropertyName,
           {
+            required: true,
             type: codec.codecType(targetType),
             document: "バイナリに変換する",
           },
@@ -185,6 +172,7 @@ export const tokenVariableDefinition = (name: string): ts.Variable => {
         [
           util.codecPropertyName,
           {
+            required: true,
             type: codec.codecType(targetType),
             document: "バイナリに変換する",
           },

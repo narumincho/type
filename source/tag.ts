@@ -82,6 +82,7 @@ const customTypeDefinitionToType = (
           [
             util.codecPropertyName,
             {
+              required: true,
               type: customTypeToCodecType(customType),
               document: "",
             },
@@ -97,6 +98,7 @@ const customTypeDefinitionToType = (
                 [
                   pattern.name,
                   {
+                    required: true,
                     type: tagNameAndParameterToTagExprType(
                       identifer.fromString(customType.name),
                       customType.typeParameterList,
@@ -110,6 +112,7 @@ const customTypeDefinitionToType = (
               [
                 util.codecPropertyName,
                 {
+                  required: true,
                   type: customTypeToCodecType(customType),
                   document: "",
                 },
