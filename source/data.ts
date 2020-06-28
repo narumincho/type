@@ -34,6 +34,7 @@ export type Type =
   | { readonly _: "String" }
   | { readonly _: "Bool" }
   | { readonly _: "Binary" }
+  | { readonly _: "Url" }
   | { readonly _: "List"; readonly type: Type }
   | { readonly _: "Maybe"; readonly type: Type }
   | { readonly _: "Result"; readonly okAndErrorType: OkAndErrorType }
@@ -378,6 +379,34 @@ export const Token: {
 };
 
 /**
+ * URL. JavaScriptのURLで扱う
+ */
+export const Url: {
+  /**
+   * 文字列表現を直接入れる. URLコンストラクタでURLの形式かどうか調べる
+   */
+  readonly codec: Codec<URL>;
+} = {
+  codec: {
+    encode: (value: URL): ReadonlyArray<number> =>
+      String.codec.encode(value.toString()),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: URL; readonly nextIndex: number } => {
+      const stringResult: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      return {
+        result: new URL(stringResult.result),
+        nextIndex: stringResult.nextIndex,
+      };
+    },
+  },
+};
+
+/**
  * Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
  */
 export const Maybe: {
@@ -532,6 +561,10 @@ export const Type: {
    */
   readonly Binary: Type;
   /**
+   * URL. JavaScriptのURLとして扱える
+   */
+  readonly Url: Type;
+  /**
    * リスト. JavaScriptのArrayとして扱える
    */
   readonly List: (a: Type) => Type;
@@ -565,6 +598,7 @@ export const Type: {
   String: { _: "String" },
   Bool: { _: "Bool" },
   Binary: { _: "Binary" },
+  Url: { _: "Url" },
   List: (type_: Type): Type => ({ _: "List", type: type_ }),
   Maybe: (type_: Type): Type => ({ _: "Maybe", type: type_ }),
   Result: (okAndErrorType: OkAndErrorType): Type => ({
@@ -593,30 +627,33 @@ export const Type: {
         case "Binary": {
           return [3];
         }
-        case "List": {
-          return [4].concat(Type.codec.encode(value["type"]));
+        case "Url": {
+          return [4];
         }
-        case "Maybe": {
+        case "List": {
           return [5].concat(Type.codec.encode(value["type"]));
         }
+        case "Maybe": {
+          return [6].concat(Type.codec.encode(value["type"]));
+        }
         case "Result": {
-          return [6].concat(OkAndErrorType.codec.encode(value.okAndErrorType));
+          return [7].concat(OkAndErrorType.codec.encode(value.okAndErrorType));
         }
         case "Id": {
-          return [7].concat(String.codec.encode(value["string"]));
-        }
-        case "Token": {
           return [8].concat(String.codec.encode(value["string"]));
         }
+        case "Token": {
+          return [9].concat(String.codec.encode(value["string"]));
+        }
         case "Custom": {
-          return [9].concat(
+          return [10].concat(
             NameAndTypeParameterList.codec.encode(
               value.nameAndTypeParameterList
             )
           );
         }
         case "Parameter": {
-          return [10].concat(String.codec.encode(value["string"]));
+          return [11].concat(String.codec.encode(value["string"]));
         }
       }
     },
@@ -641,6 +678,9 @@ export const Type: {
         return { result: Type.Binary, nextIndex: patternIndex.nextIndex };
       }
       if (patternIndex.result === 4) {
+        return { result: Type.Url, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 5) {
         const result: {
           readonly result: Type;
           readonly nextIndex: number;
@@ -650,7 +690,7 @@ export const Type: {
           nextIndex: result.nextIndex,
         };
       }
-      if (patternIndex.result === 5) {
+      if (patternIndex.result === 6) {
         const result: {
           readonly result: Type;
           readonly nextIndex: number;
@@ -660,7 +700,7 @@ export const Type: {
           nextIndex: result.nextIndex,
         };
       }
-      if (patternIndex.result === 6) {
+      if (patternIndex.result === 7) {
         const result: {
           readonly result: OkAndErrorType;
           readonly nextIndex: number;
@@ -670,14 +710,14 @@ export const Type: {
           nextIndex: result.nextIndex,
         };
       }
-      if (patternIndex.result === 7) {
+      if (patternIndex.result === 8) {
         const result: {
           readonly result: string;
           readonly nextIndex: number;
         } = String.codec.decode(patternIndex.nextIndex, binary);
         return { result: Type.Id(result.result), nextIndex: result.nextIndex };
       }
-      if (patternIndex.result === 8) {
+      if (patternIndex.result === 9) {
         const result: {
           readonly result: string;
           readonly nextIndex: number;
@@ -687,7 +727,7 @@ export const Type: {
           nextIndex: result.nextIndex,
         };
       }
-      if (patternIndex.result === 9) {
+      if (patternIndex.result === 10) {
         const result: {
           readonly result: NameAndTypeParameterList;
           readonly nextIndex: number;
@@ -700,7 +740,7 @@ export const Type: {
           nextIndex: result.nextIndex,
         };
       }
-      if (patternIndex.result === 10) {
+      if (patternIndex.result === 11) {
         const result: {
           readonly result: string;
           readonly nextIndex: number;

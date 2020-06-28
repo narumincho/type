@@ -71,6 +71,11 @@ const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
         parameter: Maybe.Nothing(),
       },
       {
+        name: "Url",
+        description: "URL. JavaScriptのURLとして扱える",
+        parameter: Maybe.Nothing(),
+      },
+      {
         name: "List",
         description: "リスト. JavaScriptのArrayとして扱える",
         parameter: Maybe.Just(typeType),

@@ -8,6 +8,7 @@ import * as kernelString from "./kernel/string";
 import * as list from "./kernel/list";
 import * as maybe from "./kernel/maybe";
 import * as result from "./kernel/result";
+import * as url from "./kernel/url";
 import * as util from "./util";
 import { identifer, data as ts } from "js-ts-code-generator";
 
@@ -28,6 +29,7 @@ export const generate = (
     list.variableDefinition(),
     hexString.idKernelExprDefinition,
     hexString.tokenKernelExprDefinition,
+    url.variableDefinition(),
     ...[...idAndTokenNameSet.id].map((name) =>
       hexString.idVariableDefinition(name)
     ),
@@ -631,6 +633,8 @@ const codecExprUse = (type_: data.Type): ts.Expr => {
       return bool.codec();
     case "Binary":
       return binary.codec();
+    case "Url":
+      return url.codec();
     case "List":
       return ts.call(
         ts.get(

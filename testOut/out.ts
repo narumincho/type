@@ -407,6 +407,34 @@ export const Token: {
 };
 
 /**
+ * URL. JavaScriptのURLで扱う
+ */
+export const Url: {
+  /**
+   * 文字列表現を直接入れる. URLコンストラクタでURLの形式かどうか調べる
+   */
+  readonly codec: Codec<URL>;
+} = {
+  codec: {
+    encode: (value: URL): ReadonlyArray<number> =>
+      String.codec.encode(value.toString()),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: URL; readonly nextIndex: number } => {
+      const stringResult: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      return {
+        result: new URL(stringResult.result),
+        nextIndex: stringResult.nextIndex,
+      };
+    },
+  },
+};
+
+/**
  * UserId
  */
 export const UserId: {
