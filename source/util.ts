@@ -1,35 +1,45 @@
+import * as binary from "./kernel/binary";
+import * as bool from "./kernel/bool";
+import * as codec from "./kernel/codec";
 import * as data from "./data";
+import * as hexString from "./kernel/hexString";
+import * as int32 from "./kernel/int32";
+import * as kernelString from "./kernel/string";
+import * as list from "./kernel/list";
+import * as maybe from "./kernel/maybe";
+import * as result from "./kernel/result";
+import * as url from "./kernel/url";
+import * as util from "./util";
+
 import { identifer, data as ts } from "js-ts-code-generator";
 
 export const typeToTypeScriptType = (type_: data.Type): ts.Type => {
   switch (type_._) {
     case "Int32":
-      return ts.typeNumber;
+      return int32.type;
 
     case "String":
-      return ts.typeString;
+      return kernelString.type;
 
     case "Bool":
-      return ts.typeBoolean;
+      return bool.type;
 
     case "Binary":
-      return ts.uint8ArrayType;
+      return binary.type;
+
+    case "Url":
+      return url.type;
 
     case "List":
-      return ts.readonlyArrayType(typeToTypeScriptType(type_.type));
+      return list.type(typeToTypeScriptType(type_.type));
 
     case "Maybe":
-      return ts.typeWithParameter(
-        ts.typeScopeInGlobal(identifer.fromString("Maybe")),
-        [typeToTypeScriptType(type_.type)]
-      );
+      return maybe.type(typeToTypeScriptType(type_.type));
+
     case "Result":
-      return ts.typeWithParameter(
-        ts.typeScopeInGlobal(identifer.fromString("Result")),
-        [
-          typeToTypeScriptType(type_.okAndErrorType.error),
-          typeToTypeScriptType(type_.okAndErrorType.ok),
-        ]
+      return result.type(
+        typeToTypeScriptType(type_.okAndErrorType.error),
+        typeToTypeScriptType(type_.okAndErrorType.ok)
       );
 
     case "Id":
@@ -75,6 +85,8 @@ export const toTypeName = (type_: data.Type): string => {
       return "Bool";
     case "Binary":
       return "Binary";
+    case "Url":
+      return "Url";
     case "List":
       return toTypeName(type_.type) + "List";
     case "Maybe":
@@ -161,6 +173,7 @@ const getIdAndTokenTypeNameInType = (type_: data.Type): IdAndTokenNameSet => {
     case "String":
     case "Bool":
     case "Binary":
+    case "Url":
     case "Parameter":
       return { id: new Set(), token: new Set() };
     case "Id":
@@ -185,11 +198,11 @@ const getIdAndTokenTypeNameInType = (type_: data.Type): IdAndTokenNameSet => {
 };
 
 const flatIdAndTokenNameSetList = (
-  list: ReadonlyArray<IdAndTokenNameSet>
+  IdAndTokenNameSetList: ReadonlyArray<IdAndTokenNameSet>
 ): IdAndTokenNameSet => {
   const idSet: Set<string> = new Set();
   const tokenSet: Set<string> = new Set();
-  for (const idAndToken of list) {
+  for (const idAndToken of IdAndTokenNameSetList) {
     for (const id of idAndToken.id) {
       idSet.add(id);
     }
@@ -201,66 +214,6 @@ const flatIdAndTokenNameSetList = (
     id: idSet,
     token: tokenSet,
   };
-};
-
-export const isIncludeBinaryType = (
-  customType: data.CustomTypeDefinition
-): boolean => {
-  switch (customType.body._) {
-    case "Product":
-      return isIncludeBinaryTypeInProduct(customType.body.memberList);
-    case "Sum":
-      return isIncludeBinaryTypeInSum(customType.body.patternList);
-  }
-};
-
-const isIncludeBinaryTypeInProduct = (
-  memberList: ReadonlyArray<data.Member>
-): boolean => {
-  for (const member of memberList) {
-    if (isIncludeBinaryTypeInType(member.type)) {
-      return true;
-    }
-  }
-  return false;
-};
-
-const isIncludeBinaryTypeInSum = (
-  patternList: ReadonlyArray<data.Pattern>
-): boolean => {
-  for (const pattern of patternList) {
-    switch (pattern.parameter._) {
-      case "Just":
-        if (isIncludeBinaryTypeInType(pattern.parameter.value)) {
-          return true;
-        }
-    }
-  }
-  return false;
-};
-
-const isIncludeBinaryTypeInType = (type_: data.Type): boolean => {
-  switch (type_._) {
-    case "Int32":
-    case "String":
-    case "Bool":
-    case "Custom":
-    case "Id":
-    case "Token":
-      return false;
-    case "Binary":
-      return true;
-    case "List":
-    case "Maybe":
-      return isIncludeBinaryTypeInType(type_.type);
-    case "Result":
-      return (
-        isIncludeBinaryTypeInType(type_.okAndErrorType.ok) ||
-        isIncludeBinaryTypeInType(type_.okAndErrorType.error)
-      );
-    case "Parameter":
-      return false;
-  }
 };
 
 export const firstUpperCase = (text: string): string =>

@@ -4,7 +4,7 @@ import { identifer, data as ts } from "js-ts-code-generator";
 
 const name = identifer.fromString("Int32");
 
-const type = ts.typeNumber;
+export const type = ts.typeNumber;
 
 export const codec = (): ts.Expr =>
   ts.get(ts.variable(name), util.codecPropertyName);
