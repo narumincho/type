@@ -1,15 +1,12 @@
 import * as binary from "./kernel/binary";
 import * as bool from "./kernel/bool";
-import * as codec from "./kernel/codec";
 import * as data from "./data";
-import * as hexString from "./kernel/hexString";
 import * as int32 from "./kernel/int32";
 import * as kernelString from "./kernel/string";
 import * as list from "./kernel/list";
 import * as maybe from "./kernel/maybe";
 import * as result from "./kernel/result";
 import * as url from "./kernel/url";
-import * as util from "./util";
 
 import { identifer, data as ts } from "js-ts-code-generator";
 
