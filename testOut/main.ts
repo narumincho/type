@@ -3,6 +3,9 @@ import * as out from "./out";
 import { Codec } from "../source/data";
 
 const objectEqual = <T>(a: T, b: T): boolean => {
+  if (a instanceof URL && b instanceof URL) {
+    return a.toString() === b.toString();
+  }
   if (a === b) {
     return true;
   }
@@ -129,4 +132,10 @@ test(
     introduction: "文字列のデコードがうまくいきますように",
   },
   out.User.codec
+);
+
+test(
+  "url",
+  new URL("https://narumincho.com:2550/sample/path?query=data#hash"),
+  out.Url.codec
 );
