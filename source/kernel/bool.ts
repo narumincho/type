@@ -1,13 +1,14 @@
 import * as c from "./codec";
+import * as ts from "js-ts-code-generator/distribution/newData";
 import * as util from "../util";
-import { identifer, data as ts } from "js-ts-code-generator";
+import { identifer, data as tsUtil } from "js-ts-code-generator";
 
 const name = identifer.fromString("Bool");
 
-export const type: ts.Type = ts.typeBoolean;
+export const type: ts.Type = ts.Type.Boolean;
 
 export const codec = (): ts.Expr =>
-  ts.get(ts.variable(name), util.codecPropertyName);
+  tsUtil.get(ts.Expr.Variable(name), util.codecPropertyName);
 
 export const variableDefinition = (): ts.Variable =>
   c.variableDefinition(
@@ -21,14 +22,14 @@ export const variableDefinition = (): ts.Variable =>
 
 const encodeDefinition = (): ts.Expr =>
   c.encodeLambda(type, (valueVar) => [
-    ts.statementReturn(
-      ts.arrayLiteral([
+    ts.Statement.Return(
+      ts.Expr.ArrayLiteral([
         {
-          expr: ts.conditionalOperator(
-            valueVar,
-            ts.numberLiteral(1),
-            ts.numberLiteral(0)
-          ),
+          expr: ts.Expr.ConditionalOperator({
+            condition: valueVar,
+            thenExpr: ts.Expr.NumberLiteral(1),
+            elseExpr: ts.Expr.NumberLiteral(0),
+          }),
           spread: false,
         },
       ])
@@ -38,10 +39,10 @@ const encodeDefinition = (): ts.Expr =>
 const decodeDefinition = (): ts.Expr =>
   c.decodeLambda(type, (parameterIndex, parameterBinary) => [
     c.returnStatement(
-      ts.notEqual(
-        ts.getByExpr(parameterBinary, parameterIndex),
-        ts.numberLiteral(0)
+      tsUtil.notEqual(
+        ts.Expr.Get({ expr: parameterBinary, propertyExpr: parameterIndex }),
+        ts.Expr.NumberLiteral(0)
       ),
-      ts.addition(parameterIndex, ts.numberLiteral(1))
+      tsUtil.addition(parameterIndex, ts.Expr.NumberLiteral(1))
     ),
   ]);

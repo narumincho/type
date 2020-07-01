@@ -8,7 +8,7 @@ const name = identifer.fromString("Url");
 export const type = ts.typeScopeInGlobal(identifer.fromString("URL"));
 
 export const codec = (): ts.Expr =>
-  ts.get(ts.variable(name), util.codecPropertyName);
+  ts.get(ts.Expr.Variable(name), util.codecPropertyName);
 
 export const variableDefinition = (): ts.Variable => ({
   name,
@@ -26,12 +26,12 @@ export const variableDefinition = (): ts.Variable => ({
       ],
     ])
   ),
-  expr: ts.objectLiteral([
-    ts.memberKeyValue(
+  expr: ts.Expr.ObjectLiteral([
+    ts.Member.KeyValue(
       util.codecPropertyName,
-      ts.objectLiteral([
-        ts.memberKeyValue(util.encodePropertyName, encodeDefinition()),
-        ts.memberKeyValue(util.decodePropertyName, decodeDefinition()),
+      ts.Expr.ObjectLiteral([
+        ts.Member.KeyValue(util.encodePropertyName, encodeDefinition()),
+        ts.Member.KeyValue(util.decodePropertyName, decodeDefinition()),
       ])
     ),
   ]),
@@ -39,7 +39,7 @@ export const variableDefinition = (): ts.Variable => ({
 
 const encodeDefinition = (): ts.Expr => {
   return c.encodeLambda(type, (value) => [
-    ts.statementReturn(
+    ts.Statement.Return(
       ts.call(ts.get(s.codec(), util.encodePropertyName), [
         ts.callMethod(value, "toString", []),
       ])
@@ -60,9 +60,9 @@ const decodeDefinition = (): ts.Expr => {
     ),
     c.returnStatement(
       ts.newExpr(ts.globalObjects(identifer.fromString("URL")), [
-        c.getResult(ts.variable(stringResultName)),
+        c.getResult(ts.Expr.Variable(stringResultName)),
       ]),
-      c.getNextIndex(ts.variable(stringResultName))
+      c.getNextIndex(ts.Expr.Variable(stringResultName))
     ),
   ]);
 };

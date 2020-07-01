@@ -59,7 +59,8 @@ const customTypeNameIdentifer = (
 export const customTypeVar = (
   customTypeName: string,
   tagName: string
-): ts.Expr => ts.variable(customTypeNameIdentifer(customTypeName, tagName));
+): ts.Expr =>
+  ts.Expr.Variable(customTypeNameIdentifer(customTypeName, tagName));
 
 const customTypeDefinitionToTagVariable = (
   customType: data.CustomTypeDefinition
@@ -128,14 +129,16 @@ const customTypeDefinitionToExpr = (
 ): ts.Expr => {
   switch (customType.body._) {
     case "Product":
-      return ts.objectLiteral(customTypeToCodecDefinitionMember(customType));
+      return ts.Expr.ObjectLiteral(
+        customTypeToCodecDefinitionMember(customType)
+      );
 
     case "Sum": {
       const { patternList } = customType.body;
-      return ts.objectLiteral(
+      return ts.Expr.ObjectLiteral(
         patternList
           .map((pattern) =>
-            ts.memberKeyValue(
+            ts.Member.KeyValue(
               pattern.name,
               util.isTagTypeAllNoParameter(patternList)
                 ? ts.stringLiteral(pattern.name)
@@ -161,9 +164,9 @@ const tagNameAndParameterToTagExprType = (
     identifer.fromString
   );
   const returnType = ts.typeWithParameter(
-    ts.typeScopeInFile(typeName),
+    ts.Type.ScopeInFile(typeName),
     typeParameterIdentiferList.map((typeParameterIdentifer) =>
-      ts.typeScopeInFile(typeParameterIdentifer)
+      ts.Type.ScopeInFile(typeParameterIdentifer)
     )
   );
 
@@ -188,14 +191,14 @@ const patternToTagExpr = (
   typeParameterList: ReadonlyArray<string>,
   pattern: data.Pattern
 ): ts.Expr => {
-  const tagField: ts.Member = ts.memberKeyValue(
+  const tagField: ts.Member = ts.Member.KeyValue(
     "_",
     ts.stringLiteral(pattern.name)
   );
   const returnType = ts.typeWithParameter(
-    ts.typeScopeInFile(typeName),
+    ts.Type.ScopeInFile(typeName),
     typeParameterList.map((typeParameter) =>
-      ts.typeScopeInFile(identifer.fromString(typeParameter))
+      ts.Type.ScopeInFile(identifer.fromString(typeParameter))
     )
   );
 
@@ -214,12 +217,12 @@ const patternToTagExpr = (
         typeParameterList.map(identifer.fromString),
         returnType,
         [
-          ts.statementReturn(
-            ts.objectLiteral([
+          ts.Statement.Return(
+            ts.Expr.ObjectLiteral([
               tagField,
-              ts.memberKeyValue(
+              ts.Member.KeyValue(
                 util.typeToMemberOrParameterName(pattern.parameter.value),
-                ts.variable(parameterIdentifer)
+                ts.Expr.Variable(parameterIdentifer)
               ),
             ])
           ),
@@ -229,13 +232,13 @@ const patternToTagExpr = (
 
     case "Nothing":
       if (typeParameterList.length === 0) {
-        return ts.objectLiteral([tagField]);
+        return ts.Expr.ObjectLiteral([tagField]);
       }
       return ts.lambda(
         [],
         typeParameterList.map(identifer.fromString),
         returnType,
-        [ts.statementReturn(ts.objectLiteral([tagField]))]
+        [ts.Statement.Return(ts.Expr.ObjectLiteral([tagField]))]
       );
   }
 };
@@ -245,7 +248,7 @@ const customTypeToCodecType = (
   customTypeDefinition: data.CustomTypeDefinition
 ): ts.Type =>
   codec.codecTypeWithTypeParameter(
-    ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
+    ts.Type.ScopeInFile(identifer.fromString(customTypeDefinition.name)),
     customTypeDefinition.typeParameterList
   );
 
@@ -253,7 +256,7 @@ const customTypeToCodecDefinitionMember = (
   customType: data.CustomTypeDefinition
 ): ReadonlyArray<ts.Member> => {
   return [
-    ts.memberKeyValue(util.codecPropertyName, codecExprDefinition(customType)),
+    ts.Member.KeyValue(util.codecPropertyName, codecExprDefinition(customType)),
   ];
 };
 
@@ -270,31 +273,31 @@ const codecExprDefinition = (
     customTypeDefinition.typeParameterList.map((typeParameter) => ({
       name: codecParameterName(typeParameter),
       type: codec.codecType(
-        ts.typeScopeInFile(identifer.fromString(typeParameter))
+        ts.Type.ScopeInFile(identifer.fromString(typeParameter))
       ),
     })),
     customTypeDefinition.typeParameterList.map(identifer.fromString),
     codec.codecType(
       ts.typeWithParameter(
-        ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
+        ts.Type.ScopeInFile(identifer.fromString(customTypeDefinition.name)),
         customTypeDefinition.typeParameterList.map((typeParameter) =>
-          ts.typeScopeInFile(identifer.fromString(typeParameter))
+          ts.Type.ScopeInFile(identifer.fromString(typeParameter))
         )
       )
     ),
-    [ts.statementReturn(codecDefinitionBodyExpr(customTypeDefinition))]
+    [ts.Statement.Return(codecDefinitionBodyExpr(customTypeDefinition))]
   );
 };
 
 const codecDefinitionBodyExpr = (
   customTypeDefinition: data.CustomTypeDefinition
 ): ts.Expr => {
-  return ts.objectLiteral([
-    ts.memberKeyValue(
+  return ts.Expr.ObjectLiteral([
+    ts.Member.KeyValue(
       util.encodePropertyName,
       encodeExprDefinition(customTypeDefinition)
     ),
-    ts.memberKeyValue(
+    ts.Member.KeyValue(
       util.decodePropertyName,
       decodeExprDefinition(customTypeDefinition)
     ),
@@ -309,9 +312,9 @@ const encodeExprDefinition = (
 ): ts.Expr =>
   codec.encodeLambda(
     ts.typeWithParameter(
-      ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
+      ts.Type.ScopeInFile(identifer.fromString(customTypeDefinition.name)),
       customTypeDefinition.typeParameterList.map((typeParameter) =>
-        ts.typeScopeInFile(identifer.fromString(typeParameter))
+        ts.Type.ScopeInFile(identifer.fromString(typeParameter))
       )
     ),
     (valueVar) => {
@@ -335,7 +338,7 @@ const productEncodeDefinitionStatementList = (
   parameter: ts.Expr
 ): ReadonlyArray<ts.Statement> => {
   if (memberList.length === 0) {
-    return [ts.statementReturn(ts.arrayLiteral([]))];
+    return [ts.Statement.Return(ts.Expr.ArrayLiteral([]))];
   }
   let e = ts.call(
     ts.get(codecExprUse(memberList[0].type), util.encodePropertyName),
@@ -348,7 +351,7 @@ const productEncodeDefinitionStatementList = (
       ]),
     ]);
   }
-  return [ts.statementReturn(e)];
+  return [ts.Statement.Return(e)];
 };
 
 const sumEncodeDefinitionStatementList = (
@@ -384,7 +387,9 @@ const patternToSwitchPattern = (
     switch (patternList.parameter._) {
       case "Just":
         return ts.callMethod(
-          ts.arrayLiteral([{ expr: ts.numberLiteral(index), spread: false }]),
+          ts.Expr.ArrayLiteral([
+            { expr: ts.Expr.NumberLiteral(index), spread: false },
+          ]),
           "concat",
           [
             encodeExprUse(
@@ -398,14 +403,14 @@ const patternToSwitchPattern = (
         );
 
       case "Nothing":
-        return ts.arrayLiteral([
-          { expr: ts.numberLiteral(index), spread: false },
+        return ts.Expr.ArrayLiteral([
+          { expr: ts.Expr.NumberLiteral(index), spread: false },
         ]);
     }
   })();
   return {
     caseTag: patternList.name,
-    statementList: [ts.statementReturn(returnExpr)],
+    statementList: [ts.Statement.Return(returnExpr)],
   };
 };
 
@@ -417,9 +422,9 @@ const decodeExprDefinition = (
 ): ts.Expr => {
   return codec.decodeLambda(
     ts.typeWithParameter(
-      ts.typeScopeInFile(identifer.fromString(customTypeDefinition.name)),
+      ts.Type.ScopeInFile(identifer.fromString(customTypeDefinition.name)),
       customTypeDefinition.typeParameterList.map((typeParameter) =>
-        ts.typeScopeInFile(identifer.fromString(typeParameter))
+        ts.Type.ScopeInFile(identifer.fromString(typeParameter))
       )
     ),
     (parameterIndex, parameterBinary) => {
@@ -460,7 +465,7 @@ const productDecodeDefinitionStatementList = (
       const resultAndNextIndexName = resultAndNextIndexNameIdentifer(
         memberNameAndType
       );
-      const resultAndNextIndexVar = ts.variable(resultAndNextIndexName);
+      const resultAndNextIndexVar = ts.Expr.Variable(resultAndNextIndexName);
 
       return {
         nextIndexExpr: codec.getNextIndex(resultAndNextIndexVar),
@@ -483,13 +488,15 @@ const productDecodeDefinitionStatementList = (
   );
   return memberDecoderCode.statementList.concat(
     codec.returnStatement(
-      ts.objectLiteral(
+      ts.Expr.ObjectLiteral(
         memberList.map(
           (memberNameAndType): ts.Member =>
-            ts.memberKeyValue(
+            ts.Member.KeyValue(
               memberNameAndType.name,
               codec.getResult(
-                ts.variable(resultAndNextIndexNameIdentifer(memberNameAndType))
+                ts.Expr.Variable(
+                  resultAndNextIndexNameIdentifer(memberNameAndType)
+                )
               )
             )
         )
@@ -507,12 +514,14 @@ const sumDecodeDefinitionStatementList = (
   noTypeParameter: boolean
 ): ReadonlyArray<ts.Statement> => {
   const patternIndexAndNextIndexName = identifer.fromString("patternIndex");
-  const patternIndexAndNextIndexVar = ts.variable(patternIndexAndNextIndexName);
+  const patternIndexAndNextIndexVar = ts.Expr.Variable(
+    patternIndexAndNextIndexName
+  );
 
   return [
     ts.statementVariableDefinition(
       patternIndexAndNextIndexName,
-      codec.decodeReturnType(ts.typeNumber),
+      codec.decodeReturnType(ts.Type.Number),
       int32.decode(parameterIndex, parameterBinary)
     ),
     ...patternList.map((pattern, index) =>
@@ -544,7 +553,7 @@ const tagNameAndParameterCode = (
       return ts.statementIf(
         ts.equal(
           codec.getResult(patternIndexAndNextIndexVar),
-          ts.numberLiteral(index)
+          ts.Expr.NumberLiteral(index)
         ),
         [
           ts.statementVariableDefinition(
@@ -564,10 +573,12 @@ const tagNameAndParameterCode = (
               noTypeParameter,
               pattern.name,
               data.Maybe.Just(
-                codec.getResult(ts.variable(identifer.fromString("result")))
+                codec.getResult(
+                  ts.Expr.Variable(identifer.fromString("result"))
+                )
               )
             ),
-            codec.getNextIndex(ts.variable(identifer.fromString("result")))
+            codec.getNextIndex(ts.Expr.Variable(identifer.fromString("result")))
           ),
         ]
       );
@@ -575,7 +586,7 @@ const tagNameAndParameterCode = (
       return ts.statementIf(
         ts.equal(
           codec.getResult(patternIndexAndNextIndexVar),
-          ts.numberLiteral(index)
+          ts.Expr.NumberLiteral(index)
         ),
         [
           codec.returnStatement(
@@ -599,7 +610,7 @@ const patternUse = (
   parameter: data.Maybe<ts.Expr>
 ): ts.Expr => {
   const tagExpr = ts.get(
-    ts.variable(identifer.fromString(customTypeName)),
+    ts.Expr.Variable(identifer.fromString(customTypeName)),
     tagName
   );
   switch (parameter._) {
@@ -641,7 +652,7 @@ const codecExprUse = (type_: data.Type): ts.Expr => {
     case "List":
       return ts.call(
         ts.get(
-          ts.variable(identifer.fromString("List")),
+          ts.Expr.Variable(identifer.fromString("List")),
           util.codecPropertyName
         ),
         [codecExprUse(type_.type)]
@@ -649,7 +660,7 @@ const codecExprUse = (type_: data.Type): ts.Expr => {
     case "Maybe":
       return ts.call(
         ts.get(
-          ts.variable(identifer.fromString("Maybe")),
+          ts.Expr.Variable(identifer.fromString("Maybe")),
           util.codecPropertyName
         ),
         [codecExprUse(type_.type)]
@@ -657,7 +668,7 @@ const codecExprUse = (type_: data.Type): ts.Expr => {
     case "Result":
       return ts.call(
         ts.get(
-          ts.variable(identifer.fromString("Result")),
+          ts.Expr.Variable(identifer.fromString("Result")),
           util.codecPropertyName
         ),
         [
@@ -667,18 +678,18 @@ const codecExprUse = (type_: data.Type): ts.Expr => {
       );
     case "Id":
       return ts.get(
-        ts.variable(identifer.fromString(type_.string)),
+        ts.Expr.Variable(identifer.fromString(type_.string)),
         util.codecPropertyName
       );
     case "Token":
       return ts.get(
-        ts.variable(identifer.fromString(type_.string)),
+        ts.Expr.Variable(identifer.fromString(type_.string)),
         util.codecPropertyName
       );
     case "Custom":
       if (type_.nameAndTypeParameterList.parameterList.length === 0) {
         return ts.get(
-          ts.variable(
+          ts.Expr.Variable(
             identifer.fromString(type_.nameAndTypeParameterList.name)
           ),
           util.codecPropertyName
@@ -686,7 +697,7 @@ const codecExprUse = (type_: data.Type): ts.Expr => {
       }
       return ts.call(
         ts.get(
-          ts.variable(
+          ts.Expr.Variable(
             identifer.fromString(type_.nameAndTypeParameterList.name)
           ),
           util.codecPropertyName
@@ -696,6 +707,6 @@ const codecExprUse = (type_: data.Type): ts.Expr => {
         )
       );
     case "Parameter":
-      return ts.variable(codecParameterName(type_.string));
+      return ts.Expr.Variable(codecParameterName(type_.string));
   }
 };

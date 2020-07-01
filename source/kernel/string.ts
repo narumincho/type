@@ -8,7 +8,7 @@ export const name = identifer.fromString("String");
 export const type = ts.typeString;
 
 export const codec = (): ts.Expr =>
-  ts.get(ts.variable(name), util.codecPropertyName);
+  ts.get(ts.Expr.Variable(name), util.codecPropertyName);
 
 export const exprDefinition = (): ts.Variable =>
   c.variableDefinition(
@@ -22,13 +22,13 @@ export const exprDefinition = (): ts.Variable =>
 
 const encodeDefinition = (): ts.Expr => {
   const resultName = identifer.fromString("result");
-  const resultVar = ts.variable(resultName);
+  const resultVar = ts.Expr.Variable(resultName);
 
   return c.encodeLambda(type, (valueVar) => [
     ts.statementVariableDefinition(
       resultName,
-      ts.readonlyArrayType(ts.typeNumber),
-      ts.arrayLiteral([
+      ts.readonlyArrayType(ts.Type.Number),
+      ts.Expr.ArrayLiteral([
         {
           expr: ts.callMethod(
             ts.newExpr(
@@ -58,7 +58,7 @@ const encodeDefinition = (): ts.Expr => {
         },
       ])
     ),
-    ts.statementReturn(
+    ts.Statement.Return(
       ts.callMethod(int32.encode(ts.get(resultVar, "length")), "concat", [
         resultVar,
       ])
@@ -68,22 +68,22 @@ const encodeDefinition = (): ts.Expr => {
 
 const decodeDefinition = (): ts.Expr => {
   const lengthName = identifer.fromString("length");
-  const lengthVar = ts.variable(lengthName);
+  const lengthVar = ts.Expr.Variable(lengthName);
   const nextIndexName = identifer.fromString("nextIndex");
-  const nextIndexVar = ts.variable(nextIndexName);
+  const nextIndexVar = ts.Expr.Variable(nextIndexName);
   const textBinaryName = identifer.fromString("textBinary");
-  const textBinaryVar = ts.variable(textBinaryName);
+  const textBinaryVar = ts.Expr.Variable(textBinaryName);
   const isBrowserName = identifer.fromString("isBrowser");
 
   return c.decodeLambda(type, (parameterIndex, parameterBinary) => [
     ts.statementVariableDefinition(
       lengthName,
-      c.decodeReturnType(ts.typeNumber),
+      c.decodeReturnType(ts.Type.Number),
       int32.decode(parameterIndex, parameterBinary)
     ),
     ts.statementVariableDefinition(
       nextIndexName,
-      ts.typeNumber,
+      ts.Type.Number,
       ts.addition(c.getNextIndex(lengthVar), c.getResult(lengthVar))
     ),
     ts.statementVariableDefinition(
@@ -108,7 +108,7 @@ const decodeDefinition = (): ts.Expr => {
         )
       )
     ),
-    ts.statementIf(ts.variable(isBrowserName), [
+    ts.statementIf(ts.Expr.Variable(isBrowserName), [
       c.returnStatement(
         ts.callMethod(
           ts.newExpr(ts.globalObjects(identifer.fromString("TextDecoder")), []),

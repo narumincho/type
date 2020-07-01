@@ -9,7 +9,7 @@ import { identifer, data as ts } from "js-ts-code-generator";
 const name = "Maybe";
 
 export const type = (elementType: ts.Type): ts.Type =>
-  ts.typeWithParameter(ts.typeScopeInFile(identifer.fromString(name)), [
+  ts.typeWithParameter(ts.Type.ScopeInFile(identifer.fromString(name)), [
     elementType,
   ]);
 

@@ -1,38 +1,39 @@
 import * as codec from "./codec";
+import * as ts from "js-ts-code-generator/distribution/newData";
 import * as util from "../util";
-import { identifer, data as ts } from "js-ts-code-generator";
+import { identifer, data as tsUtil } from "js-ts-code-generator";
 
 const type = ts.typeString;
 
 const hexEncodeDefinition = (byteSize: number): ts.Expr => {
   const resultName = identifer.fromString("result");
-  const resultVar = ts.variable(resultName);
+  const resultVar = ts.Expr.Variable(resultName);
   const iName = identifer.fromString("i");
-  const iVar = ts.variable(iName);
+  const iVar = ts.Expr.Variable(iName);
 
   return codec.encodeLambda(type, (value) => [
     ts.statementVariableDefinition(
       resultName,
-      ts.arrayType(ts.typeNumber),
-      ts.arrayLiteral([])
+      tsUtil.arrayType(ts.Type.Number),
+      ts.Expr.ArrayLiteral([])
     ),
-    ts.statementFor(iName, ts.numberLiteral(byteSize), [
+    ts.statementFor(iName, ts.Expr.NumberLiteral(byteSize), [
       ts.statementSet(
-        ts.getByExpr(resultVar, iVar),
+        ts.Expr.Get({ expr: resultVar, propertyExpr: iVar }),
         null,
-        ts.callNumberMethod("parseInt", [
-          ts.callMethod(value, "slice", [
-            ts.multiplication(iVar, ts.numberLiteral(2)),
-            ts.addition(
-              ts.multiplication(iVar, ts.numberLiteral(2)),
-              ts.numberLiteral(2)
+        tsUtil.callNumberMethod("parseInt", [
+          tsUtil.callMethod(value, "slice", [
+            tsUtil.multiplication(iVar, ts.Expr.NumberLiteral(2)),
+            tsUtil.addition(
+              tsUtil.multiplication(iVar, ts.Expr.NumberLiteral(2)),
+              ts.Expr.NumberLiteral(2)
             ),
           ]),
-          ts.numberLiteral(16),
+          ts.Expr.NumberLiteral(16),
         ])
       ),
     ]),
-    ts.statementReturn(resultVar),
+    ts.Statement.Return(resultVar),
   ]);
 };
 
@@ -41,11 +42,11 @@ const decodeDefinition = (byteSize: number): ts.Expr => {
     codec.returnStatement(
       ts.callMethod(
         ts.callMethod(
-          ts.arrayLiteral([
+          ts.Expr.ArrayLiteral([
             {
               expr: ts.callMethod(parameterBinary, "slice", [
                 parameterIndex,
-                ts.addition(parameterIndex, ts.numberLiteral(byteSize)),
+                ts.addition(parameterIndex, ts.Expr.NumberLiteral(byteSize)),
               ]),
               spread: true,
             },
@@ -56,21 +57,21 @@ const decodeDefinition = (byteSize: number): ts.Expr => {
               [
                 {
                   name: identifer.fromString("n"),
-                  type: ts.typeNumber,
+                  type: ts.Type.Number,
                 },
               ],
               [],
               ts.typeString,
               [
-                ts.statementReturn(
+                ts.Statement.Return(
                   ts.callMethod(
                     ts.callMethod(
-                      ts.variable(identifer.fromString("n")),
+                      ts.Expr.Variable(identifer.fromString("n")),
                       "toString",
-                      [ts.numberLiteral(16)]
+                      [ts.Expr.NumberLiteral(16)]
                     ),
                     "padStart",
-                    [ts.numberLiteral(2), ts.stringLiteral("0")]
+                    [ts.Expr.NumberLiteral(2), ts.stringLiteral("0")]
                   )
                 ),
               ]
@@ -81,7 +82,7 @@ const decodeDefinition = (byteSize: number): ts.Expr => {
         [ts.stringLiteral("")]
       ),
 
-      ts.addition(parameterIndex, ts.numberLiteral(byteSize))
+      ts.addition(parameterIndex, ts.Expr.NumberLiteral(byteSize))
     ),
   ]);
 };
@@ -123,8 +124,8 @@ export const typeDefinition = (name: string): ts.TypeAlias => ({
 });
 
 export const idVariableDefinition = (name: string): ts.Variable => {
-  const targetType = ts.typeScopeInFile(identifer.fromString(name));
-  const idCodec = ts.get(ts.variable(idName), util.codecPropertyName);
+  const targetType = ts.Type.ScopeInFile(identifer.fromString(name));
+  const idCodec = ts.get(ts.Expr.Variable(idName), util.codecPropertyName);
   return {
     name: identifer.fromString(name),
     document: name,
@@ -140,15 +141,15 @@ export const idVariableDefinition = (name: string): ts.Variable => {
         ],
       ])
     ),
-    expr: ts.objectLiteral([
-      ts.memberKeyValue(
+    expr: ts.Expr.ObjectLiteral([
+      ts.Member.KeyValue(
         util.codecPropertyName,
-        ts.objectLiteral([
-          ts.memberKeyValue(
+        ts.Expr.ObjectLiteral([
+          ts.Member.KeyValue(
             util.encodePropertyName,
             ts.get(idCodec, util.encodePropertyName)
           ),
-          ts.memberKeyValue(
+          ts.Member.KeyValue(
             util.decodePropertyName,
             ts.typeAssertion(
               ts.get(idCodec, util.decodePropertyName),
@@ -162,8 +163,11 @@ export const idVariableDefinition = (name: string): ts.Variable => {
 };
 
 export const tokenVariableDefinition = (name: string): ts.Variable => {
-  const targetType = ts.typeScopeInFile(identifer.fromString(name));
-  const tokenCodec = ts.get(ts.variable(tokenName), util.codecPropertyName);
+  const targetType = ts.Type.ScopeInFile(identifer.fromString(name));
+  const tokenCodec = ts.get(
+    ts.Expr.Variable(tokenName),
+    util.codecPropertyName
+  );
   return {
     name: identifer.fromString(name),
     document: name,
@@ -179,15 +183,15 @@ export const tokenVariableDefinition = (name: string): ts.Variable => {
         ],
       ])
     ),
-    expr: ts.objectLiteral([
-      ts.memberKeyValue(
+    expr: ts.Expr.ObjectLiteral([
+      ts.Member.KeyValue(
         util.codecPropertyName,
-        ts.objectLiteral([
-          ts.memberKeyValue(
+        ts.Expr.ObjectLiteral([
+          ts.Member.KeyValue(
             util.encodePropertyName,
             ts.get(tokenCodec, util.encodePropertyName)
           ),
-          ts.memberKeyValue(
+          ts.Member.KeyValue(
             util.decodePropertyName,
             ts.typeAssertion(
               ts.get(tokenCodec, util.decodePropertyName),

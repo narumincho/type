@@ -10,8 +10,8 @@ export const type = (element: ts.Type): ts.Type =>
 
 const elementTypeName = identifer.fromString("element");
 const elementCodecName = identifer.fromString("elementCodec");
-const elementCodecVar = ts.variable(elementCodecName);
-const elementType = ts.typeScopeInFile(elementTypeName);
+const elementCodecVar = ts.Expr.Variable(elementCodecName);
+const elementType = ts.Type.ScopeInFile(elementTypeName);
 
 export const variableDefinition = (): ts.Variable => ({
   name,
@@ -31,8 +31,8 @@ export const variableDefinition = (): ts.Variable => ({
       ],
     ])
   ),
-  expr: ts.objectLiteral([
-    ts.memberKeyValue(
+  expr: ts.Expr.ObjectLiteral([
+    ts.Member.KeyValue(
       util.codecPropertyName,
       ts.lambda(
         [
@@ -44,10 +44,10 @@ export const variableDefinition = (): ts.Variable => ({
         [elementTypeName],
         c.codecType(type(elementType)),
         [
-          ts.statementReturn(
-            ts.objectLiteral([
-              ts.memberKeyValue(util.encodePropertyName, encodeDefinition()),
-              ts.memberKeyValue(util.decodePropertyName, decodeDefinition()),
+          ts.Statement.Return(
+            ts.Expr.ObjectLiteral([
+              ts.Member.KeyValue(util.encodePropertyName, encodeDefinition()),
+              ts.Member.KeyValue(util.decodePropertyName, decodeDefinition()),
             ])
           ),
         ]
@@ -61,60 +61,60 @@ const encodeDefinition = (): ts.Expr => {
   const elementName = identifer.fromString("element");
 
   return c.encodeLambda(
-    type(ts.typeScopeInFile(elementTypeName)),
+    type(ts.Type.ScopeInFile(elementTypeName)),
     (valueVar) => [
       ts.statementLetVariableDefinition(
         resultName,
-        ts.arrayType(ts.typeNumber),
+        ts.arrayType(ts.Type.Number),
         ts.typeAssertion(
           int32.encode(ts.get(valueVar, "length")),
-          ts.arrayType(ts.typeNumber)
+          ts.arrayType(ts.Type.Number)
         )
       ),
       ts.statementForOf(elementName, valueVar, [
         ts.statementSet(
-          ts.variable(resultName),
+          ts.Expr.Variable(resultName),
           null,
-          ts.callMethod(ts.variable(resultName), "concat", [
+          ts.callMethod(ts.Expr.Variable(resultName), "concat", [
             ts.call(ts.get(elementCodecVar, util.encodePropertyName), [
-              ts.variable(elementName),
+              ts.Expr.Variable(elementName),
             ]),
           ])
         ),
       ]),
-      ts.statementReturn(ts.variable(resultName)),
+      ts.Statement.Return(ts.Expr.Variable(resultName)),
     ]
   );
 };
 
 const decodeDefinition = (): ts.Expr => {
-  const elementTypeVar = ts.typeScopeInFile(elementTypeName);
+  const elementTypeVar = ts.Type.ScopeInFile(elementTypeName);
   const resultName = identifer.fromString("result");
-  const resultVar = ts.variable(resultName);
+  const resultVar = ts.Expr.Variable(resultName);
   const lengthResultName = identifer.fromString("lengthResult");
-  const lengthResultVar = ts.variable(lengthResultName);
+  const lengthResultVar = ts.Expr.Variable(lengthResultName);
   const resultAndNextIndexName = identifer.fromString("resultAndNextIndex");
-  const resultAndNextIndexVar = ts.variable(resultAndNextIndexName);
+  const resultAndNextIndexVar = ts.Expr.Variable(resultAndNextIndexName);
   const nextIndexName = identifer.fromString("nextIndex");
-  const nextIndexVar = ts.variable(nextIndexName);
+  const nextIndexVar = ts.Expr.Variable(nextIndexName);
 
   return c.decodeLambda(
     ts.readonlyArrayType(elementTypeVar),
     (parameterIndex, parameterBinary) => [
       ts.statementVariableDefinition(
         lengthResultName,
-        c.decodeReturnType(ts.typeNumber),
+        c.decodeReturnType(ts.Type.Number),
         int32.decode(parameterIndex, parameterBinary)
       ),
       ts.statementLetVariableDefinition(
         nextIndexName,
-        ts.typeNumber,
+        ts.Type.Number,
         c.getNextIndex(lengthResultVar)
       ),
       ts.statementVariableDefinition(
         resultName,
         ts.arrayType(elementTypeVar),
-        ts.arrayLiteral([])
+        ts.Expr.ArrayLiteral([])
       ),
       ts.statementFor(identifer.fromString("i"), c.getResult(lengthResultVar), [
         ts.statementVariableDefinition(
