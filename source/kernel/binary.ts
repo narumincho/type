@@ -1,14 +1,15 @@
 import * as c from "./codec";
 import * as int32 from "./int32";
+import * as ts from "js-ts-code-generator/distribution/newData";
 import * as util from "../util";
-import { identifer, data as ts } from "js-ts-code-generator";
+import { identifer, data as tsUtil } from "js-ts-code-generator";
 
 export const name = identifer.fromString("Binary");
 
-export const type: ts.Type = ts.uint8ArrayType;
+export const type: ts.Type = tsUtil.uint8ArrayType;
 
 export const codec = (): ts.Expr =>
-  ts.get(ts.variable(name), util.codecPropertyName);
+  tsUtil.get(ts.Expr.Variable(name), util.codecPropertyName);
 
 export const variableDefinition = (): ts.Variable =>
   c.variableDefinition(
@@ -22,32 +23,36 @@ export const variableDefinition = (): ts.Variable =>
 
 const encodeDefinition = (): ts.Expr =>
   c.encodeLambda(type, (valueVar) => [
-    ts.statementReturn(
-      ts.callMethod(int32.encode(ts.get(valueVar, "length")), "concat", [
-        ts.arrayLiteral([{ expr: valueVar, spread: true }]),
-      ])
+    ts.Statement.Return(
+      tsUtil.callMethod(
+        int32.encode(tsUtil.get(valueVar, "length")),
+        "concat",
+        [ts.Expr.ArrayLiteral([{ expr: valueVar, spread: true }])]
+      )
     ),
   ]);
 
 const decodeDefinition = (): ts.Expr => {
   const lengthName = identifer.fromString("length");
-  const lengthVar = ts.variable(lengthName);
+  const lengthVar = ts.Expr.Variable(lengthName);
   const nextIndexName = identifer.fromString("nextIndex");
-  const nextIndexVar = ts.variable(nextIndexName);
+  const nextIndexVar = ts.Expr.Variable(nextIndexName);
 
   return c.decodeLambda(type, (parameterIndex, parameterBinary) => [
-    ts.statementVariableDefinition(
-      lengthName,
-      c.decodeReturnType(ts.typeNumber),
-      int32.decode(parameterIndex, parameterBinary)
-    ),
-    ts.statementVariableDefinition(
-      nextIndexName,
-      ts.typeNumber,
-      ts.addition(c.getNextIndex(lengthVar), c.getResult(lengthVar))
-    ),
+    ts.Statement.VariableDefinition({
+      isConst: true,
+      name: lengthName,
+      type: c.decodeReturnType(ts.Type.Number),
+      expr: int32.decode(parameterIndex, parameterBinary),
+    }),
+    ts.Statement.VariableDefinition({
+      isConst: true,
+      name: nextIndexName,
+      type: ts.Type.Number,
+      expr: tsUtil.addition(c.getNextIndex(lengthVar), c.getResult(lengthVar)),
+    }),
     c.returnStatement(
-      ts.callMethod(parameterBinary, "slice", [
+      tsUtil.callMethod(parameterBinary, "slice", [
         c.getNextIndex(lengthVar),
         nextIndexVar,
       ]),

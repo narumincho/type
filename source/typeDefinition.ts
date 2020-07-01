@@ -3,8 +3,9 @@ import * as data from "./data";
 import * as hexString from "./kernel/hexString";
 import * as maybe from "./kernel/maybe";
 import * as result from "./kernel/result";
+import * as ts from "js-ts-code-generator/distribution/newData";
 import * as util from "./util";
-import { identifer, data as ts } from "js-ts-code-generator";
+import { identifer } from "js-ts-code-generator";
 
 export const generateTypeDefinition = (
   customTypeList: ReadonlyArray<data.CustomTypeDefinition>,
@@ -32,7 +33,7 @@ export const customTypeToDefinition = (
 ): ts.TypeAlias => ({
   name: identifer.fromString(customType.name),
   document: customType.description,
-  parameterList: customType.typeParameterList.map(identifer.fromString),
+  typeParameterList: customType.typeParameterList.map(identifer.fromString),
   type: customTypeDefinitionBodyToTsType(customType.body),
 });
 
@@ -42,58 +43,45 @@ const customTypeDefinitionBodyToTsType = (
   switch (body._) {
     case "Sum":
       if (util.isTagTypeAllNoParameter(body.patternList)) {
-        return ts.typeUnion(
-          body.patternList.map((pattern) => ts.typeStringLiteral(pattern.name))
+        return ts.Type.Union(
+          body.patternList.map((pattern) => ts.Type.StringLiteral(pattern.name))
         );
       }
-      return ts.typeUnion(
+      return ts.Type.Union(
         body.patternList.map((pattern) => patternListToObjectType(pattern))
       );
     case "Product":
-      return ts.typeObject(
-        new Map(
-          body.memberList.map((member) => [
-            member.name,
-            {
-              required: true,
-              type: util.typeToTypeScriptType(member.type),
-              document: member.description,
-            },
-          ])
-        )
+      return ts.Type.Object(
+        body.memberList.map((member) => ({
+          name: member.name,
+          required: true,
+          type: util.typeToTypeScriptType(member.type),
+          document: member.description,
+        }))
       );
   }
 };
 
 const patternListToObjectType = (patternList: data.Pattern): ts.Type => {
-  const tagField: [
-    string,
-    { required: boolean; type: ts.Type; document: string }
-  ] = [
-    "_",
-    {
-      required: true,
-      document: "",
-      type: ts.typeStringLiteral(patternList.name),
-    },
-  ];
+  const tagField: ts.MemberType = {
+    name: "_",
+    required: true,
+    document: "",
+    type: ts.Type.StringLiteral(patternList.name),
+  };
 
   switch (patternList.parameter._) {
     case "Just":
-      return ts.typeObject(
-        new Map([
-          tagField,
-          [
-            util.typeToMemberOrParameterName(patternList.parameter.value),
-            {
-              required: true,
-              document: "",
-              type: util.typeToTypeScriptType(patternList.parameter.value),
-            },
-          ],
-        ])
-      );
+      return ts.Type.Object([
+        tagField,
+        {
+          name: util.typeToMemberOrParameterName(patternList.parameter.value),
+          required: true,
+          document: "",
+          type: util.typeToTypeScriptType(patternList.parameter.value),
+        },
+      ]);
     case "Nothing":
-      return ts.typeObject(new Map([tagField]));
+      return ts.Type.Object([tagField]);
   }
 };

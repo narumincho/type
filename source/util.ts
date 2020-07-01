@@ -6,9 +6,9 @@ import * as kernelString from "./kernel/string";
 import * as list from "./kernel/list";
 import * as maybe from "./kernel/maybe";
 import * as result from "./kernel/result";
+import * as ts from "js-ts-code-generator/distribution/newData";
 import * as url from "./kernel/url";
-
-import { identifer, data as ts } from "js-ts-code-generator";
+import { identifer } from "js-ts-code-generator";
 
 export const typeToTypeScriptType = (type_: data.Type): ts.Type => {
   switch (type_._) {
@@ -41,24 +41,26 @@ export const typeToTypeScriptType = (type_: data.Type): ts.Type => {
 
     case "Id":
     case "Token":
-      return ts.typeScopeInFile(identifer.fromString(type_.string));
+      return ts.Type.ScopeInFile(identifer.fromString(type_.string));
 
     case "Custom": {
       if (type_.nameAndTypeParameterList.parameterList.length === 0) {
-        return ts.typeScopeInFile(
+        return ts.Type.ScopeInFile(
           identifer.fromString(type_.nameAndTypeParameterList.name)
         );
       }
-      return ts.typeWithParameter(
-        ts.typeScopeInFile(
+      return ts.Type.WithTypeParameter({
+        type: ts.Type.ScopeInFile(
           identifer.fromString(type_.nameAndTypeParameterList.name)
         ),
-        type_.nameAndTypeParameterList.parameterList.map(typeToTypeScriptType)
-      );
+        typeParameterList: type_.nameAndTypeParameterList.parameterList.map(
+          typeToTypeScriptType
+        ),
+      });
     }
 
     case "Parameter":
-      return ts.typeScopeInFile(identifer.fromString(type_.string));
+      return ts.Type.ScopeInFile(identifer.fromString(type_.string));
   }
 };
 

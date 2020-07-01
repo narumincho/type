@@ -1,5 +1,6 @@
+import * as ts from "js-ts-code-generator/distribution/newData";
 import * as util from "../util";
-import { identifer, data as ts } from "js-ts-code-generator";
+import { identifer, data as tsUtil } from "js-ts-code-generator";
 
 export const codecTypeWithTypeParameter = (
   type_: ts.Type,
@@ -7,63 +8,56 @@ export const codecTypeWithTypeParameter = (
 ): ts.Type => {
   return typeParameterList.length === 0
     ? codecType(type_)
-    : ts.typeFunction(
-        typeParameterList.map(identifer.fromString),
-        typeParameterList.map((typeParameter) =>
-          codecType(ts.typeScopeInFile(identifer.fromString(typeParameter)))
+    : ts.Type.Function({
+        typeParameterList: typeParameterList.map(identifer.fromString),
+        parameterList: typeParameterList.map((typeParameter) =>
+          codecType(ts.Type.ScopeInFile(identifer.fromString(typeParameter)))
         ),
-        codecType(
-          ts.typeWithParameter(
-            type_,
-            typeParameterList.map((typeParameter) =>
-              ts.typeScopeInFile(identifer.fromString(typeParameter))
-            )
-          )
-        )
-      );
+        return: codecType(
+          ts.Type.WithTypeParameter({
+            type: type_,
+            typeParameterList: typeParameterList.map((typeParameter) =>
+              ts.Type.ScopeInFile(identifer.fromString(typeParameter))
+            ),
+          })
+        ),
+      });
 };
 
 const codecName = identifer.fromString("Codec");
 
 /** `Codec<type_>` を表す */
 export const codecType = (type_: ts.Type): ts.Type =>
-  ts.typeWithParameter(ts.typeScopeInFile(codecName), [type_]);
+  ts.Type.WithTypeParameter({
+    type: ts.Type.ScopeInFile(codecName),
+    typeParameterList: [type_],
+  });
 
 export const codecTypeDefinition = (): ts.TypeAlias => {
   const typeParameterIdentifer = identifer.fromString("T");
   return {
     name: codecName,
     document: "バイナリと相互変換するための関数",
-    parameterList: [typeParameterIdentifer],
-    type: ts.typeObject(
-      new Map([
-        [
-          util.encodePropertyName,
-          {
-            required: true,
-            type: encodeFunctionType(
-              ts.typeScopeInFile(typeParameterIdentifer)
-            ),
-            document: "",
-          },
-        ],
-        [
-          util.decodePropertyName,
-          {
-            required: true,
-            type: decodeFunctionType(
-              ts.typeScopeInFile(typeParameterIdentifer)
-            ),
-            document: "",
-          },
-        ],
-      ])
-    ),
+    typeParameterList: [typeParameterIdentifer],
+    type: ts.Type.Object([
+      {
+        name: util.encodePropertyName,
+        required: true,
+        type: encodeFunctionType(ts.Type.ScopeInFile(typeParameterIdentifer)),
+        document: "",
+      },
+      {
+        name: util.decodePropertyName,
+        required: true,
+        type: decodeFunctionType(ts.Type.ScopeInFile(typeParameterIdentifer)),
+        document: "",
+      },
+    ]),
   };
 };
 
 export const variableDefinition = (
-  name: identifer.Identifer,
+  name: ts.Identifer,
   type_: ts.Type,
   document: string,
   codecDocument: string,
@@ -72,26 +66,28 @@ export const variableDefinition = (
 ): ts.Variable => ({
   name,
   document,
-  type: ts.typeObject(
-    new Map([
-      [
-        util.codecPropertyName,
-        {
-          required: true,
-          type: codecType(type_),
-          document: codecDocument,
-        },
-      ],
-    ])
-  ),
-  expr: ts.objectLiteral([
-    ts.memberKeyValue(
-      util.codecPropertyName,
-      ts.objectLiteral([
-        ts.memberKeyValue(util.encodePropertyName, encodeDefinition),
-        ts.memberKeyValue(util.decodePropertyName, decodeDefinition),
-      ])
-    ),
+  type: ts.Type.Object([
+    {
+      name: util.codecPropertyName,
+      required: true,
+      type: codecType(type_),
+      document: codecDocument,
+    },
+  ]),
+  expr: ts.Expr.ObjectLiteral([
+    ts.Member.KeyValue({
+      key: util.codecPropertyName,
+      value: ts.Expr.ObjectLiteral([
+        ts.Member.KeyValue({
+          key: util.encodePropertyName,
+          value: encodeDefinition,
+        }),
+        ts.Member.KeyValue({
+          key: util.decodePropertyName,
+          value: decodeDefinition,
+        }),
+      ]),
+    }),
   ]),
 });
 
@@ -101,56 +97,58 @@ export const variableDefinition = (
  * ```
  */
 export const encodeFunctionType = (type_: ts.Type): ts.Type =>
-  ts.typeFunction([], [type_], encodeReturnType);
+  ts.Type.Function({
+    typeParameterList: [],
+    parameterList: [type_],
+    return: encodeReturnType,
+  });
 
 export const encodeLambda = (
   type_: ts.Type,
   statementList: (valueExpr: ts.Expr) => ReadonlyArray<ts.Statement>
 ): ts.Expr => {
   const valueName = identifer.fromString("value");
-  return ts.lambda(
-    [
+  return ts.Expr.Lambda({
+    typeParameterList: [],
+    parameterList: [
       {
         name: valueName,
         type: type_,
       },
     ],
-    [],
-    encodeReturnType,
-    statementList(ts.variable(valueName))
-  );
+    returnType: encodeReturnType,
+    statementList: statementList(ts.Expr.Variable(valueName)),
+  });
 };
 
-const encodeReturnType = ts.readonlyArrayType(ts.typeNumber);
+const encodeReturnType = tsUtil.readonlyArrayType(ts.Type.Number);
 /**
  * ```ts
  * (a: number, b: Uint8Array) => { readonly result: type_, readonly nextIndex: number }
  * ```
  */
 export const decodeFunctionType = (type_: ts.Type): ts.Type =>
-  ts.typeFunction(
-    [],
-    decodeParameterList.map((parameter) => parameter.type),
-    decodeReturnType(type_)
-  );
+  ts.Type.Function({
+    typeParameterList: [],
+    parameterList: decodeParameterList.map((parameter) => parameter.type),
+    return: decodeReturnType(type_),
+  });
 
 export const decodeReturnType = (type_: ts.Type): ts.Type =>
-  ts.typeObject(
-    new Map([
-      [
-        util.resultProperty,
-        {
-          required: true,
-          type: type_,
-          document: "",
-        },
-      ],
-      [
-        util.nextIndexProperty,
-        { required: true, type: ts.typeNumber, document: "" },
-      ],
-    ])
-  );
+  ts.Type.Object([
+    {
+      name: util.resultProperty,
+      required: true,
+      type: type_,
+      document: "",
+    },
+    {
+      name: util.nextIndexProperty,
+      required: true,
+      type: ts.Type.Number,
+      document: "",
+    },
+  ]);
 
 const indexIdentifer = identifer.fromString("index");
 const binaryIdentifer = identifer.fromString("binary");
@@ -161,12 +159,12 @@ const binaryIdentifer = identifer.fromString("binary");
 const decodeParameterList: ReadonlyArray<ts.ParameterWithDocument> = [
   {
     name: indexIdentifer,
-    type: ts.typeNumber,
+    type: ts.Type.Number,
     document: "バイナリを読み込み開始位置",
   },
   {
     name: binaryIdentifer,
-    type: ts.uint8ArrayType,
+    type: tsUtil.uint8ArrayType,
     document: "バイナリ",
   },
 ];
@@ -181,10 +179,10 @@ export const returnStatement = (
   resultExpr: ts.Expr,
   nextIndexExpr: ts.Expr
 ): ts.Statement =>
-  ts.statementReturn(
-    ts.objectLiteral([
-      ts.memberKeyValue(util.resultProperty, resultExpr),
-      ts.memberKeyValue(util.nextIndexProperty, nextIndexExpr),
+  ts.Statement.Return(
+    ts.Expr.ObjectLiteral([
+      ts.Member.KeyValue({ key: util.resultProperty, value: resultExpr }),
+      ts.Member.KeyValue({ key: util.nextIndexProperty, value: nextIndexExpr }),
     ])
   );
 
@@ -195,12 +193,15 @@ export const decodeLambda = (
     parameterBinary: ts.Expr
   ) => ReadonlyArray<ts.Statement>
 ): ts.Expr => {
-  return ts.lambda(
-    decodeParameterList,
-    [],
-    decodeReturnType(type),
-    statementList(ts.variable(indexIdentifer), ts.variable(binaryIdentifer))
-  );
+  return ts.Expr.Lambda({
+    typeParameterList: [],
+    parameterList: decodeParameterList,
+    returnType: decodeReturnType(type),
+    statementList: statementList(
+      ts.Expr.Variable(indexIdentifer),
+      ts.Expr.Variable(binaryIdentifer)
+    ),
+  });
 };
 
 /**
@@ -209,7 +210,7 @@ export const decodeLambda = (
  * ```
  */
 export const getResult = (resultAndNextIndexExpr: ts.Expr): ts.Expr =>
-  ts.get(resultAndNextIndexExpr, util.resultProperty);
+  tsUtil.get(resultAndNextIndexExpr, util.resultProperty);
 
 /**
  * ```ts
@@ -217,4 +218,4 @@ export const getResult = (resultAndNextIndexExpr: ts.Expr): ts.Expr =>
  * ```
  */
 export const getNextIndex = (resultAndNextIndexExpr: ts.Expr): ts.Expr =>
-  ts.get(resultAndNextIndexExpr, util.nextIndexProperty);
+  tsUtil.get(resultAndNextIndexExpr, util.nextIndexProperty);

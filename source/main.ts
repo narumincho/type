@@ -1,8 +1,8 @@
 import * as data from "./data";
 import * as tag from "./tag";
+import * as ts from "js-ts-code-generator/distribution/newData";
 import * as typeDefinition from "./typeDefinition";
 import * as util from "./util";
-import { data as ts } from "js-ts-code-generator";
 
 export { data };
 

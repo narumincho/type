@@ -1,18 +1,19 @@
+import * as ts from "js-ts-code-generator/distribution/newData";
 import {
   CustomTypeDefinition,
   CustomTypeDefinitionBody,
   Maybe,
   Type,
 } from "../data";
-import { identifer, data as ts } from "js-ts-code-generator";
+import { identifer } from "js-ts-code-generator";
 
 const name = "Result";
 
 export const type = (okType: ts.Type, errorType: ts.Type): ts.Type =>
-  ts.typeWithParameter(ts.typeScopeInFile(identifer.fromString(name)), [
-    okType,
-    errorType,
-  ]);
+  ts.Type.WithTypeParameter({
+    type: ts.Type.ScopeInFile(identifer.fromString(name)),
+    typeParameterList: [okType, errorType],
+  });
 
 export const customTypeDefinition: CustomTypeDefinition = {
   name,
