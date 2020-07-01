@@ -28,36 +28,39 @@ const encodeDefinition = (): ts.Expr => {
   const resultVar = ts.Expr.Variable(resultName);
 
   return c.encodeLambda(type, (valueVar) => [
-    ts.statementVariableDefinition(
-      resultName,
-      tsUtil.readonlyArrayType(ts.Type.Number),
-      ts.Expr.ArrayLiteral([
+    ts.Statement.VariableDefinition({
+      isConst: true,
+      name: resultName,
+      type: tsUtil.readonlyArrayType(ts.Type.Number),
+      expr: ts.Expr.ArrayLiteral([
         {
           expr: tsUtil.callMethod(
-            ts.newExpr(
-              ts.conditionalOperator(
-                tsUtil.logicalOr(
+            ts.Expr.New({
+              expr: ts.Expr.ConditionalOperator({
+                condition: tsUtil.logicalOr(
                   tsUtil.equal(globalProcess, ts.Expr.UndefinedLiteral),
                   tsUtil.equal(
                     tsUtil.get(globalProcess, "title"),
                     ts.Expr.StringLiteral("browser")
                   )
                 ),
-                ts.Expr.GlobalObjects(identifer.fromString("TextEncoder")),
-                ts.Expr.ImportedVariable({
+                thenExpr: ts.Expr.GlobalObjects(
+                  identifer.fromString("TextEncoder")
+                ),
+                elseExpr: ts.Expr.ImportedVariable({
                   moduleName: "util",
                   name: identifer.fromString("TextEncoder"),
-                })
-              ),
-              []
-            ),
+                }),
+              }),
+              parameterList: [],
+            }),
             util.encodePropertyName,
             [valueVar]
           ),
           spread: true,
         },
-      ])
-    ),
+      ]),
+    }),
     ts.Statement.Return(
       tsUtil.callMethod(
         int32.encode(tsUtil.get(resultVar, "length")),
@@ -78,48 +81,55 @@ const decodeDefinition = (): ts.Expr => {
   const isBrowserName = identifer.fromString("isBrowser");
 
   return c.decodeLambda(type, (parameterIndex, parameterBinary) => [
-    ts.statementVariableDefinition(
-      lengthName,
-      c.decodeReturnType(ts.Type.Number),
-      int32.decode(parameterIndex, parameterBinary)
-    ),
-    ts.statementVariableDefinition(
-      nextIndexName,
-      ts.Type.Number,
-      ts.addition(c.getNextIndex(lengthVar), c.getResult(lengthVar))
-    ),
-    ts.statementVariableDefinition(
-      textBinaryName,
-      ts.uint8ArrayType,
-      tsUtil.callMethod(parameterBinary, "slice", [
+    ts.Statement.VariableDefinition({
+      isConst: true,
+      name: lengthName,
+      type: c.decodeReturnType(ts.Type.Number),
+      expr: int32.decode(parameterIndex, parameterBinary),
+    }),
+    ts.Statement.VariableDefinition({
+      isConst: true,
+      name: nextIndexName,
+      type: ts.Type.Number,
+      expr: tsUtil.addition(c.getNextIndex(lengthVar), c.getResult(lengthVar)),
+    }),
+    ts.Statement.VariableDefinition({
+      isConst: true,
+      name: textBinaryName,
+      type: tsUtil.uint8ArrayType,
+      expr: tsUtil.callMethod(parameterBinary, "slice", [
         c.getNextIndex(lengthVar),
         nextIndexVar,
-      ])
-    ),
-    ts.statementVariableDefinition(
-      isBrowserName,
-      ts.Type.Boolean,
-      tsUtil.logicalOr(
+      ]),
+    }),
+    ts.Statement.VariableDefinition({
+      isConst: true,
+      name: isBrowserName,
+      type: ts.Type.Boolean,
+      expr: tsUtil.logicalOr(
         tsUtil.equal(globalProcess, ts.Expr.UndefinedLiteral),
         tsUtil.equal(
           tsUtil.get(globalProcess, "title"),
           ts.Expr.StringLiteral("browser")
         )
-      )
-    ),
-    ts.Statement.If(ts.Expr.Variable(isBrowserName), [
-      c.returnStatement(
-        tsUtil.callMethod(
-          ts.Expr.New({
-            expr: ts.Expr.GlobalObjects(identifer.fromString("TextDecoder")),
-            parameterList: [],
-          }),
-          "decode",
-          [textBinaryVar]
-        ),
-        nextIndexVar
       ),
-    ]),
+    }),
+    ts.Statement.If({
+      condition: ts.Expr.Variable(isBrowserName),
+      thenStatementList: [
+        c.returnStatement(
+          tsUtil.callMethod(
+            ts.Expr.New({
+              expr: ts.Expr.GlobalObjects(identifer.fromString("TextDecoder")),
+              parameterList: [],
+            }),
+            "decode",
+            [textBinaryVar]
+          ),
+          nextIndexVar
+        ),
+      ],
+    }),
     c.returnStatement(
       tsUtil.callMethod(
         ts.Expr.New({

@@ -14,27 +14,29 @@ export const codec = (): ts.Expr =>
 export const variableDefinition = (): ts.Variable => ({
   name,
   document: "URL. JavaScriptのURLで扱う",
-  type: ts.typeObject(
-    new Map([
-      [
-        util.codecPropertyName,
-        {
-          required: true,
-          type: c.codecType(type),
-          document:
-            "文字列表現を直接入れる. URLコンストラクタでURLの形式かどうか調べる",
-        },
-      ],
-    ])
-  ),
+  type: ts.Type.Object([
+    {
+      name: util.codecPropertyName,
+      required: true,
+      type: c.codecType(type),
+      document:
+        "文字列表現を直接入れる. URLコンストラクタでURLの形式かどうか調べる",
+    },
+  ]),
   expr: ts.Expr.ObjectLiteral([
-    ts.Member.KeyValue(
-      util.codecPropertyName,
-      ts.Expr.ObjectLiteral([
-        ts.Member.KeyValue(util.encodePropertyName, encodeDefinition()),
-        ts.Member.KeyValue(util.decodePropertyName, decodeDefinition()),
-      ])
-    ),
+    ts.Member.KeyValue({
+      key: util.codecPropertyName,
+      value: ts.Expr.ObjectLiteral([
+        ts.Member.KeyValue({
+          key: util.encodePropertyName,
+          value: encodeDefinition(),
+        }),
+        ts.Member.KeyValue({
+          key: util.decodePropertyName,
+          value: decodeDefinition(),
+        }),
+      ]),
+    }),
   ]),
 });
 
@@ -52,18 +54,20 @@ const encodeDefinition = (): ts.Expr => {
 const decodeDefinition = (): ts.Expr => {
   const stringResultName = identifer.fromString("stringResult");
   return c.decodeLambda(type, (parameterIndex, parameterBinary) => [
-    ts.statementVariableDefinition(
-      stringResultName,
-      c.decodeReturnType(s.type),
-      ts.Expr.Call(tsUtil.get(s.codec(), util.decodePropertyName), [
-        parameterIndex,
-        parameterBinary,
-      ])
-    ),
+    ts.Statement.VariableDefinition({
+      isConst: true,
+      name: stringResultName,
+      type: c.decodeReturnType(s.type),
+      expr: ts.Expr.Call({
+        expr: tsUtil.get(s.codec(), util.decodePropertyName),
+        parameterList: [parameterIndex, parameterBinary],
+      }),
+    }),
     c.returnStatement(
-      ts.newExpr(ts.globalObjects(identifer.fromString("URL")), [
-        c.getResult(ts.Expr.Variable(stringResultName)),
-      ]),
+      ts.Expr.New({
+        expr: ts.Expr.GlobalObjects(identifer.fromString("URL")),
+        parameterList: [c.getResult(ts.Expr.Variable(stringResultName))],
+      }),
       c.getNextIndex(ts.Expr.Variable(stringResultName))
     ),
   ]);

@@ -110,42 +110,49 @@ export const decodeDefinition = (): ts.Expr => {
   const byteVar = ts.Expr.Variable(byteName);
 
   return c.decodeLambda(ts.Type.Number, (parameterIndex, parameterBinary) => [
-    ts.statementLetVariableDefinition(
-      resultName,
-      ts.Type.Number,
-      ts.Expr.NumberLiteral(0)
-    ),
-    ts.statementLetVariableDefinition(
-      offsetName,
-      ts.Type.Number,
-      ts.Expr.NumberLiteral(0)
-    ),
+    ts.Statement.VariableDefinition({
+      isConst: false,
+      name: resultName,
+      type: ts.Type.Number,
+      expr: ts.Expr.NumberLiteral(0),
+    }),
+    ts.Statement.VariableDefinition({
+      isConst: false,
+      name: offsetName,
+      type: ts.Type.Number,
+      expr: ts.Expr.NumberLiteral(0),
+    }),
     ts.Statement.WhileTrue([
-      ts.statementVariableDefinition(
-        byteName,
-        ts.Type.Number,
-        ts.Expr.Get({
+      ts.Statement.VariableDefinition({
+        isConst: true,
+        name: byteName,
+        type: ts.Type.Number,
+        expr: ts.Expr.Get({
           expr: parameterBinary,
           propertyExpr: tsUtil.addition(parameterIndex, offsetVar),
-        })
-      ),
-      ts.statementSet(
-        resultVar,
-        "|",
-        ts.leftShift(
-          ts.bitwiseAnd(byteVar, ts.Expr.NumberLiteral(0x7f)),
-          ts.multiplication(offsetVar, ts.Expr.NumberLiteral(7))
-        )
-      ),
-      ts.statementSet(offsetVar, "+", ts.Expr.NumberLiteral(1)),
-      ts.Statement.If(
-        tsUtil.equal(
+        }),
+      }),
+      ts.Statement.Set({
+        target: resultVar,
+        operatorMaybe: ts.Maybe.Just<ts.BinaryOperator>("BitwiseOr"),
+        expr: tsUtil.leftShift(
+          tsUtil.bitwiseAnd(byteVar, ts.Expr.NumberLiteral(0x7f)),
+          tsUtil.multiplication(offsetVar, ts.Expr.NumberLiteral(7))
+        ),
+      }),
+      ts.Statement.Set({
+        target: offsetVar,
+        operatorMaybe: ts.Maybe.Just<ts.BinaryOperator>("Addition"),
+        expr: ts.Expr.NumberLiteral(1),
+      }),
+      ts.Statement.If({
+        condition: tsUtil.equal(
           tsUtil.bitwiseAnd(ts.Expr.NumberLiteral(0x80), byteVar),
           ts.Expr.NumberLiteral(0)
         ),
-        [
-          ts.Statement.If(
-            tsUtil.logicalAnd(
+        thenStatementList: [
+          ts.Statement.If({
+            condition: tsUtil.logicalAnd(
               tsUtil.lessThan(
                 tsUtil.multiplication(offsetVar, ts.Expr.NumberLiteral(7)),
                 ts.Expr.NumberLiteral(32)
@@ -155,7 +162,7 @@ export const decodeDefinition = (): ts.Expr => {
                 ts.Expr.NumberLiteral(0)
               )
             ),
-            [
+            thenStatementList: [
               c.returnStatement(
                 tsUtil.bitwiseOr(
                   resultVar,
@@ -166,14 +173,14 @@ export const decodeDefinition = (): ts.Expr => {
                 ),
                 tsUtil.addition(parameterIndex, offsetVar)
               ),
-            ]
-          ),
+            ],
+          }),
           c.returnStatement(
             resultVar,
             tsUtil.addition(parameterIndex, offsetVar)
           ),
-        ]
-      ),
+        ],
+      }),
     ]),
   ]);
 };

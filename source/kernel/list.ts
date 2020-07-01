@@ -110,41 +110,49 @@ const decodeDefinition = (): ts.Expr => {
   return c.decodeLambda(
     tsUtil.readonlyArrayType(elementTypeVar),
     (parameterIndex, parameterBinary) => [
-      ts.statementVariableDefinition(
-        lengthResultName,
-        c.decodeReturnType(ts.Type.Number),
-        int32.decode(parameterIndex, parameterBinary)
-      ),
-      ts.statementLetVariableDefinition(
-        nextIndexName,
-        ts.Type.Number,
-        c.getNextIndex(lengthResultVar)
-      ),
-      ts.statementVariableDefinition(
-        resultName,
-        tsUtil.arrayType(elementTypeVar),
-        ts.Expr.ArrayLiteral([])
-      ),
-      ts.statementFor(identifer.fromString("i"), c.getResult(lengthResultVar), [
-        ts.statementVariableDefinition(
-          resultAndNextIndexName,
-          c.decodeReturnType(elementTypeVar),
-          ts.Expr.Call(tsUtil.get(elementCodecVar, util.decodePropertyName), [
-            nextIndexVar,
-            parameterBinary,
-          ])
-        ),
-        ts.Statement.EvaluateExpr(
-          tsUtil.callMethod(resultVar, "push", [
-            c.getResult(resultAndNextIndexVar),
-          ])
-        ),
-        ts.Statement.Set({
-          target: nextIndexVar,
-          operatorMaybe: ts.Maybe.Nothing(),
-          expr: c.getNextIndex(resultAndNextIndexVar),
-        }),
-      ]),
+      ts.Statement.VariableDefinition({
+        isConst: true,
+        name: lengthResultName,
+        type: c.decodeReturnType(ts.Type.Number),
+        expr: int32.decode(parameterIndex, parameterBinary),
+      }),
+      ts.Statement.VariableDefinition({
+        isConst: false,
+        name: nextIndexName,
+        type: ts.Type.Number,
+        expr: c.getNextIndex(lengthResultVar),
+      }),
+      ts.Statement.VariableDefinition({
+        isConst: true,
+        name: resultName,
+        type: tsUtil.arrayType(elementTypeVar),
+        expr: ts.Expr.ArrayLiteral([]),
+      }),
+      ts.Statement.For({
+        counterVariableName: identifer.fromString("i"),
+        untilExpr: c.getResult(lengthResultVar),
+        statementList: [
+          ts.Statement.VariableDefinition({
+            isConst: true,
+            name: resultAndNextIndexName,
+            type: c.decodeReturnType(elementTypeVar),
+            expr: ts.Expr.Call({
+              expr: tsUtil.get(elementCodecVar, util.decodePropertyName),
+              parameterList: [nextIndexVar, parameterBinary],
+            }),
+          }),
+          ts.Statement.EvaluateExpr(
+            tsUtil.callMethod(resultVar, "push", [
+              c.getResult(resultAndNextIndexVar),
+            ])
+          ),
+          ts.Statement.Set({
+            target: nextIndexVar,
+            operatorMaybe: ts.Maybe.Nothing(),
+            expr: c.getNextIndex(resultAndNextIndexVar),
+          }),
+        ],
+      }),
       c.returnStatement(resultVar, nextIndexVar),
     ]
   );
