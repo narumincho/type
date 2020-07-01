@@ -1,14 +1,15 @@
 import * as c from "./codec";
 import * as s from "./string";
+import * as ts from "js-ts-code-generator/distribution/newData";
 import * as util from "../util";
-import { identifer, data as ts } from "js-ts-code-generator";
+import { identifer, data as tsUtil } from "js-ts-code-generator";
 
 const name = identifer.fromString("Url");
 
-export const type = ts.typeScopeInGlobal(identifer.fromString("URL"));
+export const type = ts.Type.ScopeInGlobal(identifer.fromString("URL"));
 
 export const codec = (): ts.Expr =>
-  ts.get(ts.Expr.Variable(name), util.codecPropertyName);
+  tsUtil.get(ts.Expr.Variable(name), util.codecPropertyName);
 
 export const variableDefinition = (): ts.Variable => ({
   name,
@@ -40,9 +41,10 @@ export const variableDefinition = (): ts.Variable => ({
 const encodeDefinition = (): ts.Expr => {
   return c.encodeLambda(type, (value) => [
     ts.Statement.Return(
-      ts.call(ts.get(s.codec(), util.encodePropertyName), [
-        ts.callMethod(value, "toString", []),
-      ])
+      ts.Expr.Call({
+        expr: tsUtil.get(s.codec(), util.encodePropertyName),
+        parameterList: [tsUtil.callMethod(value, "toString", [])],
+      })
     ),
   ]);
 };
@@ -53,7 +55,7 @@ const decodeDefinition = (): ts.Expr => {
     ts.statementVariableDefinition(
       stringResultName,
       c.decodeReturnType(s.type),
-      ts.call(ts.get(s.codec(), util.decodePropertyName), [
+      ts.Expr.Call(tsUtil.get(s.codec(), util.decodePropertyName), [
         parameterIndex,
         parameterBinary,
       ])

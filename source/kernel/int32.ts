@@ -1,19 +1,26 @@
 import * as c from "./codec";
+import * as ts from "js-ts-code-generator/distribution/newData";
 import * as util from "../util";
-import { identifer, data as ts } from "js-ts-code-generator";
+import { identifer, data as tsUtil } from "js-ts-code-generator";
 
 const name = identifer.fromString("Int32");
 
 export const type = ts.Type.Number;
 
 export const codec = (): ts.Expr =>
-  ts.get(ts.Expr.Variable(name), util.codecPropertyName);
+  tsUtil.get(ts.Expr.Variable(name), util.codecPropertyName);
 
 export const encode = (target: ts.Expr): ts.Expr =>
-  ts.call(ts.get(codec(), util.encodePropertyName), [target]);
+  ts.Expr.Call({
+    expr: tsUtil.get(codec(), util.encodePropertyName),
+    parameterList: [target],
+  });
 
 export const decode = (index: ts.Expr, binary: ts.Expr): ts.Expr =>
-  ts.call(ts.get(codec(), util.decodePropertyName), [index, binary]);
+  ts.Expr.Call({
+    expr: tsUtil.get(codec(), util.decodePropertyName),
+    parameterList: [index, binary],
+  });
 
 export const variableDefinition = (): ts.Variable =>
   c.variableDefinition(
@@ -37,48 +44,57 @@ const encodeDefinition = (): ts.Expr => {
   const restVar = ts.Expr.Variable(restName);
 
   return c.encodeLambda(type, (valueVar) => [
-    ts.statementLetVariableDefinition(
-      restName,
-      ts.Type.Number,
-      ts.bitwiseOr(valueVar, ts.Expr.NumberLiteral(0))
-    ),
-    ts.statementVariableDefinition(
-      resultName,
-      ts.arrayType(ts.Type.Number),
-      ts.Expr.ArrayLiteral([])
-    ),
-    ts.statementWhileTrue([
-      ts.statementVariableDefinition(
-        byteName,
-        ts.Type.Number,
-        ts.bitwiseAnd(restVar, ts.Expr.NumberLiteral(0x7f))
-      ),
-      ts.statementSet(restVar, ">>", ts.Expr.NumberLiteral(7)),
-      ts.statementIf(
-        ts.logicalOr(
-          ts.logicalAnd(
-            ts.equal(restVar, ts.Expr.NumberLiteral(0)),
-            ts.equal(
-              ts.bitwiseAnd(byteVar, ts.Expr.NumberLiteral(0x40)),
+    ts.Statement.VariableDefinition({
+      isConst: false,
+      name: restName,
+      type: ts.Type.Number,
+      expr: tsUtil.bitwiseOr(valueVar, ts.Expr.NumberLiteral(0)),
+    }),
+    ts.Statement.VariableDefinition({
+      isConst: true,
+      name: resultName,
+      type: tsUtil.arrayType(ts.Type.Number),
+      expr: ts.Expr.ArrayLiteral([]),
+    }),
+    ts.Statement.WhileTrue([
+      ts.Statement.VariableDefinition({
+        isConst: true,
+        name: byteName,
+        type: ts.Type.Number,
+        expr: tsUtil.bitwiseAnd(restVar, ts.Expr.NumberLiteral(0x7f)),
+      }),
+      ts.Statement.Set({
+        target: restVar,
+        operatorMaybe: ts.Maybe.Just<ts.BinaryOperator>("SignedRightShift"),
+        expr: ts.Expr.NumberLiteral(7),
+      }),
+      ts.Statement.If({
+        condition: tsUtil.logicalOr(
+          tsUtil.logicalAnd(
+            tsUtil.equal(restVar, ts.Expr.NumberLiteral(0)),
+            tsUtil.equal(
+              tsUtil.bitwiseAnd(byteVar, ts.Expr.NumberLiteral(0x40)),
               ts.Expr.NumberLiteral(0)
             )
           ),
-          ts.logicalAnd(
-            ts.equal(restVar, ts.Expr.NumberLiteral(-1)),
-            ts.notEqual(
-              ts.bitwiseAnd(byteVar, ts.Expr.NumberLiteral(0x40)),
+          tsUtil.logicalAnd(
+            tsUtil.equal(restVar, ts.Expr.NumberLiteral(-1)),
+            tsUtil.notEqual(
+              tsUtil.bitwiseAnd(byteVar, ts.Expr.NumberLiteral(0x40)),
               ts.Expr.NumberLiteral(0)
             )
           )
         ),
-        [
-          ts.statementEvaluateExpr(ts.callMethod(resultVar, "push", [byteVar])),
+        thenStatementList: [
+          ts.Statement.EvaluateExpr(
+            tsUtil.callMethod(resultVar, "push", [byteVar])
+          ),
           ts.Statement.Return(resultVar),
-        ]
-      ),
-      ts.statementEvaluateExpr(
-        ts.callMethod(resultVar, "push", [
-          ts.bitwiseOr(byteVar, ts.Expr.NumberLiteral(0x80)),
+        ],
+      }),
+      ts.Statement.EvaluateExpr(
+        tsUtil.callMethod(resultVar, "push", [
+          tsUtil.bitwiseOr(byteVar, ts.Expr.NumberLiteral(0x80)),
         ])
       ),
     ]),
@@ -104,11 +120,14 @@ export const decodeDefinition = (): ts.Expr => {
       ts.Type.Number,
       ts.Expr.NumberLiteral(0)
     ),
-    ts.statementWhileTrue([
+    ts.Statement.WhileTrue([
       ts.statementVariableDefinition(
         byteName,
         ts.Type.Number,
-        ts.getByExpr(parameterBinary, ts.addition(parameterIndex, offsetVar))
+        ts.Expr.Get({
+          expr: parameterBinary,
+          propertyExpr: tsUtil.addition(parameterIndex, offsetVar),
+        })
       ),
       ts.statementSet(
         resultVar,
@@ -119,37 +138,40 @@ export const decodeDefinition = (): ts.Expr => {
         )
       ),
       ts.statementSet(offsetVar, "+", ts.Expr.NumberLiteral(1)),
-      ts.statementIf(
-        ts.equal(
-          ts.bitwiseAnd(ts.Expr.NumberLiteral(0x80), byteVar),
+      ts.Statement.If(
+        tsUtil.equal(
+          tsUtil.bitwiseAnd(ts.Expr.NumberLiteral(0x80), byteVar),
           ts.Expr.NumberLiteral(0)
         ),
         [
-          ts.statementIf(
-            ts.logicalAnd(
-              ts.lessThan(
-                ts.multiplication(offsetVar, ts.Expr.NumberLiteral(7)),
+          ts.Statement.If(
+            tsUtil.logicalAnd(
+              tsUtil.lessThan(
+                tsUtil.multiplication(offsetVar, ts.Expr.NumberLiteral(7)),
                 ts.Expr.NumberLiteral(32)
               ),
-              ts.notEqual(
-                ts.bitwiseAnd(byteVar, ts.Expr.NumberLiteral(0x40)),
+              tsUtil.notEqual(
+                tsUtil.bitwiseAnd(byteVar, ts.Expr.NumberLiteral(0x40)),
                 ts.Expr.NumberLiteral(0)
               )
             ),
             [
               c.returnStatement(
-                ts.bitwiseOr(
+                tsUtil.bitwiseOr(
                   resultVar,
-                  ts.leftShift(
-                    ts.bitwiseNot(ts.Expr.NumberLiteral(0)),
-                    ts.multiplication(offsetVar, ts.Expr.NumberLiteral(7))
+                  tsUtil.leftShift(
+                    tsUtil.bitwiseNot(ts.Expr.NumberLiteral(0)),
+                    tsUtil.multiplication(offsetVar, ts.Expr.NumberLiteral(7))
                   )
                 ),
-                ts.addition(parameterIndex, offsetVar)
+                tsUtil.addition(parameterIndex, offsetVar)
               ),
             ]
           ),
-          c.returnStatement(resultVar, ts.addition(parameterIndex, offsetVar)),
+          c.returnStatement(
+            resultVar,
+            tsUtil.addition(parameterIndex, offsetVar)
+          ),
         ]
       ),
     ]),
